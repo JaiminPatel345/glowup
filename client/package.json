@@ -10,12 +10,14 @@
   },
   "dependencies": {
     "@expo/ngrok": "^4.1.0",
+    "@reduxjs/toolkit": "^2.9.0",
     "expo": "~53.0.22",
     "expo-av": "^15.1.7",
     "expo-camera": "^16.1.11",
     "expo-status-bar": "~2.2.3",
     "react": "19.0.0",
-    "react-native": "0.79.5"
+    "react-native": "0.79.5",
+    "react-redux": "^9.2.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

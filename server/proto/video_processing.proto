@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package video_processing;
+
+// Service definition for video processing
+service VideoProcessingService {
+  // Bidirectional streaming for real-time video processing
+  rpc ProcessVideoStream(stream VideoFrame) returns (stream VideoFrame);
+  
+  // Health check
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+// Video frame message
+message VideoFrame {
+  string session_id = 1;           // Session identifier
+  bytes frame_data = 2;            // Base64 encoded image data or raw bytes
+  string format = 3;               // Image format (jpeg, png, etc.)
+  int64 timestamp = 4;             // Timestamp in milliseconds
+  int32 width = 5;                 // Frame width
+  int32 height = 6;                // Frame height
+  FrameMetadata metadata = 7;      // Additional metadata
+}
+
+// Frame metadata
+message FrameMetadata {
+  string camera_facing = 1;        // "front" or "back"
+  float quality = 2;               // Compression quality (0.0 - 1.0)
+  map<string, string> extra = 3;   // Additional key-value pairs
+}
+
+// Health check messages
+message HealthCheckRequest {
+  string service = 1;
+}
+
+message HealthCheckResponse {
+  enum ServingStatus {
+    UNKNOWN = 0;
+    SERVING = 1;
+    NOT_SERVING = 2;
+  }
+  ServingStatus status = 1;
+  string message = 2;
+}

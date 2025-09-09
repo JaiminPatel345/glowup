@@ -154,9 +154,12 @@ class GatewayServer {
   }
 
   async handleVideoFrame(session, frameData) {
+    logger.info(`Received video frame for session ${session.id}`);
+    
     // Validate frame data
     const validation = validateFrame(frameData);
     if (!validation.valid) {
+      logger.error(`Invalid frame for session ${session.id}: ${validation.error}`);
       throw new Error(`Invalid frame: ${validation.error}`);
     }
 
@@ -178,6 +181,8 @@ class GatewayServer {
       }
     };
 
+    logger.info(`Forwarding frame to gRPC service for session ${session.id}`);
+    
     // Send to gRPC service
     session.grpcStream.write(grpcFrame);
   }

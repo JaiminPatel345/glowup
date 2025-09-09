@@ -37,8 +37,25 @@ export const useVideoProcessing = () => {
       await webSocketService.connect();
       dispatch(setRecording(true));
       
-      // Start capturing frames
-      startFrameCapture();
+      // Start capturing frames after a longer delay to ensure camera is fully ready
+      setTimeout(() => {
+        if (cameraRef.current) {
+          console.log('Starting frame capture - camera ref available');
+          startFrameCapture();
+        } else {
+          console.warn('Camera ref not available when starting frame capture');
+          // Try again after another delay
+          setTimeout(() => {
+            if (cameraRef.current) {
+              console.log('Starting frame capture - camera ref available (retry)');
+              startFrameCapture();
+            } else {
+              console.error('Camera ref still not available after retry');
+              dispatch(setError('Camera not ready - please try again'));
+            }
+          }, 2000);
+        }
+      }, 2000); // Increased delay to 2 seconds
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to start processing';
       dispatch(setError(errorMessage));
@@ -61,7 +78,7 @@ export const useVideoProcessing = () => {
       clearInterval(frameIntervalRef.current);
     }
 
-    // Capture frames at ~15 FPS for optimal performance
+    // Capture frames at maximum rate for real-time processing
     frameIntervalRef.current = setInterval(async () => {
       if (cameraRef.current && isRecording) {
         try {
@@ -69,13 +86,17 @@ export const useVideoProcessing = () => {
           updateFPSCounter();
         } catch (error) {
           console.error('Frame capture error:', error);
+          // Don't stop recording on single frame errors
         }
       }
-    }, 1000 / 15); // 15 FPS
+    }, 16); // ~60 FPS (1000ms / 60)
   }, [isRecording]);
 
   const captureAndSendFrame = useCallback(async () => {
-    if (!cameraRef.current) return;
+    if (!cameraRef.current) {
+      console.warn('Camera ref not available');
+      return;
+    }
 
     try {
       // Take picture from camera
@@ -83,9 +104,10 @@ export const useVideoProcessing = () => {
         base64: true,
         quality: quality,
         skipProcessing: true, // Skip processing for speed
+        exif: false, // Skip EXIF data for speed
       });
 
-      if (photo.base64) {
+      if (photo && photo.base64) {
         // Dispatch original frame to store
         dispatch(setOriginalFrame(photo.base64));
 
@@ -102,10 +124,13 @@ export const useVideoProcessing = () => {
 
         // Send frame for processing
         webSocketService.sendFrame(frame);
+      } else {
+        console.warn('No base64 data in captured photo');
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown camera error';
       console.error('Failed to capture frame:', error);
-      dispatch(setError('Failed to capture camera frame'));
+      dispatch(setError(`Failed to capture camera frame: ${errorMessage}`));
     }
   }, [dispatch, quality, cameraFacing]);
 

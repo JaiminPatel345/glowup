@@ -1,193 +1,134 @@
+#!/usr/bin/env python3
 """
-Hair Processor Module - Core ML processing for hair analysis with face anonymization
+Hair Processor - Real-time face anonymization using MediaPipe and OpenCV
 """
 
 import asyncio
 import base64
-import io
+import cv2
 import logging
+import numpy as np
 import time
+from io import BytesIO
+from PIL import Image
 from typing import Dict, Any, Optional
 
-import cv2
-import numpy as np
-from PIL import Image
-import mediapipe as mp
+from utils import blur_image
 
 logger = logging.getLogger(__name__)
 
 class HairProcessor:
-    """
-    Hair processing engine for real-time video analysis with face anonymization
-    """
+    """Hair processing service using MediaPipe for face anonymization"""
     
     def __init__(self):
-        """Initialize the hair processor with MediaPipe face detection"""
-        self.processing_count = 0
-        
-        # Initialize MediaPipe Face Detection
-        self.mp_face_detection = mp.solutions.face_detection
-        self.mp_drawing = mp.solutions.drawing_utils
-        self.face_detection = self.mp_face_detection.FaceDetection(
-            model_selection=0,  # 0 for short-range (2 meters), 1 for full-range (5 meters)
-            min_detection_confidence=0.5
-        )
-        
+        """Initialize the hair processor"""
         logger.info("HairProcessor initialized with MediaPipe face anonymization")
-    
-    async def process_frame(self, frame_data: str, format: str, metadata: Any) -> Dict[str, Any]:
+        
+    async def process_frame(self, frame_data: str, format: str = 'jpeg', metadata: Optional[Dict] = None) -> Dict[str, Any]:
         """
-        Process a single video frame for hair analysis with face anonymization
+        Process a video frame with face anonymization
         
         Args:
-            frame_data: Base64 encoded image data
+            frame_data: Base64 encoded frame data
             format: Image format (jpeg, png, etc.)
-            metadata: Frame metadata
+            metadata: Additional frame metadata
             
         Returns:
-            Dictionary containing processed frame data
+            Dict containing processed frame data
         """
-        start_time = time.time()
-        self.processing_count += 1
-        
         try:
-            # Process the frame with face anonymization
-            processed_data = await self._face_anonymization_processing(frame_data, format, metadata)
+            start_time = time.time()
             
-            processing_time = (time.time() - start_time) * 1000  # Convert to ms
+            # Decode base64 image
+            img_data = self._decode_base64_image(frame_data)
+            if img_data is None:
+                logger.error("Failed to decode base64 image")
+                return self._create_error_response(frame_data, format)
             
-            # Log processing stats every 50 frames
-            if self.processing_count % 50 == 0:
-                logger.info(f"Processed frame #{self.processing_count} in {processing_time:.2f}ms")
+            # Process with face blur
+            processed_img = blur_image(img_data, model_selection=1)
             
-            return processed_data
+            # Encode back to base64
+            processed_frame_data = self._encode_image_to_base64(processed_img, format)
+            if processed_frame_data is None:
+                logger.error("Failed to encode processed image")
+                return self._create_error_response(frame_data, format)
+            
+            processing_time = time.time() - start_time
+            logger.debug(f"Frame processed in {processing_time:.3f}s")
+            
+            return {
+                'frame_data': processed_frame_data,
+                'format': format,
+                'width': processed_img.shape[1],
+                'height': processed_img.shape[0],
+                'extra_metadata': {
+                    'processing_time': processing_time,
+                    'faces_detected': True,  # Could be enhanced to return actual count
+                    'processor': 'face_blur'
+                }
+            }
             
         except Exception as e:
-            logger.error(f"Error processing frame #{self.processing_count}: {e}")
-            # Return original frame on error
-            return {
-                'frame_data': frame_data,
-                'format': format,
-                'width': 0,
-                'height': 0,
-                'extra_metadata': {'error': str(e)}
-            }
+            logger.error(f"Error processing frame: {e}")
+            return self._create_error_response(frame_data, format)
     
-    async def _face_anonymization_processing(self, frame_data: str, format: str, metadata: Any) -> Dict[str, Any]:
-        """
-        Face anonymization processing using MediaPipe
-        """
-        
-        # Decode base64 image
-        image_data = self._decode_base64_image(frame_data)
-        
-        if image_data is None:
-            raise ValueError("Failed to decode image data")
-        
-        # Convert PIL Image to OpenCV format
-        cv_image = cv2.cvtColor(np.array(image_data), cv2.COLOR_RGB2BGR)
-        height, width = cv_image.shape[:2]
-        
-        # Convert BGR to RGB for MediaPipe
-        rgb_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
-        
-        # Process with MediaPipe Face Detection
-        results = self.face_detection.process(rgb_image)
-        
-        # Apply face anonymization (blur faces)
-        if results.detections:
-            for detection in results.detections:
-                bboxC = detection.location_data.relative_bounding_box
-                ih, iw, _ = rgb_image.shape
-                
-                # Calculate bounding box coordinates
-                x = int(bboxC.xmin * iw)
-                y = int(bboxC.ymin * ih)
-                w = int(bboxC.width * iw)
-                h = int(bboxC.height * ih)
-                
-                # Ensure coordinates are within image bounds
-                x = max(0, x)
-                y = max(0, y)
-                w = min(w, iw - x)
-                h = min(h, ih - y)
-                
-                # Extract face region
-                face_region = rgb_image[y:y+h, x:x+w]
-                
-                if face_region.size > 0:
-                    # Apply Gaussian blur to anonymize face
-                    blurred_face = cv2.GaussianBlur(face_region, (99, 99), 30)
-                    
-                    # Replace face region with blurred version
-                    rgb_image[y:y+h, x:x+w] = blurred_face
-        
-        # Convert back to BGR for OpenCV
-        processed_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
-        
-        # Convert back to PIL Image
-        processed_pil = Image.fromarray(cv2.cvtColor(processed_image, cv2.COLOR_BGR2RGB))
-        
-        # Encode back to base64
-        processed_base64 = self._encode_image_to_base64(processed_pil, format)
-        
-        return {
-            'frame_data': processed_base64,
-            'format': format,
-            'width': width,
-            'height': height,
-            'extra_metadata': {
-                'processing_type': 'face_anonymization',
-                'faces_detected': len(results.detections) if results.detections else 0,
-                'confidence': 0.8,
-                'processing_time_ms': 0  # Will be calculated by caller
-            }
-        }
-    
-    def _decode_base64_image(self, base64_string: str) -> Optional[Image.Image]:
-        """Decode base64 string to PIL Image"""
+    def _decode_base64_image(self, frame_data: str) -> Optional[np.ndarray]:
+        """Decode base64 string to OpenCV image"""
         try:
             # Remove data URL prefix if present
-            if base64_string.startswith('data:image'):
-                base64_string = base64_string.split(',')[1]
+            if frame_data.startswith('data:image'):
+                frame_data = frame_data.split(',')[1]
             
             # Decode base64
-            image_bytes = base64.b64decode(base64_string)
+            img_bytes = base64.b64decode(frame_data)
             
-            # Convert to PIL Image
-            image = Image.open(io.BytesIO(image_bytes))
-            return image
+            # Convert to numpy array
+            img_array = np.frombuffer(img_bytes, dtype=np.uint8)
+            
+            # Decode with OpenCV
+            img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+            
+            return img
             
         except Exception as e:
             logger.error(f"Failed to decode base64 image: {e}")
             return None
     
-    def _encode_image_to_base64(self, image: Image.Image, format: str = 'JPEG') -> str:
-        """Encode PIL Image to base64 string"""
+    def _encode_image_to_base64(self, img: np.ndarray, format: str = 'jpeg') -> Optional[str]:
+        """Encode OpenCV image to base64 string"""
         try:
-            buffer = io.BytesIO()
-            
-            # Use JPEG for better compression, PNG for transparency
-            img_format = 'JPEG' if format.lower() in ['jpg', 'jpeg'] else 'PNG'
-            
-            # Optimize JPEG quality for real-time processing
-            if img_format == 'JPEG':
-                image.save(buffer, format=img_format, quality=85, optimize=True)
+            # Encode image
+            if format.lower() in ['jpg', 'jpeg']:
+                _, buffer = cv2.imencode('.jpg', img, [cv2.IMWRITE_JPEG_QUALITY, 85])
+            elif format.lower() == 'png':
+                _, buffer = cv2.imencode('.png', img)
             else:
-                image.save(buffer, format=img_format, optimize=True)
+                _, buffer = cv2.imencode('.jpg', img, [cv2.IMWRITE_JPEG_QUALITY, 85])
             
-            # Encode to base64
-            buffer.seek(0)
-            base64_string = base64.b64encode(buffer.getvalue()).decode('utf-8')
+            # Convert to base64
+            img_base64 = base64.b64encode(buffer).decode('utf-8')
             
-            return base64_string
+            return img_base64
             
         except Exception as e:
             logger.error(f"Failed to encode image to base64: {e}")
-            raise
+            return None
+    
+    def _create_error_response(self, original_frame_data: str, format: str) -> Dict[str, Any]:
+        """Create error response with original frame"""
+        return {
+            'frame_data': original_frame_data,
+            'format': format,
+            'width': 0,
+            'height': 0,
+            'extra_metadata': {
+                'processing_time': 0,
+                'error': True,
+                'processor': 'face_blur'
+            }
+        }
     
     def cleanup(self):
-        """Cleanup MediaPipe resources"""
-        if hasattr(self, 'face_detection'):
-            self.face_detection.close()
-            logger.info("MediaPipe face detection resources cleaned up")
+        """Cleanup resources"""
+        logger.info("HairProcessor cleanup completed")

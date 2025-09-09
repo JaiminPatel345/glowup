@@ -40,6 +40,8 @@ class VideoProcessingService(video_processing_pb2_grpc.VideoProcessingServiceSer
         frame_count = 0
         start_time = time.time()
         
+        logger.info("New ProcessVideoStream request started")
+        
         try:
             async for frame_request in request_iterator:
                 if not session_id:
@@ -53,8 +55,12 @@ class VideoProcessingService(video_processing_pb2_grpc.VideoProcessingServiceSer
                 frame_count += 1
                 self.active_sessions[session_id]['frame_count'] = frame_count
                 
+                logger.info(f"Processing frame {frame_count} for session {session_id}")
+                
                 # Process the frame
                 processed_frame = await self._process_frame(frame_request)
+                
+                logger.info(f"Frame {frame_count} processed, yielding response")
                 
                 # Yield the processed frame
                 yield processed_frame

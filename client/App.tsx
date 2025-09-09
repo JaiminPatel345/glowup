@@ -136,7 +136,7 @@ function CameraApp() {
               ref={cameraRef}
               style={styles.liveCamera}
               facing={facing}
-              mode="video"
+              mode="picture"
             />
             <View style={styles.liveCameraOverlay}>
               <Text style={styles.liveCameraText}>Live</Text>

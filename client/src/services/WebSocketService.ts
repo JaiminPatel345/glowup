@@ -102,6 +102,7 @@ export class WebSocketService {
       };
 
       const messageStr = JSON.stringify(message);
+      console.log(`Sending frame: ${frame.width}x${frame.height}, ${Math.round(messageStr.length / 1024)}KB`);
       this.ws!.send(messageStr);
       
       // Update bytes transmitted
@@ -138,10 +139,16 @@ export class WebSocketService {
 
     this.ws.onclose = (event) => {
       console.log('WebSocket closed:', event.code, event.reason);
+      console.log('Close event details:', { 
+        code: event.code, 
+        reason: event.reason, 
+        wasClean: event.wasClean 
+      });
       store.dispatch(setConnectionStatus('disconnected'));
       this.clearTimeouts();
       
       if (!this.isReconnecting && event.code !== 1000) {
+        console.log('Attempting reconnection due to unexpected close');
         this.attemptReconnect();
       }
     };
@@ -179,6 +186,8 @@ export class WebSocketService {
 
   private handleProcessedFrame(data: ProcessedFrameResponse): void {
     const processingTime = Date.now() - data.timestamp;
+    console.log(`Received processed frame, processing time: ${processingTime}ms`);
+    
     
     store.dispatch(setProcessedFrame({
       frameData: data.frameData,

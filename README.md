@@ -1,4 +1,4 @@
-# GlowUp - Real-time Video Processing App
+# GlowUp - Real-time Video Processing App [In Progress]
 
 A real-time video processing application built with React Native (client), Node.js (gateway), and Python (hair processing service) using WebSocket and gRPC for low-latency communication.
 
@@ -26,9 +26,8 @@ A real-time video processing application built with React Native (client), Node.
 
 ## ✨ Features
 
-### Face Anonymization
-- **Real-time face detection**: Uses MediaPipe for accurate face detection
-- **Privacy protection**: Automatically blurs detected faces in processed video
+### Try on Hair style 
+- **Real-time Try on**: Uses FastHairGEN for fastest hair processing
 - **High performance**: Optimized for real-time processing with minimal latency
 
 ### Dual Video Preview
@@ -37,8 +36,7 @@ A real-time video processing application built with React Native (client), Node.
 - **Real-time stats**: Shows FPS, frame count, and connection status
 - **Seamless switching**: Easy camera controls for flip and close operations
 
-### Technical Stack
-```
+
 
 ## Quick Start
 

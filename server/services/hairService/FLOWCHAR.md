@@ -137,41 +137,42 @@ graph TB
 ---
 
 ## Step 3: HairGAN Processing
-
 ```mermaid
 graph TB
     Input[📂 preprocessed_frames/<br/>50 frames] --> Processor[hair_gan_processor.py<br/>HairGANProcessor.process_frames_batch]
     
-    Processor --> Loop{For Each Frame}
+    Processor --> LoopStart{For Each Frame}
     
-    Loop --> Step1[1. Face Detection<br/>Locate facial landmarks]
+    LoopStart -->|Process Frame| Step1[1. Face Detection<br/>Locate facial landmarks]
     Step1 --> Step2[2. Hair Segmentation<br/>Isolate hair region]
     Step2 --> Step3[3. Style Transfer<br/>Apply HairFastGAN model]
     Step3 --> Step4[4. Blend Result<br/>Merge with original]
     
-    Step4 --> Check{More Frames?}
-    Check -->|Yes| Loop
-    Check -->|No| Output
+    Step4 --> SaveFrame[Save Styled Frame]
+    SaveFrame --> Check{More Frames?}
+    Check -->|Yes| LoopStart
+    Check -->|No| AllDone[All Frames Processed]
     
     Processor --> Options[Processing Options]
     Options --> Reference[Reference Style Image<br/>optional]
     Options --> Batch[Batch Processing]
     Options --> GPU[GPU Acceleration<br/>if available]
     
-    Reference --> Output
-    Batch --> Output
-    GPU --> Output
-    
-    Output[📂 processed_frames/<br/>├─ frame_00000.jpg STYLED<br/>├─ frame_00001.jpg STYLED<br/>├─ ...<br/>└─ frame_00049.jpg STYLED]
+    AllDone --> Output[📂 processed_frames/<br/>frame_00000.jpg STYLED<br/>frame_00001.jpg STYLED<br/>frame_00049.jpg STYLED]
     
     Output --> Stats[~50 styled frames<br/>Size: 3-4 MB total]
     Stats --> Next([To FPS Enhancement])
     
     style Input fill:#fce4ec,stroke:#c2185b
     style Processor fill:#fff3e0,stroke:#f57c00
-    style Loop fill:#ffe0b2,stroke:#e64a19
+    style LoopStart fill:#ffe0b2,stroke:#e64a19
+    style Check fill:#ffe0b2,stroke:#e64a19
+    style Step1 fill:#ffecb3,stroke:#ff6f00
+    style Step2 fill:#ffecb3,stroke:#ff6f00
+    style Step3 fill:#ffecb3,stroke:#ff6f00
+    style Step4 fill:#ffecb3,stroke:#ff6f00
+    style SaveFrame fill:#ffecb3,stroke:#ff6f00
     style Output fill:#fff8e1,stroke:#ffa000
-```
 
 **HairGAN Pipeline:**
 1. **Face Detection:** Identify facial features and landmarks
@@ -518,6 +519,388 @@ python main.py
 ```bash
 ls output/final_output.mp4
 ```
+
+---
+
+## 🚀 Complete Setup Guide (New Laptop/Clone)
+
+### Prerequisites
+
+Before starting, ensure you have:
+- Python 3.8 or higher
+- Git
+- Webcam (for video capture)
+- 2-4 GB free disk space
+
+### Step-by-Step Installation
+
+#### 1. Clone the Repository
+
+```bash
+# Navigate to your projects directory
+cd ~/My/Dev/Projects/App/glowup/server/services/
+
+# Clone or copy the hairService directory
+# If using git:
+git clone <your-repo-url> hairService
+# OR if copying from another location:
+# cp -r /path/to/hairService ./hairService
+
+# Navigate to the project
+cd hairService
+```
+
+#### 2. Create Virtual Environment
+
+```bash
+# Create virtual environment
+python3 -m venv .venv
+
+# OR if python3 doesn't work, try:
+python -m venv .venv
+```
+
+#### 3. Activate Virtual Environment
+
+**On Linux/Mac:**
+```bash
+source .venv/bin/activate
+```
+
+**On Windows:**
+```bash
+# Command Prompt
+.venv\Scripts\activate.bat
+
+# PowerShell
+.venv\Scripts\Activate.ps1
+```
+
+**Verify activation:**
+You should see `(.venv)` at the beginning of your terminal prompt:
+```bash
+(.venv) username@laptop:~/hairService$
+```
+
+#### 4. Upgrade pip
+
+```bash
+pip install --upgrade pip
+```
+
+#### 5. Install Dependencies
+
+```bash
+# Install from requirements file
+pip install -r requirements_pipeline.txt
+
+# OR install manually:
+pip install opencv-python>=4.5.0
+pip install opencv-contrib-python>=4.5.0
+pip install numpy>=1.19.0
+pip install Pillow>=8.0.0
+pip install torch>=1.9.0
+pip install torchvision>=0.10.0
+```
+
+**Note:** If you don't need PyTorch (for HairFastGAN), you can skip torch and torchvision.
+
+#### 6. Verify Installation
+
+```bash
+# Check Python version
+python --version
+
+# Verify OpenCV installation
+python -c "import cv2; print(f'OpenCV version: {cv2.__version__}')"
+
+# Verify NumPy installation
+python -c "import numpy; print(f'NumPy version: {numpy.__version__}')"
+
+# Check if camera is available
+python -c "from video_utils import verify_camera_available; verify_camera_available()"
+```
+
+#### 7. Run the Pipeline
+
+**Option A: Complete Pipeline (Interactive)**
+```bash
+python main.py
+```
+
+**Option B: Examples Menu**
+```bash
+python examples.py
+```
+
+**Option C: Quick Test (5 seconds)**
+```bash
+python -c "from main import run_pipeline_custom; run_pipeline_custom(camera_max_duration=5)"
+```
+
+#### 8. Check Output
+
+```bash
+# List output files
+ls -lh output/
+
+# View final video (Linux with VLC)
+vlc output/final_output.mp4
+
+# OR use default video player
+xdg-open output/final_output.mp4
+```
+
+### Troubleshooting Installation
+
+#### Issue: Python not found
+```bash
+# Try these alternatives:
+python3 --version
+python3.8 --version
+python3.9 --version
+python3.10 --version
+
+# Use the one that works to create venv
+python3.10 -m venv .venv
+```
+
+#### Issue: pip not found after activation
+```bash
+# Deactivate and reactivate
+deactivate
+source .venv/bin/activate
+
+# OR install pip in venv
+python -m ensurepip --upgrade
+```
+
+#### Issue: OpenCV installation fails
+```bash
+# Try installing without contrib first
+pip install opencv-python
+
+# If that works, then try contrib
+pip install opencv-contrib-python
+```
+
+#### Issue: Camera not detected
+```bash
+# Check available video devices (Linux)
+ls /dev/video*
+
+# Test camera with Python
+python -c "import cv2; cap = cv2.VideoCapture(0); print('Camera OK' if cap.isOpened() else 'Camera not found'); cap.release()"
+
+# If camera index 0 doesn't work, try 1 or 2
+python -c "import cv2; cap = cv2.VideoCapture(1); print('Camera OK' if cap.isOpened() else 'Camera not found'); cap.release()"
+```
+
+#### Issue: Permission denied for camera
+```bash
+# Linux: Add user to video group
+sudo usermod -a -G video $USER
+
+# Then logout and login again, or:
+newgrp video
+```
+
+#### Issue: Slow performance
+```bash
+# Use Fast configuration
+python -c "from config import FastProcessingConfig; from main import run_pipeline; run_pipeline(config_class=FastProcessingConfig)"
+```
+
+### Deactivation
+
+When you're done, deactivate the virtual environment:
+
+```bash
+deactivate
+```
+
+### Reactivating Later
+
+```bash
+# Navigate to project directory
+cd ~/My/Dev/Projects/App/glowup/server/services/hairService
+
+# Activate virtual environment
+source .venv/bin/activate  # Linux/Mac
+# OR
+.venv\Scripts\activate  # Windows
+
+# Run your scripts
+python main.py
+```
+
+---
+
+## 📦 Complete Installation Script (Copy-Paste)
+
+### Linux/Mac - One Command Setup
+
+Save this as `setup.sh` and run it:
+
+```bash
+#!/bin/bash
+
+echo "🚀 Setting up HairService Video Processing Pipeline..."
+
+# Create virtual environment
+echo "📦 Creating virtual environment..."
+python3 -m venv .venv
+
+# Activate virtual environment
+echo "✅ Activating virtual environment..."
+source .venv/bin/activate
+
+# Upgrade pip
+echo "⬆️  Upgrading pip..."
+pip install --upgrade pip
+
+# Install dependencies
+echo "📥 Installing dependencies..."
+pip install opencv-python>=4.5.0
+pip install opencv-contrib-python>=4.5.0
+pip install numpy>=1.19.0
+pip install Pillow>=8.0.0
+pip install torch>=1.9.0
+pip install torchvision>=0.10.0
+
+# Verify installation
+echo "🔍 Verifying installation..."
+python -c "import cv2; print(f'✓ OpenCV {cv2.__version__} installed')"
+python -c "import numpy; print(f'✓ NumPy {numpy.__version__} installed')"
+python -c "from PIL import Image; print('✓ Pillow installed')"
+
+# Check camera
+echo "📷 Checking camera..."
+python -c "from video_utils import verify_camera_available; verify_camera_available()"
+
+echo ""
+echo "✅ Setup complete!"
+echo ""
+echo "To activate the environment, run:"
+echo "  source .venv/bin/activate"
+echo ""
+echo "To run the pipeline, run:"
+echo "  python main.py"
+```
+
+**Run the script:**
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+### Windows PowerShell - One Command Setup
+
+Save this as `setup.ps1` and run it:
+
+```powershell
+Write-Host "🚀 Setting up HairService Video Processing Pipeline..." -ForegroundColor Green
+
+# Create virtual environment
+Write-Host "📦 Creating virtual environment..." -ForegroundColor Cyan
+python -m venv .venv
+
+# Activate virtual environment
+Write-Host "✅ Activating virtual environment..." -ForegroundColor Cyan
+.\.venv\Scripts\Activate.ps1
+
+# Upgrade pip
+Write-Host "⬆️  Upgrading pip..." -ForegroundColor Cyan
+pip install --upgrade pip
+
+# Install dependencies
+Write-Host "📥 Installing dependencies..." -ForegroundColor Cyan
+pip install opencv-python>=4.5.0
+pip install opencv-contrib-python>=4.5.0
+pip install numpy>=1.19.0
+pip install Pillow>=8.0.0
+pip install torch>=1.9.0
+pip install torchvision>=0.10.0
+
+# Verify installation
+Write-Host "🔍 Verifying installation..." -ForegroundColor Cyan
+python -c "import cv2; print(f'✓ OpenCV {cv2.__version__} installed')"
+python -c "import numpy; print(f'✓ NumPy {numpy.__version__} installed')"
+
+Write-Host ""
+Write-Host "✅ Setup complete!" -ForegroundColor Green
+Write-Host ""
+Write-Host "To run the pipeline, run:" -ForegroundColor Yellow
+Write-Host "  python main.py"
+```
+
+**Run the script:**
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+.\setup.ps1
+```
+
+---
+
+## 🔄 Daily Usage Workflow
+
+### Every Time You Work on the Project:
+
+```bash
+# 1. Navigate to project
+cd ~/My/Dev/Projects/App/glowup/server/services/hairService
+
+# 2. Activate virtual environment
+source .venv/bin/activate  # Linux/Mac
+# .venv\Scripts\activate   # Windows
+
+# 3. Run your code
+python main.py
+
+# 4. When done, deactivate
+deactivate
+```
+
+### Quick Aliases (Optional - Linux/Mac)
+
+Add to your `~/.bashrc` or `~/.zshrc`:
+
+```bash
+# HairService aliases
+alias hairservice='cd ~/My/Dev/Projects/App/glowup/server/services/hairService && source .venv/bin/activate'
+alias hairrun='python main.py'
+alias hairexample='python examples.py'
+```
+
+Then you can just type:
+```bash
+hairservice  # Navigate and activate
+hairrun      # Run main pipeline
+```
+
+---
+
+## 📊 System Requirements
+
+### Minimum Requirements
+- **CPU:** Dual-core 2.0 GHz
+- **RAM:** 4 GB
+- **Storage:** 2 GB free space
+- **Python:** 3.8+
+- **Webcam:** Any USB or built-in camera
+
+### Recommended Requirements
+- **CPU:** Quad-core 2.5 GHz or better
+- **RAM:** 8 GB or more
+- **GPU:** CUDA-capable GPU (for HairFastGAN)
+- **Storage:** 4 GB free space
+- **Python:** 3.9 or 3.10
+
+### Tested On
+- Ubuntu 20.04, 22.04
+- macOS 11.0+
+- Windows 10, 11
+- Python 3.8, 3.9, 3.10, 3.11
 
 ---
 

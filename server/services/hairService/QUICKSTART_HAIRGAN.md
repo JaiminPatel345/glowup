@@ -6,6 +6,8 @@ Complete guide to get HairFastGAN working in 5 minutes!
 
 ## ⚡ Super Quick Setup (Copy-Paste)
 
+### Linux/Mac:
+
 ```bash
 # Make sure you're in the project directory and venv is activated
 cd ~/My/Dev/Projects/App/glowup/server/services/hairService
@@ -14,6 +16,37 @@ source .venv/bin/activate
 # Run the automated setup script
 chmod +x setup_hairgan.sh
 ./setup_hairgan.sh
+
+# Test the installation
+python test_hairgan.py
+```
+
+### Windows PowerShell:
+
+```powershell
+# Navigate to project directory and activate venv
+cd C:\path\to\hairService
+.venv\Scripts\Activate.ps1
+
+# If you get execution policy error, run this first:
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+# Run the setup script
+.\setup_hairgan.ps1
+
+# Test the installation
+python test_hairgan.py
+```
+
+### Windows Command Prompt:
+
+```cmd
+# Navigate to project directory and activate venv
+cd C:\path\to\hairService
+.venv\Scripts\activate.bat
+
+# Run the setup script
+setup_hairgan.bat
 
 # Test the installation
 python test_hairgan.py

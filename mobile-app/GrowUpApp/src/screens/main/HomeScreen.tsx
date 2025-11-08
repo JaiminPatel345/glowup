@@ -1,16 +1,30 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView } from 'react-native';
 import { useAppSelector, useAppDispatch } from '../../store';
 import { logoutUser } from '../../store/slices/authSlice';
 import { Button } from '../../components/common';
+import { SkinAnalysisScreen } from '../skin';
+import { HairTryOnScreen } from '../hair';
+
+type CurrentScreen = 'home' | 'skin-analysis' | 'hair-tryon';
 
 const HomeScreen: React.FC = () => {
   const dispatch = useAppDispatch();
   const { user, isLoading } = useAppSelector((state) => state.auth);
+  const [currentScreen, setCurrentScreen] = useState<CurrentScreen>('home');
 
   const handleLogout = () => {
     dispatch(logoutUser());
   };
+
+  // Render different screens based on current screen
+  if (currentScreen === 'skin-analysis') {
+    return <SkinAnalysisScreen />;
+  }
+
+  if (currentScreen === 'hair-tryon') {
+    return <HairTryOnScreen />;
+  }
 
   return (
     <ScrollView className="flex-1 bg-white">
@@ -42,7 +56,7 @@ const HomeScreen: React.FC = () => {
               </Text>
               <Button
                 title="Start Analysis"
-                onPress={() => {/* Navigate to skin analysis */}}
+                onPress={() => setCurrentScreen('skin-analysis')}
                 size="sm"
                 testID="skin-analysis-button"
               />
@@ -58,7 +72,7 @@ const HomeScreen: React.FC = () => {
               </Text>
               <Button
                 title="Try Hairstyles"
-                onPress={() => {/* Navigate to hair try-on */}}
+                onPress={() => setCurrentScreen('hair-tryon')}
                 variant="secondary"
                 size="sm"
                 testID="hair-tryon-button"

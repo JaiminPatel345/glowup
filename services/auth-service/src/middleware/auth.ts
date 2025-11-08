@@ -5,7 +5,7 @@ import { logger } from '../config/logger';
 
 const authService = new AuthService();
 
-export const authenticateToken = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+export const authenticateToken = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
@@ -14,7 +14,8 @@ export const authenticateToken = (req: AuthenticatedRequest, res: Response, next
       success: false,
       error: 'Access token required'
     };
-    return res.status(401).json(response);
+    res.status(401).json(response);
+    return;
   }
 
   try {
@@ -22,16 +23,17 @@ export const authenticateToken = (req: AuthenticatedRequest, res: Response, next
     req.user = payload;
     next();
   } catch (error) {
-    logger.warn('Invalid token attempt', { token: token.substring(0, 10) + '...', error: error.message });
+    logger.warn('Invalid token attempt', { token: token.substring(0, 10) + '...', error: error instanceof Error ? error.message : 'Unknown error' });
     const response: ApiResponse = {
       success: false,
       error: 'Invalid or expired token'
     };
-    return res.status(403).json(response);
+    res.status(403).json(response);
+    return;
   }
 };
 
-export const optionalAuth = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+export const optionalAuth = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -41,7 +43,7 @@ export const optionalAuth = (req: AuthenticatedRequest, res: Response, next: Nex
       req.user = payload;
     } catch (error) {
       // Token is invalid but we don't fail the request
-      logger.debug('Optional auth failed', { error: error.message });
+      logger.debug('Optional auth failed', { error: error instanceof Error ? error.message : 'Unknown error' });
     }
   }
 
@@ -49,13 +51,14 @@ export const optionalAuth = (req: AuthenticatedRequest, res: Response, next: Nex
 };
 
 export const requireRole = (roles: string[]) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {
       const response: ApiResponse = {
         success: false,
         error: 'Authentication required'
       };
-      return res.status(401).json(response);
+      res.status(401).json(response);
+      return;
     }
 
     if (!roles.includes(req.user.role)) {
@@ -63,7 +66,8 @@ export const requireRole = (roles: string[]) => {
         success: false,
         error: 'Insufficient permissions'
       };
-      return res.status(403).json(response);
+      res.status(403).json(response);
+      return;
     }
 
     next();
@@ -71,13 +75,14 @@ export const requireRole = (roles: string[]) => {
 };
 
 export const requirePermission = (permission: string) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {
       const response: ApiResponse = {
         success: false,
         error: 'Authentication required'
       };
-      return res.status(401).json(response);
+      res.status(401).json(response);
+      return;
     }
 
     if (!req.user.permissions.includes(permission)) {
@@ -85,7 +90,8 @@ export const requirePermission = (permission: string) => {
         success: false,
         error: `Permission '${permission}' required`
       };
-      return res.status(403).json(response);
+      res.status(403).json(response);
+      return;
     }
 
     next();

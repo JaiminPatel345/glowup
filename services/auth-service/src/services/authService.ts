@@ -214,7 +214,7 @@ export class AuthService {
       exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) // 7 days
     };
 
-    return jwt.sign(payload, this.jwtSecret, { expiresIn: this.jwtExpiresIn });
+    return jwt.sign(payload, this.jwtSecret, { expiresIn: this.jwtExpiresIn } as jwt.SignOptions);
   }
 
   private async generateRefreshToken(userId: string): Promise<string> {

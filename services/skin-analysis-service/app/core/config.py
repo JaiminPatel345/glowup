@@ -23,8 +23,10 @@ class Settings(BaseSettings):
     # Performance settings
     MAX_ANALYSIS_TIME: int = int(os.getenv("MAX_ANALYSIS_TIME", "5"))  # 5 seconds
     
-    class Config:
-        env_file = ".env"
+    model_config = {
+        "env_file": ".env",
+        "extra": "ignore"
+    }
 
 
 settings = Settings()

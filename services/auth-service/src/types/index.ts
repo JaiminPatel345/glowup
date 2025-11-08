@@ -48,8 +48,11 @@ export interface JWTPayload {
   exp: number;
 }
 
-export interface AuthenticatedRequest extends Express.Request {
+import { Request } from 'express';
+
+export interface AuthenticatedRequest extends Request {
   user?: JWTPayload;
+  correlationId?: string;
 }
 
 export interface ApiResponse<T = any> {

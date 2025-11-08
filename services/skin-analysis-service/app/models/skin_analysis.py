@@ -1,13 +1,14 @@
-from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
+from pydantic import BaseModel, Field, ConfigDict, field_validator
+from typing import List, Optional, Dict, Any, Annotated
 from datetime import datetime
 from bson import ObjectId
 
 
 class PyObjectId(ObjectId):
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
+    def __get_pydantic_core_schema__(cls, source_type, handler):
+        from pydantic_core import core_schema
+        return core_schema.no_info_plain_validator_schema(cls.validate)
 
     @classmethod
     def validate(cls, v):
@@ -16,8 +17,9 @@ class PyObjectId(ObjectId):
         return ObjectId(v)
 
     @classmethod
-    def __modify_schema__(cls, field_schema):
+    def __get_pydantic_json_schema__(cls, field_schema):
         field_schema.update(type="string")
+        return field_schema
 
 
 class SkinIssue(BaseModel):
@@ -37,6 +39,12 @@ class AnalysisMetadata(BaseModel):
 
 
 class SkinAnalysisResult(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+        json_encoders={ObjectId: str}
+    )
+    
     id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
     user_id: str = Field(..., description="ID of the user who requested analysis")
     image_url: str = Field(..., description="URL to the original image")
@@ -44,11 +52,6 @@ class SkinAnalysisResult(BaseModel):
     issues: List[SkinIssue] = Field(default_factory=list, description="List of detected issues")
     analysis_metadata: AnalysisMetadata = Field(..., description="Analysis metadata")
     created_at: datetime = Field(default_factory=datetime.utcnow, description="Creation timestamp")
-
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
 
 
 class SkinAnalysisRequest(BaseModel):
@@ -80,12 +83,13 @@ class ProductRecommendations(BaseModel):
 
 
 class ProductRecommendationDocument(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+        json_encoders={ObjectId: str}
+    )
+    
     id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
     issue_id: str = Field(..., description="ID of the skin issue")
     products: List[ProductInfo] = Field(default_factory=list, description="All products for this issue")
     last_updated: datetime = Field(default_factory=datetime.utcnow, description="Last update timestamp")
-
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}

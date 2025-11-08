@@ -23,10 +23,10 @@ export class AuthController {
       
       const response: ApiResponse = {
         success: false,
-        error: error.message || 'Registration failed'
+        error: error instanceof Error ? error.message : 'Registration failed'
       };
 
-      const statusCode = error.message?.includes('already exists') ? 409 : 500;
+      const statusCode = error instanceof Error && error.message?.includes('already exists') ? 409 : 500;
       res.status(statusCode).json(response);
     }
   }
@@ -48,10 +48,10 @@ export class AuthController {
       
       const response: ApiResponse = {
         success: false,
-        error: error.message || 'Login failed'
+        error: error instanceof Error ? error.message : 'Login failed'
       };
 
-      const statusCode = error.message?.includes('Invalid') ? 401 : 500;
+      const statusCode = error instanceof Error && error.message?.includes('Invalid') ? 401 : 500;
       res.status(statusCode).json(response);
     }
   }
@@ -73,10 +73,10 @@ export class AuthController {
       
       const response: ApiResponse = {
         success: false,
-        error: error.message || 'Token refresh failed'
+        error: error instanceof Error ? error.message : 'Token refresh failed'
       };
 
-      const statusCode = error.message?.includes('Invalid') || error.message?.includes('expired') ? 401 : 500;
+      const statusCode = error instanceof Error && (error.message?.includes('Invalid') || error.message?.includes('expired')) ? 401 : 500;
       res.status(statusCode).json(response);
     }
   }
@@ -97,7 +97,7 @@ export class AuthController {
       
       const response: ApiResponse = {
         success: false,
-        error: error.message || 'Logout failed'
+        error: error instanceof Error ? error.message : 'Logout failed'
       };
 
       res.status(500).json(response);
@@ -111,7 +111,8 @@ export class AuthController {
           success: false,
           error: 'Authentication required'
         };
-        return res.status(401).json(response);
+        res.status(401).json(response);
+        return;
       }
 
       const { currentPassword, newPassword }: ChangePasswordRequest = req.body;
@@ -128,10 +129,10 @@ export class AuthController {
       
       const response: ApiResponse = {
         success: false,
-        error: error.message || 'Password change failed'
+        error: error instanceof Error ? error.message : 'Password change failed'
       };
 
-      const statusCode = error.message?.includes('incorrect') ? 400 : 500;
+      const statusCode = error instanceof Error && error.message?.includes('incorrect') ? 400 : 500;
       res.status(statusCode).json(response);
     }
   }
@@ -167,7 +168,8 @@ export class AuthController {
           success: false,
           error: 'Authentication required'
         };
-        return res.status(401).json(response);
+        res.status(401).json(response);
+        return;
       }
 
       // In a real implementation, you might want to fetch fresh user data from the database
@@ -202,7 +204,8 @@ export class AuthController {
           success: false,
           error: 'Invalid token'
         };
-        return res.status(401).json(response);
+        res.status(401).json(response);
+        return;
       }
 
       const response: ApiResponse = {

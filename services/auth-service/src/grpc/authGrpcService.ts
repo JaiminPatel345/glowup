@@ -68,7 +68,7 @@ export class AuthGrpcService {
         email: '',
         role: '',
         permissions: [],
-        error_message: error.message
+        error_message: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   }
@@ -106,11 +106,11 @@ export class AuthGrpcService {
       callback(null, {
         user_id: user.id,
         email: user.email,
-        first_name: user.firstName || '',
-        last_name: user.lastName || '',
-        profile_image_url: user.profileImageUrl || '',
-        created_at: user.createdAt?.toISOString() || '',
-        updated_at: user.updatedAt?.toISOString() || '',
+        first_name: user.first_name || '',
+        last_name: user.last_name || '',
+        profile_image_url: user.profile_image_url || '',
+        created_at: user.created_at?.toISOString() || '',
+        updated_at: user.updated_at?.toISOString() || '',
         error_message: ''
       });
       
@@ -125,7 +125,7 @@ export class AuthGrpcService {
         profile_image_url: '',
         created_at: '',
         updated_at: '',
-        error_message: error.message
+        error_message: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   }
@@ -156,7 +156,7 @@ export class AuthGrpcService {
       callback(null, {
         access_token: '',
         refresh_token: '',
-        error_message: error.message
+        error_message: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   }
@@ -171,7 +171,7 @@ export class AuthGrpcService {
       this.server.bindAsync(
         `0.0.0.0:${port}`,
         grpc.ServerCredentials.createInsecure(),
-        (error, boundPort) => {
+        (error: Error | null, boundPort: number) => {
           if (error) {
             logger.error('Failed to start gRPC server:', error);
             reject(error);
@@ -188,7 +188,7 @@ export class AuthGrpcService {
 
   public stop(): Promise<void> {
     return new Promise((resolve) => {
-      this.server.tryShutdown((error) => {
+      this.server.tryShutdown((error?: Error) => {
         if (error) {
           logger.error('Error shutting down gRPC server:', error);
         } else {

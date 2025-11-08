@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { query } from '../config/database';
 import { logger } from '../config/logger';
-import { ApiResponse } from '../types';
+import { ApiResponse, AuthenticatedRequest } from '../types';
 
 // Import shared utilities
 const redisCache = require('../../../../shared/cache/redis');
@@ -10,7 +10,7 @@ const correlationLogger = require('../../../../shared/logging/correlationLogger'
 
 const router = Router();
 
-router.get('/health', async (req: Request, res: Response) => {
+router.get('/health', async (req: AuthenticatedRequest, res: Response) => {
   const correlationId = req.correlationId || 'health-check';
   const healthLogger = correlationLogger.createServiceLogger(correlationId, 'auth-service');
   
@@ -39,12 +39,12 @@ router.get('/health', async (req: Request, res: Response) => {
     } catch (dbError) {
       healthChecks.database = {
         status: 'unhealthy',
-        message: dbError.message,
+        message: dbError instanceof Error ? dbError.message : 'Database connection failed',
         responseTime: Date.now() - dbStart
       };
       overallStatus = 'unhealthy';
       correlationLogger.logHealthCheck(healthLogger, 'database', 'unhealthy', {
-        error: dbError.message
+        error: dbError instanceof Error ? dbError.message : 'Database connection failed'
       });
     }
 
@@ -68,12 +68,12 @@ router.get('/health', async (req: Request, res: Response) => {
     } catch (redisError) {
       healthChecks.redis = {
         status: 'unhealthy',
-        message: redisError.message,
+        message: redisError instanceof Error ? redisError.message : 'Redis connection failed',
         responseTime: Date.now() - redisStart
       };
       overallStatus = 'degraded';
       correlationLogger.logHealthCheck(healthLogger, 'redis', 'unhealthy', {
-        error: redisError.message
+        error: redisError instanceof Error ? redisError.message : 'Redis connection failed'
       });
     }
 
@@ -92,7 +92,7 @@ router.get('/health', async (req: Request, res: Response) => {
     } catch (cbError) {
       healthChecks.circuitBreakers = {
         status: 'unknown',
-        message: cbError.message,
+        message: cbError instanceof Error ? cbError.message : 'Circuit breaker failed',
         details: {}
       };
     }
@@ -129,7 +129,7 @@ router.get('/health', async (req: Request, res: Response) => {
         status: 'unhealthy',
         timestamp: new Date().toISOString(),
         service: 'auth-service',
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Health check failed',
         checks: healthChecks
       }
     };
@@ -164,7 +164,7 @@ router.get('/ready', async (req: Request, res: Response) => {
         status: 'not ready',
         timestamp: new Date().toISOString(),
         service: 'auth-service',
-        error: error.message
+        error: error instanceof Error ? error.message : 'Health check failed'
       }
     };
 

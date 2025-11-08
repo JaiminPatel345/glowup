@@ -31,10 +31,12 @@ class Settings(BaseSettings):
     target_latency_ms: int = int(os.getenv("TARGET_LATENCY_MS", "200"))
     
     # Storage Configuration
-    upload_dir: str = os.getenv("UPLOAD_DIR", "/app/uploads")
-    temp_dir: str = os.getenv("TEMP_DIR", "/app/temp")
+    upload_dir: str = os.getenv("UPLOAD_DIR", "/tmp/uploads")
+    temp_dir: str = os.getenv("TEMP_DIR", "/tmp/temp")
     
-    class Config:
-        env_file = ".env"
+    model_config = {
+        "env_file": ".env",
+        "extra": "ignore"
+    }
 
 settings = Settings()

@@ -49,7 +49,7 @@ check_prerequisites() {
     fi
     
     # Check Docker Compose
-    if ! command_exists docker-compose && ! docker compose version >/dev/null 2>&1; then
+    if ! command_exists docker compose && ! docker compose version >/dev/null 2>&1; then
         print_error "Docker Compose is not installed. Please install Docker Compose first."
         echo "Visit: https://docs.docker.com/compose/install/"
         exit 1
@@ -253,22 +253,22 @@ setup_docker() {
     
     # Stop any existing containers
     print_status "Stopping existing containers..."
-    docker-compose down 2>/dev/null || true
+    docker compose down 2>/dev/null || true
     
     # Build and start services
     print_status "Building and starting Docker services..."
-    docker-compose up -d --build
+    docker compose up -d --build
     
     # Wait for databases to be ready
     print_status "Waiting for databases to be ready..."
     sleep 10
     
     # Check if services are running
-    if docker-compose ps | grep -q "Up"; then
+    if docker compose ps | grep -q "Up"; then
         print_success "Docker services are running"
     else
         print_error "Some Docker services failed to start"
-        docker-compose logs
+        docker compose logs
         exit 1
     fi
 }
@@ -301,20 +301,20 @@ verify_setup() {
     
     # Check Docker services
     print_status "Checking Docker services..."
-    docker-compose ps
+    docker compose ps
     
     # Check database connections
     print_status "Testing database connections..."
     
     # Test PostgreSQL
-    if docker-compose exec -T postgres psql -U postgres -d growup -c "SELECT 1;" >/dev/null 2>&1; then
+    if docker compose exec -T postgres psql -U postgres -d growup -c "SELECT 1;" >/dev/null 2>&1; then
         print_success "PostgreSQL connection: OK"
     else
         print_error "PostgreSQL connection: FAILED"
     fi
     
     # Test MongoDB
-    if docker-compose exec -T mongodb mongosh --eval "db.adminCommand('ping')" >/dev/null 2>&1; then
+    if docker compose exec -T mongodb mongosh --eval "db.adminCommand('ping')" >/dev/null 2>&1; then
         print_success "MongoDB connection: OK"
     else
         print_error "MongoDB connection: FAILED"
@@ -335,9 +335,9 @@ show_next_steps() {
     echo "3. Start developing individual services"
     echo ""
     echo "Useful commands:"
-    echo "  docker-compose up -d          # Start all services"
-    echo "  docker-compose down           # Stop all services"
-    echo "  docker-compose logs [service] # View service logs"
+    echo "  docker compose up -d          # Start all services"
+    echo "  docker compose down           # Stop all services"
+    echo "  docker compose logs [service] # View service logs"
     echo "  npm run dev                   # Start development (when implemented)"
     echo ""
     echo "Services will be available at:"

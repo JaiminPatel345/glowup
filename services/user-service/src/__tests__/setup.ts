@@ -6,7 +6,7 @@ import { logger } from '../config/logger';
 export const testPrisma = new PrismaClient({
   datasources: {
     db: {
-      url: process.env.DATABASE_URL || 'postgresql://postgres:password@localhost:5432/growup_test',
+      url: process.env.DATABASE_URL || 'postgresql://postgres:root123@localhost:5432/mydb',
     },
   },
 });
@@ -14,12 +14,13 @@ export const testPrisma = new PrismaClient({
 // Setup test database
 beforeAll(async () => {
   try {
-    // Run database migrations for test database
-    execSync('npx prisma migrate deploy', {
+    // Sync database schema for test database (no migrations needed)
+    execSync('npx prisma db push --force-reset', {
       env: {
         ...process.env,
-        DATABASE_URL: process.env.DATABASE_URL || 'postgresql://postgres:password@localhost:5432/growup_test',
+        DATABASE_URL: process.env.DATABASE_URL || 'postgresql://postgres:root123@localhost:5432/mydb',
       },
+      stdio: 'inherit',
     });
 
     // Connect to test database

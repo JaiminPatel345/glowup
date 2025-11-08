@@ -24,7 +24,7 @@ describe('UserService', () => {
     });
 
     it('should return null when user does not exist', async () => {
-      const profile = await userService.getUserProfile('non-existent-id');
+      const profile = await userService.getUserProfile('550e8400-e29b-41d4-a716-446655440000');
       expect(profile).toBeNull();
     });
   });
@@ -48,7 +48,7 @@ describe('UserService', () => {
       const updateData = { firstName: 'Updated' };
 
       await expect(
-        userService.updateUserProfile('non-existent-id', updateData)
+        userService.updateUserProfile('550e8400-e29b-41d4-a716-446655440000', updateData)
       ).rejects.toThrow(AppError);
     });
 
@@ -79,7 +79,7 @@ describe('UserService', () => {
 
     it('should throw error when user does not exist', async () => {
       await expect(
-        userService.deactivateUser('non-existent-id')
+        userService.deactivateUser('550e8400-e29b-41d4-a716-446655440000')
       ).rejects.toThrow(AppError);
     });
   });
@@ -124,7 +124,7 @@ describe('UserService', () => {
       const preferencesData = { skinType: SkinType.NORMAL };
 
       await expect(
-        userService.createUserPreferences('non-existent-id', preferencesData)
+        userService.createUserPreferences('550e8400-e29b-41d4-a716-446655440000', preferencesData)
       ).rejects.toThrow('User not found');
     });
 
@@ -172,7 +172,7 @@ describe('UserService', () => {
       const updateData = { skinType: SkinType.NORMAL };
 
       await expect(
-        userService.updateUserPreferences('non-existent-id', updateData)
+        userService.updateUserPreferences('550e8400-e29b-41d4-a716-446655440000', updateData)
       ).rejects.toThrow('User not found');
     });
 
@@ -263,7 +263,7 @@ describe('UserService', () => {
     });
 
     it('should return null when user does not exist', async () => {
-      const result = await userService.getUserWithPreferences('non-existent-id');
+      const result = await userService.getUserWithPreferences('550e8400-e29b-41d4-a716-446655440000');
       expect(result).toBeNull();
     });
   });

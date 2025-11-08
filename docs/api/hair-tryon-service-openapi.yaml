@@ -1,0 +1,655 @@
+openapi: 3.0.3
+info:
+  title: GrowUp Hair Try-On Service API
+  description: AI-powered hair style try-on service with video processing and real-time streaming for the GrowUp mobile application
+  version: 1.0.0
+  contact:
+    name: GrowUp Development Team
+    email: dev@growup.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8002/api/hair-tryOn
+    description: Development server
+
+paths:
+  /upload-video:
+    post:
+      summary: Upload video for processing
+      description: Upload a video file for hair try-on processing (max 10 seconds)
+      tags:
+        - Video Processing
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - video
+                - user_id
+              properties:
+                video:
+                  type: string
+                  format: binary
+                  description: Video file (MP4, MOV, AVI, max 10 seconds, max 50MB)
+                user_id:
+                  type: string
+                  format: uuid
+                  description: User ID for the upload
+      responses:
+        '200':
+          description: Video uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoUploadResponse'
+              examples:
+                successful_upload:
+                  summary: Successful video upload
+                  value:
+                    upload_id: "upload_789e0123-e89b-12d3-a456-426614174002"
+                    file_url: "/uploads/upload_789e0123-e89b-12d3-a456-426614174002.mp4"
+                    file_size: 15728640
+                    duration: 8.5
+                    fps: 30
+                    resolution: "1920x1080"
+        '400':
+          description: Invalid video file or parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_duration:
+                  summary: Video too long
+                  value:
+                    error: "INVALID_VIDEO_DURATION"
+                    message: "Video duration exceeds 10 seconds limit"
+                    details: "Current duration: 15.2 seconds"
+        '413':
+          description: Video file too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Upload processing failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /process-video:
+    post:
+      summary: Process video with hair style
+      description: Apply hair style and optional color to uploaded video
+      tags:
+        - Video Processing
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - upload_id
+                - user_id
+                - style_image
+              properties:
+                upload_id:
+                  type: string
+                  format: uuid
+                  description: Video upload ID from previous upload
+                user_id:
+                  type: string
+                  format: uuid
+                  description: User ID
+                style_image:
+                  type: string
+                  format: binary
+                  description: Hair style reference image (JPEG, PNG)
+                color_image:
+                  type: string
+                  format: binary
+                  description: Hair color reference image (optional, JPEG, PNG)
+      responses:
+        '200':
+          description: Video processing initiated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HairTryOnResult'
+              examples:
+                processing_started:
+                  summary: Processing initiated
+                  value:
+                    id: "result_abc123de-e89b-12d3-a456-426614174003"
+                    user_id: "123e4567-e89b-12d3-a456-426614174000"
+                    type: "video"
+                    status: "processing"
+                    original_media_url: "/uploads/upload_789e0123-e89b-12d3-a456-426614174002.mp4"
+                    style_image_url: "/uploads/style_abc123de.jpg"
+                    color_image_url: null
+                    result_media_url: null
+                    processing_metadata: null
+                    error_message: null
+                    created_at: "2024-01-15T10:30:00Z"
+                    updated_at: "2024-01-15T10:30:00Z"
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Upload ID not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to start processing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /result/{result_id}:
+    get:
+      summary: Get processing result
+      description: Retrieve hair try-on processing result by ID
+      tags:
+        - Results
+      parameters:
+        - name: result_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Result ID to retrieve
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User ID for authorization
+      responses:
+        '200':
+          description: Result retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HairTryOnResult'
+              examples:
+                completed_result:
+                  summary: Completed processing result
+                  value:
+                    id: "result_abc123de-e89b-12d3-a456-426614174003"
+                    user_id: "123e4567-e89b-12d3-a456-426614174000"
+                    type: "video"
+                    status: "completed"
+                    original_media_url: "/uploads/upload_789e0123.mp4"
+                    style_image_url: "/uploads/style_abc123de.jpg"
+                    color_image_url: null
+                    result_media_url: "/uploads/result_abc123de_result.mp4"
+                    processing_metadata:
+                      processing_time: 45.2
+                      frames_processed: 255
+                      frame_sampling_rate: 0.5
+                      original_fps: 30
+                      output_fps: 30
+                    error_message: null
+                    created_at: "2024-01-15T10:30:00Z"
+                    updated_at: "2024-01-15T11:15:20Z"
+        '403':
+          description: Access denied - user doesn't own this result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Result not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to retrieve result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /history/{user_id}:
+    get:
+      summary: Get user processing history
+      description: Retrieve user's hair try-on processing history
+      tags:
+        - History
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User ID
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Number of results to return
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Number of results to skip
+        - name: type_filter
+          in: query
+          schema:
+            type: string
+            enum: ["video", "realtime"]
+          description: Filter by processing type
+      responses:
+        '200':
+          description: History retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoryResponse'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to retrieve history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /result/{result_id}:
+    delete:
+      summary: Delete processing result
+      description: Delete a hair try-on result and associated files
+      tags:
+        - Results
+      parameters:
+        - name: result_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Result ID to delete
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User ID for authorization
+      responses:
+        '200':
+          description: Result deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Result not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to delete result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /realtime/{session_id}:
+    get:
+      summary: WebSocket endpoint for real-time hair try-on
+      description: |
+        WebSocket endpoint for real-time hair style application.
+        
+        **Connection Process:**
+        1. Connect to WebSocket with session_id and user_id
+        2. Send style image as binary data
+        3. Send video frames as binary data
+        4. Receive processed frames as binary data
+        
+        **Message Format:**
+        - Style Image: Send once at connection start
+        - Video Frames: Continuous stream of frame data
+        - Processed Frames: Received as processed results
+        
+        **Connection Management:**
+        - Automatic reconnection on disconnect
+        - Frame dropping for latency management
+        - Quality adjustment based on connection speed
+      tags:
+        - Real-time Processing
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique session ID for the WebSocket connection
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User ID for authorization
+      responses:
+        '101':
+          description: WebSocket connection established
+        '400':
+          description: Invalid session parameters
+        '403':
+          description: Unauthorized access
+        '500':
+          description: WebSocket connection failed
+
+  /stats:
+    get:
+      summary: Get processing statistics
+      description: Get service processing statistics and metrics
+      tags:
+        - Statistics
+      responses:
+        '200':
+          description: Statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessingStatsResponse'
+        '500':
+          description: Failed to retrieve statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /health:
+    get:
+      summary: Health check
+      description: Check if the hair try-on service is running and healthy
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+components:
+  schemas:
+    VideoUploadResponse:
+      type: object
+      properties:
+        upload_id:
+          type: string
+          format: uuid
+          example: "upload_789e0123-e89b-12d3-a456-426614174002"
+        file_url:
+          type: string
+          example: "/uploads/upload_789e0123-e89b-12d3-a456-426614174002.mp4"
+        file_size:
+          type: integer
+          example: 15728640
+          description: File size in bytes
+        duration:
+          type: number
+          example: 8.5
+          description: Video duration in seconds
+        fps:
+          type: integer
+          example: 30
+          description: Frames per second
+        resolution:
+          type: string
+          example: "1920x1080"
+          description: Video resolution
+
+    ProcessingMetadata:
+      type: object
+      properties:
+        processing_time:
+          type: number
+          example: 45.2
+          description: Total processing time in seconds
+        frames_processed:
+          type: integer
+          example: 255
+          description: Number of frames processed
+        frame_sampling_rate:
+          type: number
+          example: 0.5
+          description: Sampling rate used (0.5 = 50% of frames)
+        original_fps:
+          type: integer
+          example: 30
+          description: Original video FPS
+        output_fps:
+          type: integer
+          example: 30
+          description: Output video FPS
+
+    HairTryOnResult:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "result_abc123de-e89b-12d3-a456-426614174003"
+        user_id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        type:
+          type: string
+          enum: ["video", "realtime"]
+          example: "video"
+        status:
+          type: string
+          enum: ["pending", "processing", "completed", "failed"]
+          example: "completed"
+        original_media_url:
+          type: string
+          example: "/uploads/upload_789e0123.mp4"
+        style_image_url:
+          type: string
+          example: "/uploads/style_abc123de.jpg"
+        color_image_url:
+          type: string
+          nullable: true
+          example: "/uploads/color_abc123de.jpg"
+        result_media_url:
+          type: string
+          nullable: true
+          example: "/uploads/result_abc123de_result.mp4"
+        processing_metadata:
+          $ref: '#/components/schemas/ProcessingMetadata'
+          nullable: true
+        error_message:
+          type: string
+          nullable: true
+          example: null
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-01-15T11:15:20Z"
+
+    HistoryItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "result_abc123de-e89b-12d3-a456-426614174003"
+        type:
+          type: string
+          enum: ["video", "realtime"]
+          example: "video"
+        status:
+          type: string
+          enum: ["pending", "processing", "completed", "failed"]
+          example: "completed"
+        result_media_url:
+          type: string
+          nullable: true
+          example: "/uploads/result_abc123de_result.mp4"
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        processing_time:
+          type: number
+          nullable: true
+          example: 45.2
+
+    HistoryResponse:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/HistoryItem'
+        pagination:
+          type: object
+          properties:
+            limit:
+              type: integer
+              example: 20
+            offset:
+              type: integer
+              example: 0
+            total:
+              type: integer
+              example: 45
+
+    ProcessingStatsResponse:
+      type: object
+      properties:
+        database_stats:
+          type: object
+          properties:
+            total_results:
+              type: integer
+              example: 1250
+            completed_results:
+              type: integer
+              example: 1180
+            failed_results:
+              type: integer
+              example: 70
+            average_processing_time:
+              type: number
+              example: 42.5
+        websocket_stats:
+          type: object
+          properties:
+            active_connections:
+              type: integer
+              example: 15
+            total_sessions:
+              type: integer
+              example: 2340
+            average_session_duration:
+              type: number
+              example: 180.5
+        ai_stats:
+          type: object
+          properties:
+            model_version:
+              type: string
+              example: "HairFastGAN-v2.1"
+            average_inference_time:
+              type: number
+              example: 0.15
+            frames_processed_today:
+              type: integer
+              example: 45600
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "healthy"
+        service:
+          type: string
+          example: "hair-tryOn-service"
+        version:
+          type: string
+          example: "1.0.0"
+
+    SuccessResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Operation completed successfully"
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "PROCESSING_FAILED"
+        message:
+          type: string
+          example: "Video processing failed"
+        details:
+          type: string
+          nullable: true
+          example: "AI model inference error: insufficient GPU memory"
+
+tags:
+  - name: Video Processing
+    description: Video upload and processing operations
+  - name: Real-time Processing
+    description: Real-time WebSocket hair try-on operations
+  - name: Results
+    description: Processing result management operations
+  - name: History
+    description: User processing history operations
+  - name: Statistics
+    description: Service statistics and metrics
+  - name: Health
+    description: Service health check operations

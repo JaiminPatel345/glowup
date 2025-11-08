@@ -1,0 +1,715 @@
+openapi: 3.0.3
+info:
+  title: GrowUp User Service API
+  description: User profile and preferences management service for the GrowUp mobile application
+  version: 1.0.0
+  contact:
+    name: GrowUp Development Team
+    email: dev@growup.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3002/api/v1
+    description: Development server
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Check if the user service is running
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /users/{userId}:
+    get:
+      summary: Get user profile
+      description: Retrieve user profile information by user ID
+      tags:
+        - User Profile
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      summary: Update user profile
+      description: Update user profile information
+      tags:
+        - User Profile
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserProfileRequest'
+      responses:
+        '200':
+          description: User profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Deactivate user
+      description: Deactivate user account (soft delete)
+      tags:
+        - User Profile
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User deactivated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /users/{userId}/preferences:
+    get:
+      summary: Get user preferences
+      description: Retrieve user preferences and settings
+      tags:
+        - User Preferences
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User preferences retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferencesResponse'
+        '404':
+          description: User or preferences not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      summary: Create user preferences
+      description: Create initial user preferences
+      tags:
+        - User Preferences
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserPreferencesRequest'
+      responses:
+        '201':
+          description: User preferences created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferencesResponse'
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Preferences already exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      summary: Update user preferences
+      description: Update existing user preferences
+      tags:
+        - User Preferences
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserPreferencesRequest'
+      responses:
+        '200':
+          description: User preferences updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferencesResponse'
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User or preferences not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Delete user preferences
+      description: Delete user preferences (reset to defaults)
+      tags:
+        - User Preferences
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User preferences deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: User or preferences not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /users/{userId}/complete:
+    get:
+      summary: Get complete user data
+      description: Retrieve user profile with preferences in a single request
+      tags:
+        - User Profile
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Complete user data retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompleteUserResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /users/{userId}/profile-image:
+    post:
+      summary: Upload profile image
+      description: Upload and set user profile image
+      tags:
+        - User Profile
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                profileImage:
+                  type: string
+                  format: binary
+                  description: Profile image file (JPEG, PNG)
+      responses:
+        '200':
+          description: Profile image uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileImageResponse'
+        '400':
+          description: Invalid file or file too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/users:
+    get:
+      summary: Get all users (Admin)
+      description: Retrieve paginated list of all users (admin only)
+      tags:
+        - Admin
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Number of users per page
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search term for email or name
+      responses:
+        '200':
+          description: Users retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsersListResponse'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    UpdateUserProfileRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: "John"
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: "Doe"
+        email:
+          type: string
+          format: email
+          example: "john.doe@example.com"
+        phoneNumber:
+          type: string
+          nullable: true
+          example: "+1234567890"
+        dateOfBirth:
+          type: string
+          format: date
+          nullable: true
+          example: "1990-01-15"
+
+    CreateUserPreferencesRequest:
+      type: object
+      required:
+        - skinType
+        - hairType
+      properties:
+        skinType:
+          type: string
+          enum: ["oily", "dry", "combination", "sensitive", "normal"]
+          example: "combination"
+        hairType:
+          type: string
+          enum: ["straight", "wavy", "curly", "coily"]
+          example: "wavy"
+        skinConcerns:
+          type: array
+          items:
+            type: string
+            enum: ["acne", "wrinkles", "dark_spots", "dryness", "oiliness", "sensitivity"]
+          example: ["acne", "dark_spots"]
+        preferredProducts:
+          type: string
+          enum: ["all", "ayurvedic", "non_ayurvedic"]
+          default: "all"
+          example: "ayurvedic"
+        notifications:
+          type: object
+          properties:
+            analysisReminders:
+              type: boolean
+              default: true
+            productRecommendations:
+              type: boolean
+              default: true
+            newFeatures:
+              type: boolean
+              default: false
+
+    UpdateUserPreferencesRequest:
+      type: object
+      properties:
+        skinType:
+          type: string
+          enum: ["oily", "dry", "combination", "sensitive", "normal"]
+        hairType:
+          type: string
+          enum: ["straight", "wavy", "curly", "coily"]
+        skinConcerns:
+          type: array
+          items:
+            type: string
+            enum: ["acne", "wrinkles", "dark_spots", "dryness", "oiliness", "sensitivity"]
+        preferredProducts:
+          type: string
+          enum: ["all", "ayurvedic", "non_ayurvedic"]
+        notifications:
+          type: object
+          properties:
+            analysisReminders:
+              type: boolean
+            productRecommendations:
+              type: boolean
+            newFeatures:
+              type: boolean
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        firstName:
+          type: string
+          example: "John"
+        lastName:
+          type: string
+          example: "Doe"
+        email:
+          type: string
+          format: email
+          example: "john.doe@example.com"
+        phoneNumber:
+          type: string
+          nullable: true
+          example: "+1234567890"
+        dateOfBirth:
+          type: string
+          format: date
+          nullable: true
+          example: "1990-01-15"
+        profileImageUrl:
+          type: string
+          nullable: true
+          example: "https://cdn.growup.com/profiles/user123.jpg"
+        isActive:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+
+    UserPreferences:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "456e7890-e89b-12d3-a456-426614174001"
+        userId:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        skinType:
+          type: string
+          enum: ["oily", "dry", "combination", "sensitive", "normal"]
+          example: "combination"
+        hairType:
+          type: string
+          enum: ["straight", "wavy", "curly", "coily"]
+          example: "wavy"
+        skinConcerns:
+          type: array
+          items:
+            type: string
+          example: ["acne", "dark_spots"]
+        preferredProducts:
+          type: string
+          enum: ["all", "ayurvedic", "non_ayurvedic"]
+          example: "ayurvedic"
+        notifications:
+          type: object
+          properties:
+            analysisReminders:
+              type: boolean
+              example: true
+            productRecommendations:
+              type: boolean
+              example: true
+            newFeatures:
+              type: boolean
+              example: false
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+
+    UserProfileResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/UserProfile'
+        message:
+          type: string
+          example: "User profile retrieved successfully"
+
+    UserPreferencesResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/UserPreferences'
+        message:
+          type: string
+          example: "User preferences retrieved successfully"
+
+    CompleteUserResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            profile:
+              $ref: '#/components/schemas/UserProfile'
+            preferences:
+              $ref: '#/components/schemas/UserPreferences'
+        message:
+          type: string
+          example: "Complete user data retrieved successfully"
+
+    ProfileImageResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            profileImageUrl:
+              type: string
+              example: "https://cdn.growup.com/profiles/user123.jpg"
+            uploadedAt:
+              type: string
+              format: date-time
+              example: "2024-01-15T10:30:00Z"
+        message:
+          type: string
+          example: "Profile image uploaded successfully"
+
+    UsersListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            users:
+              type: array
+              items:
+                $ref: '#/components/schemas/UserProfile'
+            pagination:
+              type: object
+              properties:
+                page:
+                  type: integer
+                  example: 1
+                limit:
+                  type: integer
+                  example: 10
+                total:
+                  type: integer
+                  example: 150
+                totalPages:
+                  type: integer
+                  example: 15
+        message:
+          type: string
+          example: "Users retrieved successfully"
+
+    HealthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            service:
+              type: string
+              example: "user-service"
+            version:
+              type: string
+              example: "1.0.0"
+            status:
+              type: string
+              example: "healthy"
+            timestamp:
+              type: string
+              format: date-time
+              example: "2024-01-15T10:30:00Z"
+        message:
+          type: string
+          example: "User service is healthy"
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Operation completed successfully"
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: "VALIDATION_ERROR"
+        message:
+          type: string
+          example: "Invalid input data"
+        details:
+          type: object
+          nullable: true
+
+tags:
+  - name: Health
+    description: Service health check operations
+  - name: User Profile
+    description: User profile management operations
+  - name: User Preferences
+    description: User preferences and settings management
+  - name: Admin
+    description: Administrative operations

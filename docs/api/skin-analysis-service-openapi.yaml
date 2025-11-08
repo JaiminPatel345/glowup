@@ -1,0 +1,648 @@
+openapi: 3.0.3
+info:
+  title: GrowUp Skin Analysis Service API
+  description: AI-powered skin analysis and product recommendation service for the GrowUp mobile application
+  version: 1.0.0
+  contact:
+    name: GrowUp Development Team
+    email: dev@growup.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8001/api/v1
+    description: Development server
+
+paths:
+  /analyze:
+    post:
+      summary: Analyze skin image
+      description: Upload and analyze a facial image to detect skin type and issues
+      tags:
+        - Skin Analysis
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - image
+                - user_id
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: Facial image file (JPEG, PNG, max 10MB)
+                user_id:
+                  type: string
+                  format: uuid
+                  description: User ID for the analysis
+            examples:
+              valid_analysis:
+                summary: Valid skin analysis request
+                value:
+                  user_id: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Skin analysis completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkinAnalysisResponse'
+              examples:
+                successful_analysis:
+                  summary: Successful analysis result
+                  value:
+                    skin_type: "combination"
+                    issues:
+                      - id: "acne_001"
+                        name: "Acne"
+                        description: "Active acne breakouts detected on forehead and chin areas"
+                        severity: "medium"
+                        causes: ["hormonal", "excess_oil", "bacteria"]
+                        highlighted_image_url: "https://cdn.growup.com/analysis/highlighted_123.jpg"
+                        confidence: 0.87
+                    analysis_id: "analysis_456e7890-e89b-12d3-a456-426614174001"
+        '400':
+          description: Invalid image or request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_image:
+                  summary: Invalid image format
+                  value:
+                    error: "INVALID_IMAGE"
+                    message: "Image quality insufficient for analysis"
+                    details: "Please ensure good lighting and clear face visibility"
+        '413':
+          description: Image file too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Analysis processing failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /analysis/{analysis_id}:
+    get:
+      summary: Get analysis result
+      description: Retrieve a previously stored skin analysis result
+      tags:
+        - Skin Analysis
+      parameters:
+        - name: analysis_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Analysis ID to retrieve
+      responses:
+        '200':
+          description: Analysis result retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkinAnalysisResponse'
+        '404':
+          description: Analysis not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to retrieve analysis
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /recommendations/{issue_id}:
+    get:
+      summary: Get product recommendations
+      description: Get product recommendations for a specific skin issue
+      tags:
+        - Product Recommendations
+      parameters:
+        - name: issue_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Skin issue ID for recommendations
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ["all", "ayurvedic", "non-ayurvedic"]
+            default: "all"
+          description: Product category filter
+      responses:
+        '200':
+          description: Product recommendations retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductRecommendationsResponse'
+              examples:
+                recommendations_found:
+                  summary: Recommendations available
+                  value:
+                    issue_id: "acne_001"
+                    all_products:
+                      - id: "prod_001"
+                        name: "Gentle Acne Cleanser"
+                        brand: "SkinCare Pro"
+                        price: 24.99
+                        rating: 4.5
+                        image_url: "https://cdn.growup.com/products/prod_001.jpg"
+                        is_ayurvedic: false
+                        ingredients: ["salicylic_acid", "tea_tree_oil"]
+                    ayurvedic_products:
+                      - id: "prod_002"
+                        name: "Neem Face Wash"
+                        brand: "Ayur Naturals"
+                        price: 18.99
+                        rating: 4.3
+                        image_url: "https://cdn.growup.com/products/prod_002.jpg"
+                        is_ayurvedic: true
+                        ingredients: ["neem", "turmeric", "aloe_vera"]
+                    non_ayurvedic_products:
+                      - id: "prod_001"
+                        name: "Gentle Acne Cleanser"
+                        brand: "SkinCare Pro"
+                        price: 24.99
+                        rating: 4.5
+                        image_url: "https://cdn.growup.com/products/prod_001.jpg"
+                        is_ayurvedic: false
+                        ingredients: ["salicylic_acid", "tea_tree_oil"]
+        '404':
+          description: No recommendations found for the issue
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductRecommendationsResponse'
+        '500':
+          description: Failed to get recommendations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /user/{user_id}/history:
+    get:
+      summary: Get user analysis history
+      description: Retrieve analysis history for a specific user
+      tags:
+        - User History
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User ID
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+          description: Number of analyses to return
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Number of analyses to skip
+      responses:
+        '200':
+          description: Analysis history retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisHistoryResponse'
+        '500':
+          description: Failed to retrieve history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /products/search:
+    get:
+      summary: Search products
+      description: Search products by name, brand, or ingredients with filters
+      tags:
+        - Product Search
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+          description: Search query
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: ["all", "ayurvedic", "non-ayurvedic"]
+          description: Product category filter
+        - name: max_price
+          in: query
+          schema:
+            type: number
+            minimum: 0
+          description: Maximum price filter
+        - name: min_rating
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 5
+          description: Minimum rating filter
+      responses:
+        '200':
+          description: Products found successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductSearchResponse'
+        '400':
+          description: Invalid search parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Search failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /products/trending:
+    get:
+      summary: Get trending products
+      description: Get trending (highest rated) products
+      tags:
+        - Product Search
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: ["all", "ayurvedic", "non-ayurvedic"]
+            default: "all"
+          description: Product category filter
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+          description: Number of products to return
+      responses:
+        '200':
+          description: Trending products retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrendingProductsResponse'
+        '500':
+          description: Failed to get trending products
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /products/{product_id}:
+    get:
+      summary: Get product details
+      description: Get detailed information about a specific product
+      tags:
+        - Product Details
+      parameters:
+        - name: product_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Product ID
+      responses:
+        '200':
+          description: Product details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetailsResponse'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to retrieve product details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /stats:
+    get:
+      summary: Get service statistics
+      description: Get service statistics including analysis and product data
+      tags:
+        - Statistics
+      responses:
+        '200':
+          description: Service statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceStatsResponse'
+        '500':
+          description: Failed to retrieve statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    SkinIssue:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "acne_001"
+        name:
+          type: string
+          example: "Acne"
+        description:
+          type: string
+          example: "Active acne breakouts detected on forehead and chin areas"
+        severity:
+          type: string
+          enum: ["low", "medium", "high"]
+          example: "medium"
+        causes:
+          type: array
+          items:
+            type: string
+          example: ["hormonal", "excess_oil", "bacteria"]
+        highlighted_image_url:
+          type: string
+          format: uri
+          example: "https://cdn.growup.com/analysis/highlighted_123.jpg"
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+          example: 0.87
+
+    SkinAnalysisResponse:
+      type: object
+      properties:
+        skin_type:
+          type: string
+          enum: ["oily", "dry", "combination", "sensitive", "normal"]
+          example: "combination"
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/SkinIssue'
+        analysis_id:
+          type: string
+          format: uuid
+          example: "analysis_456e7890-e89b-12d3-a456-426614174001"
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "prod_001"
+        name:
+          type: string
+          example: "Gentle Acne Cleanser"
+        brand:
+          type: string
+          example: "SkinCare Pro"
+        price:
+          type: number
+          minimum: 0
+          example: 24.99
+        rating:
+          type: number
+          minimum: 0
+          maximum: 5
+          example: 4.5
+        image_url:
+          type: string
+          format: uri
+          example: "https://cdn.growup.com/products/prod_001.jpg"
+        is_ayurvedic:
+          type: boolean
+          example: false
+        ingredients:
+          type: array
+          items:
+            type: string
+          example: ["salicylic_acid", "tea_tree_oil"]
+        description:
+          type: string
+          example: "A gentle cleanser specifically formulated for acne-prone skin"
+        usage_instructions:
+          type: string
+          example: "Apply twice daily on damp skin, massage gently, and rinse thoroughly"
+
+    ProductRecommendationsResponse:
+      type: object
+      properties:
+        issue_id:
+          type: string
+          example: "acne_001"
+        all_products:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        ayurvedic_products:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        non_ayurvedic_products:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+
+    AnalysisHistoryItem:
+      type: object
+      properties:
+        analysis_id:
+          type: string
+          format: uuid
+          example: "analysis_456e7890-e89b-12d3-a456-426614174001"
+        skin_type:
+          type: string
+          example: "combination"
+        issues_count:
+          type: integer
+          example: 3
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+
+    AnalysisHistoryResponse:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        analyses:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnalysisHistoryItem'
+        total:
+          type: integer
+          example: 15
+
+    ProductSearchResponse:
+      type: object
+      properties:
+        query:
+          type: string
+          example: "acne cleanser"
+        filters:
+          type: object
+          properties:
+            category:
+              type: string
+              example: "all"
+            max_price:
+              type: number
+              example: 50.0
+            min_rating:
+              type: number
+              example: 4.0
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        total:
+          type: integer
+          example: 25
+
+    TrendingProductsResponse:
+      type: object
+      properties:
+        category:
+          type: string
+          example: "all"
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        total:
+          type: integer
+          example: 10
+
+    ProductDetailsResponse:
+      allOf:
+        - $ref: '#/components/schemas/Product'
+        - type: object
+          properties:
+            reviews_count:
+              type: integer
+              example: 127
+            average_rating:
+              type: number
+              example: 4.3
+            availability:
+              type: string
+              enum: ["in_stock", "out_of_stock", "limited"]
+              example: "in_stock"
+            related_products:
+              type: array
+              items:
+                type: string
+              example: ["prod_002", "prod_003"]
+
+    ServiceStatsResponse:
+      type: object
+      properties:
+        service:
+          type: string
+          example: "skin-analysis"
+        version:
+          type: string
+          example: "1.0.0"
+        statistics:
+          type: object
+          properties:
+            total_analyses:
+              type: integer
+              example: 1250
+            total_products:
+              type: integer
+              example: 450
+            ayurvedic_products:
+              type: integer
+              example: 180
+            non_ayurvedic_products:
+              type: integer
+              example: 270
+            average_analysis_time:
+              type: number
+              example: 3.2
+            most_common_skin_type:
+              type: string
+              example: "combination"
+            most_detected_issue:
+              type: string
+              example: "acne"
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "ANALYSIS_FAILED"
+        message:
+          type: string
+          example: "Failed to analyze the uploaded image"
+        details:
+          type: string
+          nullable: true
+          example: "Image quality insufficient for analysis"
+
+tags:
+  - name: Skin Analysis
+    description: Core skin analysis operations
+  - name: Product Recommendations
+    description: Product recommendation operations
+  - name: User History
+    description: User analysis history operations
+  - name: Product Search
+    description: Product search and discovery operations
+  - name: Product Details
+    description: Detailed product information operations
+  - name: Statistics
+    description: Service statistics and metrics

@@ -3,8 +3,7 @@ import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import { Alert } from 'react-native';
-import { launchCamera } from 'react-native-image-picker';
-import { request, RESULTS } from 'react-native-permissions';
+import * as ImagePicker from 'expo-image-picker';
 import SkinAnalysisScreen from '../../screens/skin/SkinAnalysisScreen';
 import skinAnalysisReducer from '../../store/slices/skinAnalysisSlice';
 import authReducer from '../../store/slices/authSlice';
@@ -12,12 +11,16 @@ import { SkinAnalysisApi } from '../../api';
 import { SkinAnalysisResult } from '../../api/types';
 
 // Mock dependencies
-jest.mock('react-native-image-picker');
-jest.mock('react-native-permissions');
+jest.mock('expo-image-picker', () => ({
+  requestCameraPermissionsAsync: jest.fn(),
+  launchCameraAsync: jest.fn(),
+  launchImageLibraryAsync: jest.fn(),
+  MediaTypeOptions: { Images: 'Images' },
+}));
 jest.mock('../../api');
 
-const mockLaunchCamera = launchCamera as jest.MockedFunction<typeof launchCamera>;
-const mockRequest = request as jest.MockedFunction<typeof request>;
+const mockRequestCameraPermissionsAsync = ImagePicker.requestCameraPermissionsAsync as jest.MockedFunction<typeof ImagePicker.requestCameraPermissionsAsync>;
+const mockLaunchCameraAsync = ImagePicker.launchCameraAsync as jest.MockedFunction<typeof ImagePicker.launchCameraAsync>;
 const mockAlert = Alert.alert as jest.MockedFunction<typeof Alert.alert>;
 const mockSkinAnalysisApi = SkinAnalysisApi as jest.Mocked<typeof SkinAnalysisApi>;
 
@@ -62,11 +65,6 @@ const selectAlertOption = async (label: string) => {
   }
 };
 
-const getLatestCameraCallback = () => {
-  const calls = mockLaunchCamera.mock.calls;
-  return calls[calls.length - 1]?.[1];
-};
-
 const renderWithStore = (component: React.ReactElement, store = createTestStore()) => {
   return {
     ...render(
@@ -81,7 +79,14 @@ const renderWithStore = (component: React.ReactElement, store = createTestStore(
 describe('Skin Analysis Workflow Integration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockRequest.mockResolvedValue(RESULTS.GRANTED);
+    mockRequestCameraPermissionsAsync.mockResolvedValue({
+      status: 'granted',
+      granted: true,
+      canAskAgain: true,
+      expires: 'never',
+      permissions: {} as any,
+    } as ImagePicker.PermissionResponse);
+    mockLaunchCameraAsync.mockResolvedValue({ canceled: true } as ImagePicker.ImagePickerResult);
   });
 
   it('should complete full skin analysis workflow successfully', async () => {
@@ -89,6 +94,19 @@ describe('Skin Analysis Workflow Integration', () => {
       await delay(100); // Add 100ms delay to simulate API processing
       return mockAnalysisResult;
     });
+
+    const mockImageResponse = {
+      canceled: false,
+      assets: [{
+        uri: 'file://test-image.jpg',
+        fileName: 'test-image.jpg',
+        type: 'image',
+        fileSize: 1024 * 1024,
+        width: 1080,
+        height: 1920,
+      }],
+    } as ImagePicker.ImagePickerSuccessResult;
+    mockLaunchCameraAsync.mockResolvedValueOnce(mockImageResponse);
     
     const { getByText, queryByText } = renderWithStore(<SkinAnalysisScreen />);
 
@@ -106,26 +124,7 @@ describe('Skin Analysis Workflow Integration', () => {
     );
 
     // Step 2: Select camera option
-    const alertCall = mockAlert.mock.calls[0];
-    const cameraOption = alertCall[2]?.find((option: any) => option.text === 'Camera');
-    if (cameraOption?.onPress) {
-      await cameraOption.onPress();
-    }
-
-    // Step 3: Simulate successful image capture
-    const mockImageResponse = {
-      assets: [{
-        uri: 'file://test-image.jpg',
-        fileName: 'test-image.jpg',
-        type: 'image/jpeg',
-        fileSize: 1024 * 1024,
-      }],
-    };
-
-    const cameraCallback = mockLaunchCamera.mock.calls[0]?.[1];
-    if (cameraCallback) {
-      cameraCallback(mockImageResponse);
-    }
+    await selectAlertOption('Camera');
 
     // Step 4: Should show loading state
     await waitFor(() => {
@@ -156,31 +155,24 @@ describe('Skin Analysis Workflow Integration', () => {
       await delay();
       throw error;
     });
+
+    mockLaunchCameraAsync.mockResolvedValueOnce({
+      canceled: false,
+      assets: [{
+        uri: 'file://test-image.jpg',
+        fileName: 'test-image.jpg',
+        type: 'image',
+        fileSize: 1024 * 1024,
+        width: 1080,
+        height: 1920,
+      }],
+    } as ImagePicker.ImagePickerSuccessResult);
     
     const { getByText, queryByText } = renderWithStore(<SkinAnalysisScreen />);
 
     // Simulate image capture and analysis failure
     fireEvent.press(getByText('Take or Select Photo'));
-    
-    const alertCall = mockAlert.mock.calls[0];
-    const cameraOption = alertCall[2]?.find((option: any) => option.text === 'Camera');
-    if (cameraOption?.onPress) {
-      await cameraOption.onPress();
-    }
-
-    const mockImageResponse = {
-      assets: [{
-        uri: 'file://test-image.jpg',
-        fileName: 'test-image.jpg',
-        type: 'image/jpeg',
-        fileSize: 1024 * 1024,
-      }],
-    };
-
-    const cameraCallback = mockLaunchCamera.mock.calls[0]?.[1];
-    if (cameraCallback) {
-      cameraCallback(mockImageResponse);
-    }
+    await selectAlertOption('Camera');
 
     // Should show error state with retry option
     await waitFor(() => {
@@ -209,32 +201,25 @@ describe('Skin Analysis Workflow Integration', () => {
       await delay();
       throw error;
     });
+
+    mockLaunchCameraAsync.mockResolvedValueOnce({
+      canceled: false,
+      assets: [{
+        uri: 'file://test-image.jpg',
+        fileName: 'test-image.jpg',
+        type: 'image',
+        fileSize: 1024 * 1024,
+        width: 1080,
+        height: 1920,
+      }],
+    } as ImagePicker.ImagePickerSuccessResult);
     
     const store = createTestStore();
     const { getByText } = renderWithStore(<SkinAnalysisScreen />, store);
 
     // Simulate image capture
     fireEvent.press(getByText('Take or Select Photo'));
-    
-    const alertCall = mockAlert.mock.calls[0];
-    const cameraOption = alertCall[2]?.find((option: any) => option.text === 'Camera');
-    if (cameraOption?.onPress) {
-      await cameraOption.onPress();
-    }
-
-    const mockImageResponse = {
-      assets: [{
-        uri: 'file://test-image.jpg',
-        fileName: 'test-image.jpg',
-        type: 'image/jpeg',
-        fileSize: 1024 * 1024,
-      }],
-    };
-
-    const cameraCallback = mockLaunchCamera.mock.calls[0]?.[1];
-    if (cameraCallback) {
-      cameraCallback(mockImageResponse);
-    }
+    await selectAlertOption('Camera');
 
     // Simulate multiple retry attempts
     for (let i = 1; i <= 2; i++) {
@@ -256,31 +241,24 @@ describe('Skin Analysis Workflow Integration', () => {
       await delay();
       return mockAnalysisResult;
     });
+
+    mockLaunchCameraAsync.mockResolvedValueOnce({
+      canceled: false,
+      assets: [{
+        uri: 'file://test-image.jpg',
+        fileName: 'test-image.jpg',
+        type: 'image',
+        fileSize: 1024 * 1024,
+        width: 1080,
+        height: 1920,
+      }],
+    } as ImagePicker.ImagePickerSuccessResult);
     
     const { getByText } = renderWithStore(<SkinAnalysisScreen />);
 
     // Complete first analysis
     fireEvent.press(getByText('Take or Select Photo'));
-    
-    const alertCall = mockAlert.mock.calls[0];
-    const cameraOption = alertCall[2]?.find((option: any) => option.text === 'Camera');
-    if (cameraOption?.onPress) {
-      await cameraOption.onPress();
-    }
-
-    const mockImageResponse = {
-      assets: [{
-        uri: 'file://test-image.jpg',
-        fileName: 'test-image.jpg',
-        type: 'image/jpeg',
-        fileSize: 1024 * 1024,
-      }],
-    };
-
-    const cameraCallback = mockLaunchCamera.mock.calls[0]?.[1];
-    if (cameraCallback) {
-      cameraCallback(mockImageResponse);
-    }
+    await selectAlertOption('Camera');
 
     await waitFor(() => {
       expect(getByText('Analysis Results')).toBeTruthy();
@@ -296,36 +274,30 @@ describe('Skin Analysis Workflow Integration', () => {
   });
 
   it('should handle image validation errors during upload', async () => {
-    const { getByText } = renderWithStore(<SkinAnalysisScreen />);
-
-    fireEvent.press(getByText('Take or Select Photo'));
-    
-    const alertCall = mockAlert.mock.calls[0];
-    const cameraOption = alertCall[2]?.find((option: any) => option.text === 'Camera');
-    if (cameraOption?.onPress) {
-      await cameraOption.onPress();
-    }
-
-    // Simulate oversized image
-    const mockImageResponse = {
+    mockLaunchCameraAsync.mockResolvedValueOnce({
+      canceled: false,
       assets: [{
         uri: 'file://large-image.jpg',
         fileName: 'large-image.jpg',
-        type: 'image/jpeg',
+        type: 'image',
         fileSize: 15 * 1024 * 1024, // 15MB
+        width: 1080,
+        height: 1920,
       }],
-    };
+    } as ImagePicker.ImagePickerSuccessResult);
 
-    const cameraCallback = mockLaunchCamera.mock.calls[0]?.[1];
-    if (cameraCallback) {
-      cameraCallback(mockImageResponse);
-    }
+    const { getByText } = renderWithStore(<SkinAnalysisScreen />);
+
+    fireEvent.press(getByText('Take or Select Photo'));
+    await selectAlertOption('Camera');
 
     // Should show error alert
-    expect(mockAlert).toHaveBeenCalledWith(
-      'Error',
-      'Image size must be less than 10MB'
-    );
+    await waitFor(() => {
+      expect(mockAlert).toHaveBeenCalledWith(
+        'Error',
+        'Image size must be less than 10MB'
+      );
+    });
 
     // Should remain on upload screen
     expect(getByText('Take or Select Photo')).toBeTruthy();
@@ -353,31 +325,24 @@ describe('Skin Analysis Workflow Integration', () => {
     });
     
     mockSkinAnalysisApi.analyzeImage.mockImplementation(() => analysisPromise);
+
+    mockLaunchCameraAsync.mockResolvedValueOnce({
+      canceled: false,
+      assets: [{
+        uri: 'file://test-image.jpg',
+        fileName: 'test-image.jpg',
+        type: 'image',
+        fileSize: 1024 * 1024,
+        width: 1080,
+        height: 1920,
+      }],
+    } as ImagePicker.ImagePickerSuccessResult);
     
     const { getByText, queryByText } = renderWithStore(<SkinAnalysisScreen />);
 
     // Start analysis
     fireEvent.press(getByText('Take or Select Photo'));
-    
-    const alertCall = mockAlert.mock.calls[0];
-    const cameraOption = alertCall[2]?.find((option: any) => option.text === 'Camera');
-    if (cameraOption?.onPress) {
-      await cameraOption.onPress();
-    }
-
-    const mockImageResponse = {
-      assets: [{
-        uri: 'file://test-image.jpg',
-        fileName: 'test-image.jpg',
-        type: 'image/jpeg',
-        fileSize: 1024 * 1024,
-      }],
-    };
-
-    const cameraCallback = mockLaunchCamera.mock.calls[0]?.[1];
-    if (cameraCallback) {
-      cameraCallback(mockImageResponse);
-    }
+    await selectAlertOption('Camera');
 
     // Wait for loading state to appear
     await waitFor(() => {

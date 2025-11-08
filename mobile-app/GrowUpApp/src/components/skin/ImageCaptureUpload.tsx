@@ -2,21 +2,10 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   Alert,
   Image,
-  Platform,
 } from 'react-native';
-import {
-  launchCamera,
-  launchImageLibrary,
-  ImagePickerResponse,
-  MediaType,
-  CameraOptions,
-  ImageLibraryOptions,
-  PhotoQuality,
-} from 'react-native-image-picker';
-import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+import * as ImagePicker from 'expo-image-picker';
 import { Button } from '../common';
 
 interface ImageCaptureUploadProps {
@@ -33,12 +22,8 @@ const ImageCaptureUpload: React.FC<ImageCaptureUploadProps> = ({
 
   const requestCameraPermission = async (): Promise<boolean> => {
     try {
-      const permission = Platform.OS === 'ios' 
-        ? PERMISSIONS.IOS.CAMERA 
-        : PERMISSIONS.ANDROID.CAMERA;
-      
-      const result = await request(permission);
-      return result === RESULTS.GRANTED;
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      return status === 'granted';
     } catch (error) {
       console.error('Permission request error:', error);
       return false;
@@ -57,12 +42,12 @@ const ImageCaptureUpload: React.FC<ImageCaptureUploadProps> = ({
     return formData;
   };
 
-  const processImageResponse = (response: ImagePickerResponse) => {
-    if (response.didCancel || response.errorMessage) {
+  const processImageResponse = async (result: ImagePicker.ImagePickerResult) => {
+    if (result.canceled || !result.assets || result.assets.length === 0) {
       return;
     }
 
-    const asset = response.assets?.[0];
+    const asset = result.assets[0];
     if (!asset?.uri) {
       Alert.alert('Error', 'Failed to process the selected image');
       return;
@@ -75,7 +60,16 @@ const ImageCaptureUpload: React.FC<ImageCaptureUploadProps> = ({
     }
 
     const supportedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-    if (asset.type && !supportedTypes.includes(asset.type)) {
+    const normalizedType = asset.type && asset.type !== 'image' ? asset.type : undefined;
+    const extension = asset.uri.split('.').pop()?.toLowerCase();
+    const inferredType = extension === 'png'
+      ? 'image/png'
+      : extension === 'jpg' || extension === 'jpeg'
+        ? 'image/jpeg'
+        : undefined;
+
+    const fileType = normalizedType ?? inferredType;
+    if (!fileType || !supportedTypes.includes(fileType)) {
       Alert.alert('Error', 'Please select a JPEG or PNG image');
       return;
     }
@@ -84,9 +78,8 @@ const ImageCaptureUpload: React.FC<ImageCaptureUploadProps> = ({
     setIsProcessing(true);
 
     try {
-      const fileName = asset.fileName || `image_${Date.now()}.jpg`;
-      const fileType = asset.type || 'image/jpeg';
-      const formData = createFormData(asset.uri, fileName, fileType);
+  const fileName = asset.fileName || `image_${Date.now()}.jpg`;
+  const formData = createFormData(asset.uri, fileName, fileType);
       
       onImageCapture(formData);
     } catch (error) {
@@ -111,27 +104,25 @@ const ImageCaptureUpload: React.FC<ImageCaptureUploadProps> = ({
       return;
     }
 
-    const options: CameraOptions = {
-      mediaType: 'photo' as MediaType,
-      quality: 0.8 as PhotoQuality,
-      maxWidth: 1024,
-      maxHeight: 1024,
-      includeBase64: false,
-    };
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+      allowsEditing: false,
+      aspect: [4, 3],
+    });
 
-    launchCamera(options, processImageResponse);
+    await processImageResponse(result);
   };
 
-  const handleGallerySelect = () => {
-    const options: ImageLibraryOptions = {
-      mediaType: 'photo' as MediaType,
-      quality: 0.8 as PhotoQuality,
-      maxWidth: 1024,
-      maxHeight: 1024,
-      includeBase64: false,
-    };
+  const handleGallerySelect = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+      allowsEditing: false,
+      aspect: [4, 3],
+    });
 
-    launchImageLibrary(options, processImageResponse);
+    await processImageResponse(result);
   };
 
   const showImageSourceOptions = () => {

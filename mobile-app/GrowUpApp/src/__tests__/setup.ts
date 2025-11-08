@@ -28,29 +28,6 @@ jest.mock('@expo/vector-icons', () => {
   };
 });
 
-// Mock react-native-image-picker
-jest.mock('react-native-image-picker', () => ({
-  launchCamera: jest.fn(),
-  launchImageLibrary: jest.fn(),
-}));
-
-// Mock react-native-permissions
-jest.mock('react-native-permissions', () => ({
-  request: jest.fn(() => Promise.resolve('granted')),
-  PERMISSIONS: {
-    IOS: {
-      CAMERA: 'ios.permission.CAMERA',
-    },
-    ANDROID: {
-      CAMERA: 'android.permission.CAMERA',
-    },
-  },
-  RESULTS: {
-    GRANTED: 'granted',
-    DENIED: 'denied',
-  },
-}));
-
 // Mock AsyncStorage
 jest.mock('@react-native-async-storage/async-storage', () => ({
   getItem: jest.fn(() => Promise.resolve(null)),
@@ -59,11 +36,11 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   clear: jest.fn(() => Promise.resolve()),
 }));
 
-// Mock Keychain
-jest.mock('react-native-keychain', () => ({
-  setInternetCredentials: jest.fn(() => Promise.resolve()),
-  getInternetCredentials: jest.fn(() => Promise.resolve(false)),
-  resetInternetCredentials: jest.fn(() => Promise.resolve()),
+// Mock expo-secure-store
+jest.mock('expo-secure-store', () => ({
+  getItemAsync: jest.fn(() => Promise.resolve(null)),
+  setItemAsync: jest.fn(() => Promise.resolve()),
+  deleteItemAsync: jest.fn(() => Promise.resolve()),
 }));
 
 // Mock Alert module directly to avoid requiring full react-native implementation

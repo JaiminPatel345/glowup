@@ -1,17 +1,20 @@
 import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Alert } from 'react-native';
-import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
-import { request, RESULTS } from 'react-native-permissions';
+import * as ImagePicker from 'expo-image-picker';
 import ImageCaptureUpload from '../../../components/skin/ImageCaptureUpload';
 
 // Mock the dependencies
-jest.mock('react-native-image-picker');
-jest.mock('react-native-permissions');
+jest.mock('expo-image-picker', () => ({
+  requestCameraPermissionsAsync: jest.fn(),
+  launchCameraAsync: jest.fn(),
+  launchImageLibraryAsync: jest.fn(),
+  MediaTypeOptions: { Images: 'Images' },
+}));
 
-const mockLaunchCamera = launchCamera as jest.MockedFunction<typeof launchCamera>;
-const mockLaunchImageLibrary = launchImageLibrary as jest.MockedFunction<typeof launchImageLibrary>;
-const mockRequest = request as jest.MockedFunction<typeof request>;
+const mockRequestCameraPermissionsAsync = ImagePicker.requestCameraPermissionsAsync as jest.MockedFunction<typeof ImagePicker.requestCameraPermissionsAsync>;
+const mockLaunchCameraAsync = ImagePicker.launchCameraAsync as jest.MockedFunction<typeof ImagePicker.launchCameraAsync>;
+const mockLaunchImageLibraryAsync = ImagePicker.launchImageLibraryAsync as jest.MockedFunction<typeof ImagePicker.launchImageLibraryAsync>;
 const mockAlert = Alert.alert as jest.MockedFunction<typeof Alert.alert>;
 
 const selectAlertOption = async (label: string) => {
@@ -25,18 +28,21 @@ const selectAlertOption = async (label: string) => {
   }
 };
 
-const getLatestCameraCallback = () => {
-  const calls = mockLaunchCamera.mock.calls;
-  return calls[calls.length - 1]?.[1];
-};
-
 describe('ImageCaptureUpload', () => {
   const mockOnImageCapture = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
     mockOnImageCapture.mockClear();
-    mockRequest.mockResolvedValue(RESULTS.GRANTED);
+    mockRequestCameraPermissionsAsync.mockResolvedValue({
+      status: 'granted',
+      granted: true,
+      canAskAgain: true,
+      expires: 'never',
+      permissions: {} as any,
+    } as ImagePicker.PermissionResponse);
+    mockLaunchCameraAsync.mockResolvedValue({ canceled: true } as ImagePicker.ImagePickerResult);
+    mockLaunchImageLibraryAsync.mockResolvedValue({ canceled: true } as ImagePicker.ImagePickerResult);
   });
 
   it('should render upload interface correctly', () => {
@@ -77,11 +83,17 @@ describe('ImageCaptureUpload', () => {
 
     await selectAlertOption('Camera');
 
-    expect(mockRequest).toHaveBeenCalled();
+    expect(mockRequestCameraPermissionsAsync).toHaveBeenCalled();
   });
 
   it('should show permission denied alert when camera permission denied', async () => {
-    mockRequest.mockResolvedValue(RESULTS.DENIED);
+    mockRequestCameraPermissionsAsync.mockResolvedValue({
+      status: 'denied',
+      granted: false,
+      canAskAgain: false,
+      expires: 'never',
+      permissions: {} as any,
+    } as ImagePicker.PermissionResponse);
     
     const { getByText } = render(
       <ImageCaptureUpload onImageCapture={mockOnImageCapture} />
@@ -113,15 +125,13 @@ describe('ImageCaptureUpload', () => {
     await selectAlertOption('Camera');
 
     await waitFor(() => {
-      expect(mockLaunchCamera).toHaveBeenCalledWith(
+      expect(mockLaunchCameraAsync).toHaveBeenCalledWith(
         expect.objectContaining({
-          mediaType: 'photo',
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
           quality: 0.8,
-          maxWidth: 1024,
-          maxHeight: 1024,
-          includeBase64: false,
-        }),
-        expect.any(Function)
+          allowsEditing: false,
+          aspect: [4, 3],
+        })
       );
     });
   });
@@ -133,29 +143,32 @@ describe('ImageCaptureUpload', () => {
 
     fireEvent.press(getByText('Take or Select Photo'));
 
-  await selectAlertOption('Photo Library');
+    await selectAlertOption('Photo Library');
 
-    expect(mockLaunchImageLibrary).toHaveBeenCalledWith(
+    expect(mockLaunchImageLibraryAsync).toHaveBeenCalledWith(
       expect.objectContaining({
-        mediaType: 'photo',
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 0.8,
-        maxWidth: 1024,
-        maxHeight: 1024,
-        includeBase64: false,
-      }),
-      expect.any(Function)
+        allowsEditing: false,
+        aspect: [4, 3],
+      })
     );
   });
 
   it('should process valid image response correctly', async () => {
     const mockImageResponse = {
+      canceled: false,
       assets: [{
         uri: 'file://test-image.jpg',
         fileName: 'test-image.jpg',
-        type: 'image/jpeg',
+  type: 'image',
         fileSize: 1024 * 1024, // 1MB
+        width: 1080,
+        height: 1920,
       }],
-    };
+    } as ImagePicker.ImagePickerSuccessResult;
+
+    mockLaunchCameraAsync.mockResolvedValueOnce(mockImageResponse);
 
     const { getByText } = render(
       <ImageCaptureUpload onImageCapture={mockOnImageCapture} />
@@ -164,25 +177,26 @@ describe('ImageCaptureUpload', () => {
     fireEvent.press(getByText('Take or Select Photo'));
 
     await selectAlertOption('Camera');
-    const cameraCallback = getLatestCameraCallback();
-    expect(cameraCallback).toBeTruthy();
 
-    await act(async () => {
-      cameraCallback?.(mockImageResponse as any);
+    await waitFor(() => {
+      expect(mockOnImageCapture).toHaveBeenCalledWith(expect.any(FormData));
     });
-
-    expect(mockOnImageCapture).toHaveBeenCalledWith(expect.any(FormData));
   });
 
   it('should reject oversized images', async () => {
     const mockImageResponse = {
+      canceled: false,
       assets: [{
         uri: 'file://large-image.jpg',
         fileName: 'large-image.jpg',
-        type: 'image/jpeg',
+  type: 'image',
         fileSize: 15 * 1024 * 1024, // 15MB (over 10MB limit)
+        width: 1080,
+        height: 1920,
       }],
-    };
+    } as ImagePicker.ImagePickerSuccessResult;
+
+    mockLaunchCameraAsync.mockResolvedValueOnce(mockImageResponse);
 
     const { getByText } = render(
       <ImageCaptureUpload onImageCapture={mockOnImageCapture} />
@@ -191,29 +205,30 @@ describe('ImageCaptureUpload', () => {
     fireEvent.press(getByText('Take or Select Photo'));
 
     await selectAlertOption('Camera');
-    const cameraCallback = getLatestCameraCallback();
-    expect(cameraCallback).toBeTruthy();
 
-    await act(async () => {
-      cameraCallback?.(mockImageResponse as any);
+    await waitFor(() => {
+      expect(mockAlert).toHaveBeenCalledWith(
+        'Error',
+        'Image size must be less than 10MB'
+      );
     });
-
-    expect(mockAlert).toHaveBeenCalledWith(
-      'Error',
-      'Image size must be less than 10MB'
-    );
     expect(mockOnImageCapture).not.toHaveBeenCalled();
   });
 
   it('should reject unsupported file types', async () => {
     const mockImageResponse = {
+      canceled: false,
       assets: [{
-        uri: 'file://test-image.gif',
-        fileName: 'test-image.gif',
-        type: 'image/gif',
+  uri: 'file://test-image.gif',
+  fileName: 'test-image.gif',
+  type: 'image',
         fileSize: 1024 * 1024,
+        width: 1080,
+        height: 1920,
       }],
-    };
+    } as ImagePicker.ImagePickerSuccessResult;
+
+    mockLaunchCameraAsync.mockResolvedValueOnce(mockImageResponse);
 
     const { getByText } = render(
       <ImageCaptureUpload onImageCapture={mockOnImageCapture} />
@@ -222,24 +237,22 @@ describe('ImageCaptureUpload', () => {
     fireEvent.press(getByText('Take or Select Photo'));
 
     await selectAlertOption('Camera');
-    const cameraCallback = getLatestCameraCallback();
-    expect(cameraCallback).toBeTruthy();
 
-    await act(async () => {
-      cameraCallback?.(mockImageResponse as any);
+    await waitFor(() => {
+      expect(mockAlert).toHaveBeenCalledWith(
+        'Error',
+        'Please select a JPEG or PNG image'
+      );
     });
-
-    expect(mockAlert).toHaveBeenCalledWith(
-      'Error',
-      'Please select a JPEG or PNG image'
-    );
     expect(mockOnImageCapture).not.toHaveBeenCalled();
   });
 
   it('should handle cancelled image selection', async () => {
     const mockImageResponse = {
-      didCancel: true,
-    };
+      canceled: true,
+    } as ImagePicker.ImagePickerResult;
+
+    mockLaunchCameraAsync.mockResolvedValueOnce(mockImageResponse);
 
     const { getByText } = render(
       <ImageCaptureUpload onImageCapture={mockOnImageCapture} />
@@ -248,32 +261,6 @@ describe('ImageCaptureUpload', () => {
     fireEvent.press(getByText('Take or Select Photo'));
 
     await selectAlertOption('Camera');
-    const cameraCallback = getLatestCameraCallback();
-
-    await act(async () => {
-      cameraCallback?.(mockImageResponse as any);
-    });
-
-    expect(mockOnImageCapture).not.toHaveBeenCalled();
-  });
-
-  it('should handle image picker errors', async () => {
-    const mockImageResponse = {
-      errorMessage: 'Camera not available',
-    };
-
-    const { getByText } = render(
-      <ImageCaptureUpload onImageCapture={mockOnImageCapture} />
-    );
-
-    fireEvent.press(getByText('Take or Select Photo'));
-
-    await selectAlertOption('Camera');
-    const cameraCallback = getLatestCameraCallback();
-
-    await act(async () => {
-      cameraCallback?.(mockImageResponse as any);
-    });
 
     expect(mockOnImageCapture).not.toHaveBeenCalled();
   });
@@ -289,13 +276,18 @@ describe('ImageCaptureUpload', () => {
 
   it('should show selected image preview', async () => {
     const mockImageResponse = {
+      canceled: false,
       assets: [{
         uri: 'file://test-image.jpg',
         fileName: 'test-image.jpg',
-        type: 'image/jpeg',
+  type: 'image',
         fileSize: 1024 * 1024,
+        width: 1080,
+        height: 1920,
       }],
-    };
+    } as ImagePicker.ImagePickerSuccessResult;
+
+    mockLaunchCameraAsync.mockResolvedValueOnce(mockImageResponse);
 
     const { getByText } = render(
       <ImageCaptureUpload onImageCapture={mockOnImageCapture} />
@@ -305,11 +297,6 @@ describe('ImageCaptureUpload', () => {
 
     // Simulate image selection
     await selectAlertOption('Camera');
-    const cameraCallback = getLatestCameraCallback();
-
-    await act(async () => {
-      cameraCallback?.(mockImageResponse as any);
-    });
 
     // Should show "Change Photo" button after selection
     await waitFor(() => {

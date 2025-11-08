@@ -22,13 +22,11 @@
     "expo-file-system": "~17.0.1",
     "expo-image-picker": "~15.0.6",
     "expo-media-library": "~16.0.1",
+    "expo-secure-store": "~13.0.2",
     "expo-status-bar": "~3.0.8",
     "nativewind": "^4.2.1",
     "react": "19.1.0",
     "react-native": "0.81.5",
-    "react-native-image-picker": "^7.1.2",
-    "react-native-keychain": "^10.0.0",
-    "react-native-permissions": "^5.1.0",
     "react-redux": "^9.2.0"
   },
   "devDependencies": {

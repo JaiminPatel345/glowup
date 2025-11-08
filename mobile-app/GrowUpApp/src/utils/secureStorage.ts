@@ -1,4 +1,4 @@
-import * as Keychain from 'react-native-keychain';
+import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from '../constants';
 
@@ -8,10 +8,9 @@ export class SecureStorage {
    */
   static async storeAuthTokens(token: string, refreshToken: string): Promise<void> {
     try {
-      // Store tokens in Keychain for maximum security
-      await Keychain.setInternetCredentials(
+      // Store tokens in SecureStore for maximum security
+      await SecureStore.setItemAsync(
         'growup_auth_tokens',
-        'auth_token',
         JSON.stringify({ token, refreshToken })
       );
       
@@ -31,18 +30,18 @@ export class SecureStorage {
    */
   static async getAuthTokens(): Promise<{ token: string; refreshToken: string } | null> {
     try {
-      // Try to get from Keychain first
-      const credentials = await Keychain.getInternetCredentials('growup_auth_tokens');
+      // Try to get from SecureStore first
+      const credentials = await SecureStore.getItemAsync('growup_auth_tokens');
       
-      if (credentials && credentials.password) {
-        const tokens = JSON.parse(credentials.password);
+      if (credentials) {
+        const tokens = JSON.parse(credentials);
         return {
           token: tokens.token,
           refreshToken: tokens.refreshToken,
         };
       }
     } catch (error) {
-      console.error('Error retrieving tokens from Keychain:', error);
+      console.error('Error retrieving tokens from SecureStore:', error);
     }
 
     try {
@@ -65,10 +64,10 @@ export class SecureStorage {
    */
   static async clearAuthTokens(): Promise<void> {
     try {
-      // Clear from Keychain by setting empty credentials
-      await Keychain.setInternetCredentials('growup_auth_tokens', '', '');
+      // Clear from SecureStore
+      await SecureStore.deleteItemAsync('growup_auth_tokens');
     } catch (error) {
-      console.error('Error clearing tokens from Keychain:', error);
+      console.error('Error clearing tokens from SecureStore:', error);
     }
 
     try {

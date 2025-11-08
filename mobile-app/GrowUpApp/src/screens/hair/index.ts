@@ -1,0 +1,1 @@
+export { default as HairTryOnScreen } from './HairTryOnScreen';

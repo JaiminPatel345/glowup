@@ -1,0 +1,293 @@
+services:
+  # PostgreSQL Database for user management and authentication
+  postgres:
+    image: postgres:15-alpine
+    container_name: growup-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-growup}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root123}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    # Port mapping removed - accessible internally via postgres:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/postgresql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    networks:
+      - growup-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-growup}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # MongoDB Database for analysis results and product recommendations
+  mongodb:
+    image: mongo:7-jammy
+    container_name: growup-mongodb
+    environment:
+      MONGO_INITDB_DATABASE: ${MONGODB_DB:-growup}
+    # Port mapping removed - accessible internally via mongodb:27017
+    volumes:
+      - mongo_data:/data/db
+      - ./database/mongodb/init.js:/docker-entrypoint-initdb.d/init.js:ro
+    networks:
+      - growup-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Redis for caching and session storage
+  redis:
+    image: redis:7-alpine
+    container_name: growup-redis
+    # Port mapping removed - accessible internally via redis:6379
+    volumes:
+      - redis_data:/data
+    networks:
+      - growup-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  # Authentication Service (Node.js + Better-Auth)
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: growup-auth-service
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-root123}@postgres:5432/${POSTGRES_DB:-growup}
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-your_jwt_secret_key_change_in_production}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
+      - PORT=3000
+      - NODE_ENV=${NODE_ENV:-development}
+    # Port mapping removed - accessible internally via auth-service:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - growup-network
+    volumes:
+      - ./services/auth-service:/app
+      - /app/node_modules
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    develop:
+      watch:
+        - action: sync
+          path: ./services/auth-service
+          target: /app
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: ./services/auth-service/package.json
+
+  # User Management Service (Node.js + TypeScript)
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile
+    container_name: growup-user-service
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-root123}@postgres:5432/${POSTGRES_DB:-growup}
+      - REDIS_URL=redis://redis:6379
+      - AUTH_SERVICE_URL=http://auth-service:3000
+      - PORT=3000
+      - NODE_ENV=${NODE_ENV:-development}
+    # Port mapping removed - accessible internally via user-service:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    networks:
+      - growup-network
+    volumes:
+      - ./services/user-service:/app
+      - /app/node_modules
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    develop:
+      watch:
+        - action: sync
+          path: ./services/user-service
+          target: /app
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: ./services/user-service/package.json
+
+  # Skin Analysis Service (FastAPI + AI Models)
+  skin-analysis-service:
+    build:
+      context: ./services/skin-analysis-service
+      dockerfile: Dockerfile
+    container_name: growup-skin-analysis
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/${MONGODB_DB:-growup}
+      - MODEL_PATH=/app/models
+      - PORT=8000
+      - ENVIRONMENT=${NODE_ENV:-development}
+      - LOG_LEVEL=INFO
+      - AUTH_SERVICE_URL=http://auth-service:3000
+    # Port mapping removed - accessible internally via skin-analysis-service:8000
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    networks:
+      - growup-network
+    volumes:
+      - ./services/skin-analysis-service:/app
+      - ./models:/app/models:ro
+      - skin_uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    develop:
+      watch:
+        - action: sync
+          path: ./services/skin-analysis-service
+          target: /app
+          ignore:
+            - __pycache__/
+            - "*.pyc"
+        - action: rebuild
+          path: ./services/skin-analysis-service/requirements.txt
+
+  # Hair Try-On Service (FastAPI + AI Models + WebSocket)
+  hair-tryOn-service:
+    build:
+      context: ./services/hair-tryOn-service
+      dockerfile: Dockerfile
+    container_name: growup-hair-tryOn
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/${MONGODB_DB:-growup}
+      - MODEL_PATH=/app/models
+      - PORT=8000
+      - ENVIRONMENT=${NODE_ENV:-development}
+      - LOG_LEVEL=INFO
+      - WEBSOCKET_ENABLED=true
+      - AUTH_SERVICE_URL=http://auth-service:3000
+    # Port mapping removed - accessible internally via hair-tryOn-service:8000
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    networks:
+      - growup-network
+    volumes:
+      - ./services/hair-tryOn-service:/app
+      - ./models:/app/models:ro
+      - hair_uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    develop:
+      watch:
+        - action: sync
+          path: ./services/hair-tryOn-service
+          target: /app
+          ignore:
+            - __pycache__/
+            - "*.pyc"
+        - action: rebuild
+          path: ./services/hair-tryOn-service/requirements.txt
+
+  # API Gateway (NGINX + Node.js middleware)
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: growup-api-gateway
+    environment:
+      - AUTH_SERVICE_URL=http://auth-service:3000
+      - USER_SERVICE_URL=http://user-service:3000
+      - SKIN_SERVICE_URL=http://skin-analysis-service:8000
+      - HAIR_SERVICE_URL=http://hair-tryOn-service:8000
+      - REDIS_URL=redis://redis:6379
+      - NODE_ENV=${NODE_ENV:-development}
+    ports:
+      - "${GATEWAY_PORT:-80}:80"
+      - "443:443"
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+      skin-analysis-service:
+        condition: service_healthy
+      hair-tryOn-service:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - growup-network
+    volumes:
+      - ./api-gateway:/app
+      - gateway_logs:/var/log/nginx
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    develop:
+      watch:
+        - action: sync
+          path: ./api-gateway
+          target: /app
+          ignore:
+            - node_modules/
+
+# Named volumes for persistent data
+volumes:
+  postgres_data:
+    driver: local
+  mongo_data:
+    driver: local
+  redis_data:
+    driver: local
+  skin_uploads:
+    driver: local
+  hair_uploads:
+    driver: local
+  gateway_logs:
+    driver: local
+
+# Custom network for service communication
+networks:
+  growup-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

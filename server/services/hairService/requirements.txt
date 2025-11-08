@@ -1,7 +1,0 @@
-grpcio==1.60.1
-grpcio-tools==1.60.1
-Pillow==10.2.0
-numpy==1.26.4
-opencv-python==4.9.0.80
-protobuf==4.21.12
-mediapipe==0.10.9

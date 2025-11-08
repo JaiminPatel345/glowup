@@ -20,8 +20,13 @@ export const rateLimitMiddleware = rateLimit({
     // Skip rate limiting for health checks
     return req.path === '/health';
   },
-  onLimitReached: (req: Request, res: Response) => {
+  handler: (req: Request, res: Response) => {
     console.warn(`Rate limit exceeded for IP: ${req.ip}, Path: ${req.path}`);
+    res.status(429).json({
+      success: false,
+      error: 'Too many requests',
+      message: 'Too many requests from this IP, please try again later.'
+    });
   }
 });
 

@@ -18,7 +18,10 @@ from app.core.config import settings
 
 # Import Redis cache
 import sys
-sys.path.append('/app/shared')
+import os
+# Add the shared directory to the path
+shared_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../shared'))
+sys.path.append(shared_path)
 from cache.redis_cache import redis_cache
 
 logger = logging.getLogger(__name__)

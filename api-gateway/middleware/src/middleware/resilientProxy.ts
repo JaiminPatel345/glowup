@@ -2,9 +2,9 @@ import { Request, Response, NextFunction } from 'express';
 import { createProxyMiddleware, Options } from 'http-proxy-middleware';
 import { logger } from '../config/logger';
 
-const serviceRegistry = require('../../../../../shared/discovery/serviceRegistry');
-const { circuitBreakerManager } = require('../../../../../shared/resilience/circuitBreaker');
-const correlationLogger = require('../../../../../shared/logging/correlationLogger');
+const serviceRegistry = require('../../../../shared/discovery/serviceRegistry');
+const { circuitBreakerManager } = require('../../../../shared/resilience/circuitBreaker');
+const correlationLogger = require('../../../../shared/logging/correlationLogger');
 
 interface ResilientProxyOptions extends Options {
   serviceName: string;

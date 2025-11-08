@@ -14,9 +14,20 @@ import { logger } from './config/logger';
 const serviceRegistry = require('../../../shared/discovery/serviceRegistry');
 const { circuitBreakerManager } = require('../../../shared/resilience/circuitBreaker');
 const correlationLogger = require('../../../shared/logging/correlationLogger');
+const redisCache = require('../../../shared/cache/redis');
 
 // Load environment variables
 dotenv.config();
+
+// Initialize Redis connection
+async function initializeRedis() {
+  try {
+    await redisCache.connect(process.env.REDIS_URL || 'redis://localhost:6379');
+    logger.info('Redis cache connected successfully');
+  } catch (error) {
+    logger.warn('Failed to connect to Redis cache, continuing without cache:', error);
+  }
+}
 
 const app = express();
 const PORT = process.env.GATEWAY_MIDDLEWARE_PORT || 3001;
@@ -173,6 +184,9 @@ app.use(errorHandler);
 app.listen(PORT, async () => {
   logger.info(`API Gateway Middleware started on port ${PORT}`);
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  
+  // Initialize Redis
+  await initializeRedis();
   
   // Register with service registry
   await registerGateway();

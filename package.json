@@ -1,0 +1,76 @@
+{
+  "name": "growup-mobile-app",
+  "version": "1.0.0",
+  "description": "AI-powered beauty analysis and enhancement mobile application",
+  "main": "index.js",
+  "scripts": {
+    "setup": "node scripts/setup.js",
+    "setup:postgres": "node scripts/migrate-postgres.js",
+    "setup:mongodb": "node scripts/init-mongodb.js",
+    "dev": "docker-compose up -d",
+    "dev:build": "docker-compose up -d --build",
+    "dev:logs": "docker-compose logs -f",
+    "dev:stop": "docker-compose down",
+    "dev:clean": "docker-compose down -v --remove-orphans",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint . --ext .js,.ts,.jsx,.tsx",
+    "lint:fix": "eslint . --ext .js,.ts,.jsx,.tsx --fix",
+    "format": "prettier --write \"**/*.{js,ts,jsx,tsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{js,ts,jsx,tsx,json,md}\"",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs",
+    "docker:ps": "docker-compose ps",
+    "health:check": "node scripts/health-check.js",
+    "db:migrate": "npm run setup:postgres",
+    "db:seed": "npm run setup:mongodb",
+    "db:reset": "npm run dev:clean && npm run dev && sleep 10 && npm run db:migrate && npm run db:seed"
+  },
+  "keywords": [
+    "mobile-app",
+    "react-native",
+    "ai",
+    "beauty",
+    "skin-analysis",
+    "hair-tryOn",
+    "microservices",
+    "fastapi",
+    "nodejs"
+  ],
+  "author": "GrowUp Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jest": "^29.5.5",
+    "@types/node": "^20.6.3",
+    "@typescript-eslint/eslint-plugin": "^6.7.2",
+    "@typescript-eslint/parser": "^6.7.2",
+    "eslint": "^8.49.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.0.3",
+    "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "axios": "^1.5.0",
+    "dotenv": "^16.3.1",
+    "mongodb": "^6.1.0",
+    "pg": "^8.11.3",
+    "redis": "^4.6.8"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/growup-mobile-app.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/growup-mobile-app/issues"
+  },
+  "homepage": "https://github.com/your-org/growup-mobile-app#readme"
+}

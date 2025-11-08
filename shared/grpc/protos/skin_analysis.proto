@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package skin_analysis;
+
+// Skin Analysis service
+service SkinAnalysisService {
+  rpc AnalyzeSkin(AnalyzeSkinRequest) returns (AnalyzeSkinResponse);
+  rpc GetAnalysisById(GetAnalysisByIdRequest) returns (GetAnalysisByIdResponse);
+  rpc GetUserHistory(GetUserHistoryRequest) returns (GetUserHistoryResponse);
+}
+
+// Request/Response messages
+message AnalyzeSkinRequest {
+  string user_id = 1;
+  string image_url = 2;
+  bytes image_data = 3;
+}
+
+message AnalyzeSkinResponse {
+  string analysis_id = 1;
+  string skin_type = 2;
+  repeated SkinIssue issues = 3;
+  AnalysisMetadata metadata = 4;
+  string error_message = 5;
+}
+
+message GetAnalysisByIdRequest {
+  string analysis_id = 1;
+}
+
+message GetAnalysisByIdResponse {
+  SkinAnalysisResult result = 1;
+  string error_message = 2;
+}
+
+message GetUserHistoryRequest {
+  string user_id = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message GetUserHistoryResponse {
+  repeated SkinAnalysisResult results = 1;
+  int32 total_count = 2;
+  string error_message = 3;
+}
+
+// Data structures
+message SkinIssue {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string severity = 4;
+  repeated string causes = 5;
+  string highlighted_image_url = 6;
+  double confidence = 7;
+}
+
+message AnalysisMetadata {
+  string model_version = 1;
+  double processing_time = 2;
+  double image_quality = 3;
+}
+
+message SkinAnalysisResult {
+  string id = 1;
+  string user_id = 2;
+  string image_url = 3;
+  string skin_type = 4;
+  repeated SkinIssue issues = 5;
+  AnalysisMetadata metadata = 6;
+  string created_at = 7;
+}

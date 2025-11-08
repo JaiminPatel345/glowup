@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package hair_tryon;
+
+// Hair Try-On service
+service HairTryOnService {
+  rpc ProcessVideo(ProcessVideoRequest) returns (ProcessVideoResponse);
+  rpc GetProcessingStatus(GetProcessingStatusRequest) returns (GetProcessingStatusResponse);
+  rpc GetUserHistory(GetUserHistoryRequest) returns (GetUserHistoryResponse);
+}
+
+// Request/Response messages
+message ProcessVideoRequest {
+  string user_id = 1;
+  string video_url = 2;
+  bytes video_data = 3;
+  string style_image_url = 4;
+  bytes style_image_data = 5;
+  string color_image_url = 6;
+  bytes color_image_data = 7;
+}
+
+message ProcessVideoResponse {
+  string processing_id = 1;
+  string status = 2;
+  string result_video_url = 3;
+  ProcessingMetadata metadata = 4;
+  string error_message = 5;
+}
+
+message GetProcessingStatusRequest {
+  string processing_id = 1;
+}
+
+message GetProcessingStatusResponse {
+  string processing_id = 1;
+  string status = 2;
+  double progress = 3;
+  string result_video_url = 4;
+  string error_message = 5;
+}
+
+message GetUserHistoryRequest {
+  string user_id = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message GetUserHistoryResponse {
+  repeated HairTryOnResult results = 1;
+  int32 total_count = 2;
+  string error_message = 3;
+}
+
+// Data structures
+message ProcessingMetadata {
+  string model_version = 1;
+  double processing_time = 2;
+  int32 frames_processed = 3;
+}
+
+message HairTryOnResult {
+  string id = 1;
+  string user_id = 2;
+  string type = 3;
+  string original_media_url = 4;
+  string style_image_url = 5;
+  string color_image_url = 6;
+  string result_media_url = 7;
+  ProcessingMetadata metadata = 8;
+  string created_at = 9;
+}

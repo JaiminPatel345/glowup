@@ -10,6 +10,11 @@ import { errorHandler } from './middleware/errorHandler';
 import { healthCheck } from './routes/health';
 import { logger } from './config/logger';
 
+// Import shared utilities
+const serviceRegistry = require('../../../shared/discovery/serviceRegistry');
+const { circuitBreakerManager } = require('../../../shared/resilience/circuitBreaker');
+const correlationLogger = require('../../../shared/logging/correlationLogger');
+
 // Load environment variables
 dotenv.config();
 
@@ -43,6 +48,9 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// Correlation ID middleware
+app.use(correlationLogger.middleware());
+
 // Logging middleware
 app.use(loggingMiddleware);
 
@@ -57,65 +65,86 @@ app.use('/api/users', authMiddleware);
 app.use('/api/skin', authMiddleware);
 app.use('/api/hair', authMiddleware);
 
-// Proxy configuration for microservices
-const serviceProxies = {
-  '/api/auth': {
+// Import resilient proxy
+import { createResilientProxy, registerGateway, getCircuitBreakerStatus } from './middleware/resilientProxy';
+
+// Resilient proxy configuration for microservices
+const serviceProxies = [
+  {
+    path: '/api/auth',
+    serviceName: 'auth-service',
     target: process.env.AUTH_SERVICE_URL || 'http://auth-service:3000',
     changeOrigin: true,
     timeout: 60000,
+    circuitBreakerOptions: {
+      failureThreshold: 3,
+      recoveryTimeout: 30000
+    }
   },
-  '/api/users': {
+  {
+    path: '/api/users',
+    serviceName: 'user-service',
     target: process.env.USER_SERVICE_URL || 'http://user-service:3000',
     changeOrigin: true,
     timeout: 60000,
+    circuitBreakerOptions: {
+      failureThreshold: 3,
+      recoveryTimeout: 30000
+    }
   },
-  '/api/skin': {
-    target: process.env.SKIN_SERVICE_URL || 'http://skin-service:8000',
+  {
+    path: '/api/skin',
+    serviceName: 'skin-analysis-service',
+    target: process.env.SKIN_SERVICE_URL || 'http://skin-analysis-service:8000',
     changeOrigin: true,
     timeout: 120000, // Extended timeout for AI processing
+    circuitBreakerOptions: {
+      failureThreshold: 5,
+      recoveryTimeout: 60000
+    },
+    fallbackResponse: {
+      message: 'Skin analysis service is temporarily unavailable. Please try again later.'
+    }
   },
-  '/api/hair': {
-    target: process.env.HAIR_SERVICE_URL || 'http://hair-service:8000',
+  {
+    path: '/api/hair',
+    serviceName: 'hair-tryon-service',
+    target: process.env.HAIR_SERVICE_URL || 'http://hair-tryon-service:8000',
     changeOrigin: true,
     timeout: 300000, // Extended timeout for video processing
-  },
-  '/ws/hair': {
-    target: process.env.HAIR_SERVICE_URL || 'http://hair-service:8000',
-    changeOrigin: true,
-    ws: true, // Enable WebSocket proxying
-  }
-};
-
-// Create proxy middleware for each service
-Object.entries(serviceProxies).forEach(([path, config]) => {
-  app.use(path, createProxyMiddleware({
-    ...config,
-    onError: (err, req, res) => {
-      logger.error('Proxy error:', { path, error: err.message, url: req.url });
-      if (!res.headersSent) {
-        res.status(502).json({
-          success: false,
-          error: 'Service Unavailable',
-          message: 'The requested service is temporarily unavailable'
-        });
-      }
+    circuitBreakerOptions: {
+      failureThreshold: 5,
+      recoveryTimeout: 60000
     },
-    onProxyReq: (proxyReq, req, res) => {
-      logger.debug('Proxying request:', { 
-        path, 
-        method: req.method, 
-        url: req.url,
-        target: config.target 
-      });
-    },
-    onProxyRes: (proxyRes, req, res) => {
-      logger.debug('Proxy response:', { 
-        path, 
-        statusCode: proxyRes.statusCode,
-        url: req.url 
-      });
+    fallbackResponse: {
+      message: 'Hair try-on service is temporarily unavailable. Please try again later.'
     }
-  }));
+  }
+];
+
+// Create resilient proxy middleware for each service
+serviceProxies.forEach(({ path, ...config }) => {
+  app.use(path, createResilientProxy(config));
+});
+
+// WebSocket proxy for hair service (separate handling)
+app.use('/ws/hair', createProxyMiddleware({
+  target: process.env.HAIR_SERVICE_URL || 'http://hair-tryon-service:8000',
+  changeOrigin: true,
+  ws: true,
+  onError: (err, req, res) => {
+    logger.error('WebSocket proxy error:', { error: err.message, url: req.url });
+  }
+}));
+
+// Circuit breaker status endpoint
+app.get('/circuit-breakers', (req, res) => {
+  const status = getCircuitBreakerStatus();
+  res.json({
+    success: true,
+    data: status,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Default route
@@ -141,9 +170,12 @@ app.use('*', (req, res) => {
 app.use(errorHandler);
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   logger.info(`API Gateway Middleware started on port ${PORT}`);
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  
+  // Register with service registry
+  await registerGateway();
 });
 
 export default app;

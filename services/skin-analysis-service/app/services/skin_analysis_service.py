@@ -4,6 +4,8 @@ from datetime import datetime
 from bson import ObjectId
 import asyncio
 import time
+import hashlib
+import os
 
 from app.models.skin_analysis import (
     SkinAnalysisResult, 
@@ -13,6 +15,11 @@ from app.models.skin_analysis import (
 from app.services.ai_service import AIService
 from app.services.image_service import ImageService
 from app.core.config import settings
+
+# Import Redis cache
+import sys
+sys.path.append('/app/shared')
+from cache.redis_cache import redis_cache
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +32,28 @@ class SkinAnalysisService:
         self.ai_service = AIService()
         self.image_service = ImageService()
         self.collection = self.db.skin_analysis
+        
+        # Initialize Redis cache
+        self._initialize_cache()
     
+    def _initialize_cache(self):
+        """Initialize Redis cache connection"""
+        try:
+            asyncio.create_task(redis_cache.connect())
+            logger.info("Redis cache initialized for skin analysis service")
+        except Exception as e:
+            logger.error(f"Failed to initialize Redis cache: {e}")
+
+    def _generate_image_hash(self, image_path: str) -> str:
+        """Generate hash for image file"""
+        try:
+            with open(image_path, 'rb') as f:
+                image_data = f.read()
+            return hashlib.sha256(image_data).hexdigest()
+        except Exception as e:
+            logger.error(f"Failed to generate image hash: {e}")
+            return str(hash(image_path))  # Fallback to path hash
+
     async def analyze_skin(self, user_id: str, image_path: str) -> SkinAnalysisResult:
         """
         Perform complete skin analysis on uploaded image
@@ -34,6 +62,17 @@ class SkinAnalysisService:
         start_time = time.time()
         
         try:
+            # Generate image hash for caching
+            image_hash = self._generate_image_hash(image_path)
+            
+            # Check cache first
+            cached_result = await redis_cache.get_cached_skin_analysis(image_hash)
+            if cached_result:
+                logger.info(f"Returning cached skin analysis for user {user_id}")
+                # Update user_id in cached result
+                cached_result['user_id'] = user_id
+                return SkinAnalysisResult(**cached_result)
+            
             # Calculate image quality score
             quality_score = self.image_service.calculate_image_quality_score(image_path)
             
@@ -87,6 +126,11 @@ class SkinAnalysisService:
             insert_result = await self.collection.insert_one(result_dict)
             analysis_result.id = insert_result.inserted_id
             
+            # Cache the result for future requests with same image
+            cache_data = analysis_result.dict(by_alias=True)
+            cache_data.pop('user_id', None)  # Don't cache user-specific data
+            await redis_cache.cache_skin_analysis(image_hash, cache_data, 7200)  # 2 hours
+            
             logger.info(f"Skin analysis completed for user {user_id} in {processing_time:.2f}s")
             
             return analysis_result
@@ -101,10 +145,20 @@ class SkinAnalysisService:
             if not ObjectId.is_valid(analysis_id):
                 return None
             
+            # Try cache first
+            cache_key = f"analysis:{analysis_id}"
+            cached_result = await redis_cache.get(cache_key)
+            if cached_result:
+                logger.debug(f"Analysis {analysis_id} found in cache")
+                return SkinAnalysisResult(**cached_result)
+            
             result = await self.collection.find_one({"_id": ObjectId(analysis_id)})
             
             if result:
-                return SkinAnalysisResult(**result)
+                analysis_result = SkinAnalysisResult(**result)
+                # Cache for 1 hour
+                await redis_cache.set(cache_key, result, 3600)
+                return analysis_result
             
             return None
             

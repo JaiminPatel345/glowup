@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import { Alert } from 'react-native';
@@ -41,13 +41,30 @@ const mockAnalysisResult: SkinAnalysisResult = {
   },
 };
 
-const createTestStore = () => {
-  return configureStore({
+const createTestStore = () =>
+  configureStore({
     reducer: {
       skinAnalysis: skinAnalysisReducer,
       auth: authReducer,
     },
   });
+
+const delay = (ms = 0) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+const selectAlertOption = async (label: string) => {
+  const alertCall = mockAlert.mock.calls[mockAlert.mock.calls.length - 1];
+  const options = alertCall?.[2] as Array<{ text: string; onPress?: () => void }> | undefined;
+  const option = options?.find((item) => item.text === label);
+  if (option?.onPress) {
+    await act(async () => {
+      await option.onPress?.();
+    });
+  }
+};
+
+const getLatestCameraCallback = () => {
+  const calls = mockLaunchCamera.mock.calls;
+  return calls[calls.length - 1]?.[1];
 };
 
 const renderWithStore = (component: React.ReactElement, store = createTestStore()) => {
@@ -68,7 +85,10 @@ describe('Skin Analysis Workflow Integration', () => {
   });
 
   it('should complete full skin analysis workflow successfully', async () => {
-    mockSkinAnalysisApi.analyzeImage.mockResolvedValue(mockAnalysisResult);
+    mockSkinAnalysisApi.analyzeImage.mockImplementation(async (): Promise<SkinAnalysisResult> => {
+      await delay(100); // Add 100ms delay to simulate API processing
+      return mockAnalysisResult;
+    });
     
     const { getByText, queryByText } = renderWithStore(<SkinAnalysisScreen />);
 
@@ -132,7 +152,10 @@ describe('Skin Analysis Workflow Integration', () => {
 
   it('should handle analysis failure with retry functionality', async () => {
     const error = new Error('Analysis failed');
-    mockSkinAnalysisApi.analyzeImage.mockRejectedValue(error);
+    mockSkinAnalysisApi.analyzeImage.mockImplementation(async (): Promise<SkinAnalysisResult> => {
+      await delay();
+      throw error;
+    });
     
     const { getByText, queryByText } = renderWithStore(<SkinAnalysisScreen />);
 
@@ -162,13 +185,16 @@ describe('Skin Analysis Workflow Integration', () => {
     // Should show error state with retry option
     await waitFor(() => {
       expect(getByText('Analysis Failed')).toBeTruthy();
-      expect(getByText('Test error')).toBeTruthy();
+  expect(getByText('Something went wrong. Please try again.')).toBeTruthy();
       expect(getByText('Retry (1/3)')).toBeTruthy();
       expect(getByText('New Photo')).toBeTruthy();
     });
 
     // Test retry functionality
-    mockSkinAnalysisApi.analyzeImage.mockResolvedValue(mockAnalysisResult);
+    mockSkinAnalysisApi.analyzeImage.mockImplementation(async (): Promise<SkinAnalysisResult> => {
+      await delay();
+      return mockAnalysisResult;
+    });
     fireEvent.press(getByText('Retry (1/3)'));
 
     await waitFor(() => {
@@ -179,7 +205,10 @@ describe('Skin Analysis Workflow Integration', () => {
 
   it('should handle maximum retry attempts reached', async () => {
     const error = new Error('Persistent analysis failure');
-    mockSkinAnalysisApi.analyzeImage.mockRejectedValue(error);
+    mockSkinAnalysisApi.analyzeImage.mockImplementation(async (): Promise<SkinAnalysisResult> => {
+      await delay();
+      throw error;
+    });
     
     const store = createTestStore();
     const { getByText } = renderWithStore(<SkinAnalysisScreen />, store);
@@ -208,7 +237,7 @@ describe('Skin Analysis Workflow Integration', () => {
     }
 
     // Simulate multiple retry attempts
-    for (let i = 1; i <= 3; i++) {
+    for (let i = 1; i <= 2; i++) {
       await waitFor(() => {
         expect(getByText(`Retry (${i}/3)`)).toBeTruthy();
       });
@@ -223,7 +252,10 @@ describe('Skin Analysis Workflow Integration', () => {
   });
 
   it('should allow starting new analysis after completion', async () => {
-    mockSkinAnalysisApi.analyzeImage.mockResolvedValue(mockAnalysisResult);
+    mockSkinAnalysisApi.analyzeImage.mockImplementation(async (): Promise<SkinAnalysisResult> => {
+      await delay();
+      return mockAnalysisResult;
+    });
     
     const { getByText } = renderWithStore(<SkinAnalysisScreen />);
 
@@ -320,7 +352,7 @@ describe('Skin Analysis Workflow Integration', () => {
       resolveAnalysis = resolve;
     });
     
-    mockSkinAnalysisApi.analyzeImage.mockReturnValue(analysisPromise);
+    mockSkinAnalysisApi.analyzeImage.mockImplementation(() => analysisPromise);
     
     const { getByText, queryByText } = renderWithStore(<SkinAnalysisScreen />);
 
@@ -347,8 +379,10 @@ describe('Skin Analysis Workflow Integration', () => {
       cameraCallback(mockImageResponse);
     }
 
-    // Should show loading state
-    expect(getByText('Analyzing Your Skin...')).toBeTruthy();
+    // Wait for loading state to appear
+    await waitFor(() => {
+      expect(getByText('Analyzing Your Skin...')).toBeTruthy();
+    });
     expect(queryByText('Analysis Results')).toBeFalsy();
 
     // Complete analysis

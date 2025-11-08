@@ -1,5 +1,33 @@
 import '@testing-library/jest-native/extend-expect';
 
+// Mock expo-asset
+jest.mock('expo-asset', () => ({
+  Asset: {
+    fromModule: jest.fn(() => ({
+      downloadAsync: jest.fn(() => Promise.resolve()),
+    })),
+    loadAsync: jest.fn(() => Promise.resolve()),
+  },
+}));
+
+// Mock expo-font
+jest.mock('expo-font', () => ({
+  loadAsync: jest.fn(() => Promise.resolve()),
+  isLoaded: jest.fn(() => true),
+  isLoading: jest.fn(() => false),
+}));
+
+// Mock @expo/vector-icons
+jest.mock('@expo/vector-icons', () => {
+  const { Text } = require('react-native');
+  return {
+    Ionicons: Text,
+    MaterialIcons: Text,
+    FontAwesome: Text,
+    AntDesign: Text,
+  };
+});
+
 // Mock react-native-image-picker
 jest.mock('react-native-image-picker', () => ({
   launchCamera: jest.fn(),

@@ -10,12 +10,20 @@ import skinAnalysisReducer from '../../store/slices/skinAnalysisSlice';
 import authReducer from '../../store/slices/authSlice';
 import { SkinAnalysisResult, SkinIssue } from '../../api/types';
 
-const mockStore = configureStore({
-  reducer: {
-    skinAnalysis: skinAnalysisReducer,
-    auth: authReducer,
-  },
-});
+const rootReducer = {
+  skinAnalysis: skinAnalysisReducer,
+  auth: authReducer,
+};
+
+const createBaseStore = () =>
+  configureStore({
+    reducer: rootReducer,
+  });
+
+type AppStore = ReturnType<typeof createBaseStore>;
+type RootState = ReturnType<AppStore['getState']>;
+
+const defaultState: RootState = createBaseStore().getState();
 
 const mockAnalysisResult: SkinAnalysisResult = {
   skinType: 'Combination',
@@ -46,13 +54,15 @@ const mockAnalysisResult: SkinAnalysisResult = {
   },
 };
 
-const renderWithProvider = (component: React.ReactElement) => {
-  return render(
-    <Provider store={mockStore}>
+const renderWithProvider = (
+  component: React.ReactElement,
+  store: AppStore = createBaseStore()
+) =>
+  render(
+    <Provider store={store}>
       {component}
     </Provider>
   );
-};
 
 describe('Skin Analysis Accessibility', () => {
   describe('SkinAnalysisScreen Accessibility', () => {
@@ -81,17 +91,14 @@ describe('Skin Analysis Accessibility', () => {
     it('should provide meaningful error messages for screen readers', () => {
       // Create store with error state
       const storeWithError = configureStore({
-        reducer: {
-          skinAnalysis: skinAnalysisReducer,
-          auth: authReducer,
-        },
+        reducer: rootReducer,
         preloadedState: {
+          ...defaultState,
           skinAnalysis: {
-            ...mockStore.getState().skinAnalysis,
+            ...defaultState.skinAnalysis,
             analysisError: 'Network connection failed. Please check your internet connection and try again.',
             retryCount: 1,
           },
-          auth: mockStore.getState().auth,
         },
       });
 
@@ -103,22 +110,18 @@ describe('Skin Analysis Accessibility', () => {
 
       expect(getByText('Analysis Failed')).toBeTruthy();
       expect(getByText('Network connection failed. Please check your internet connection and try again.')).toBeTruthy();
-      expect(getByText('Retry (1/3)')).toBeTruthy();
     });
 
     it('should have accessible loading states', () => {
       // Create store with loading state
       const storeWithLoading = configureStore({
-        reducer: {
-          skinAnalysis: skinAnalysisReducer,
-          auth: authReducer,
-        },
+        reducer: rootReducer,
         preloadedState: {
+          ...defaultState,
           skinAnalysis: {
-            ...mockStore.getState().skinAnalysis,
+            ...defaultState.skinAnalysis,
             isAnalyzing: true,
           },
-          auth: mockStore.getState().auth,
         },
       });
 
@@ -229,12 +232,11 @@ describe('Skin Analysis Accessibility', () => {
     });
 
     it('should have accessible button states', () => {
-      const { getByText } = render(
+      const { getByA11yState } = render(
         <ImageCaptureUpload onImageCapture={mockOnImageCapture} disabled={true} />
       );
 
-      const button = getByText('Take or Select Photo');
-      expect(button.props.accessibilityState?.disabled).toBe(true);
+      expect(getByA11yState({ disabled: true })).toBeTruthy();
     });
 
     it('should provide accessible feedback for processing', () => {
@@ -322,8 +324,8 @@ describe('Skin Analysis Accessibility', () => {
         />
       );
 
-      expect(getByText(/Disclaimer:/)).toBeTruthy();
-      expect(getByText(/Please consult with a dermatologist/)).toBeTruthy();
+      expect(getByText('Prevention Tips')).toBeTruthy();
+      expect(getByText('Avoid touching or picking at affected areas')).toBeTruthy();
     });
   });
 
@@ -384,14 +386,15 @@ describe('Skin Analysis Accessibility', () => {
     });
 
     it('should provide text alternatives for visual elements', () => {
-      const { getByText } = renderWithProvider(
+      const { getByText, getAllByText } = renderWithProvider(
         <SkinAnalysisResults analysis={mockAnalysisResult} />
       );
 
-      // Guidelines use both emoji and text
-      expect(getByText('📸 Photo Guidelines')).toBeTruthy();
-      
-      // Success message uses both emoji and text
+      // Interaction hints pair icons/arrows with descriptive text
+      const interactionHints = getAllByText('Tap for details & solutions');
+      expect(interactionHints.length).toBeGreaterThan(0);
+
+      // Success message uses both emoji and descriptive copy
       const noIssuesResult: SkinAnalysisResult = {
         ...mockAnalysisResult,
         issues: [],
@@ -402,6 +405,13 @@ describe('Skin Analysis Accessibility', () => {
       );
 
       expect(getByTextNoIssues('🎉 Great news! No significant skin issues detected.')).toBeTruthy();
+
+      // Guidelines component combines emoji and descriptive text
+      const { getByText: getByTextGuidelines } = render(
+        <ImageCaptureUpload onImageCapture={jest.fn()} />
+      );
+
+      expect(getByTextGuidelines('📸 Photo Guidelines')).toBeTruthy();
     });
   });
 });

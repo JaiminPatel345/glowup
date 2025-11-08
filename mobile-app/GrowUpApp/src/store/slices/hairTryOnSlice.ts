@@ -148,10 +148,15 @@ const hairTryOnSlice = createSlice({
       styleImage?: string;
       colorImage?: string;
     }>) => {
-      state.videoProcessing = {
-        ...state.videoProcessing,
-        ...action.payload,
-      };
+      if (action.payload.video !== undefined) {
+        state.videoProcessing.currentVideo = action.payload.video;
+      }
+      if (action.payload.styleImage !== undefined) {
+        state.videoProcessing.styleImage = action.payload.styleImage;
+      }
+      if (action.payload.colorImage !== undefined) {
+        state.videoProcessing.colorImage = action.payload.colorImage;
+      }
     },
     
     clearVideoProcessingResult: (state) => {

@@ -154,6 +154,14 @@ describe('Hair Try-On Workflow Integration Tests', () => {
       // Simulate video processing
       act(() => {
         store.dispatch({
+          type: 'hairTryOn/setProcessingStatus',
+          payload: {
+            sessionId: 'test-session',
+            status: 'processing',
+            progress: 0,
+          },
+        });
+        store.dispatch({
           type: 'hairTryOn/processVideo/pending',
           meta: { requestId: 'test-request' },
         });
@@ -161,7 +169,7 @@ describe('Hair Try-On Workflow Integration Tests', () => {
 
       // Should show processing status
       await waitFor(() => {
-        expect(getByText(/Processing your video/)).toBeTruthy();
+        expect(getByText(/Processing your video/i)).toBeTruthy();
       });
 
       // Complete processing
@@ -189,8 +197,24 @@ describe('Hair Try-On Workflow Integration Tests', () => {
     it('should handle video processing failure', async () => {
       const { getByText, store } = renderWithStore(<HairTryOnScreen />);
 
-      // Simulate processing failure
+      // Simulate starting processing
       act(() => {
+        store.dispatch({
+          type: 'hairTryOn/setVideoProcessingData',
+          payload: {
+            video: 'file://test-video.mp4',
+            styleImage: 'file://test-style.jpg',
+          },
+        });
+        store.dispatch({
+          type: 'hairTryOn/setProcessingStatus',
+          payload: {
+            sessionId: 'test-session',
+            status: 'failed',
+            progress: 50,
+            error: 'Network error',
+          },
+        });
         store.dispatch({
           type: 'hairTryOn/processVideo/rejected',
           error: { message: 'Network error' },
@@ -249,7 +273,10 @@ describe('Hair Try-On Workflow Integration Tests', () => {
         },
       ]);
 
-      const { getByText, store } = renderWithStore(<HairTryOnScreen />);
+      const { getByText, store, queryByText } = renderWithStore(<HairTryOnScreen />);
+
+      // Verify we're on main screen initially
+      expect(getByText('Choose Your Experience')).toBeTruthy();
 
       // Navigate to history
       const historyButton = getByText('Hair Try-On'); // This would be the history icon in real implementation
@@ -269,6 +296,7 @@ describe('Hair Try-On Workflow Integration Tests', () => {
       });
 
       await waitFor(() => {
+        expect(queryByText('Hair Try-On History')).toBeFalsy();
         expect(getByText('Choose Your Experience')).toBeTruthy();
       });
     });

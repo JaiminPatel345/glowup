@@ -77,6 +77,9 @@ const Button: React.FC<ButtonProps> = ({
       onPress={onPress}
       disabled={disabled || loading}
       testID={testID}
+      accessible
+      accessibilityRole="button"
+      accessibilityState={{ disabled: disabled || loading }}
       className={`
         rounded-lg
         ${getVariantStyles()}

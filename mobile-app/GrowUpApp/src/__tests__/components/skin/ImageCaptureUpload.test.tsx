@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { request, RESULTS } from 'react-native-permissions';
@@ -14,11 +14,28 @@ const mockLaunchImageLibrary = launchImageLibrary as jest.MockedFunction<typeof 
 const mockRequest = request as jest.MockedFunction<typeof request>;
 const mockAlert = Alert.alert as jest.MockedFunction<typeof Alert.alert>;
 
+const selectAlertOption = async (label: string) => {
+  const alertCall = mockAlert.mock.calls[mockAlert.mock.calls.length - 1];
+  const options = alertCall?.[2] as Array<{ text: string; onPress?: () => void }> | undefined;
+  const option = options?.find((item) => item.text === label);
+  if (option?.onPress) {
+    await act(async () => {
+      await option.onPress?.();
+    });
+  }
+};
+
+const getLatestCameraCallback = () => {
+  const calls = mockLaunchCamera.mock.calls;
+  return calls[calls.length - 1]?.[1];
+};
+
 describe('ImageCaptureUpload', () => {
   const mockOnImageCapture = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockOnImageCapture.mockClear();
     mockRequest.mockResolvedValue(RESULTS.GRANTED);
   });
 
@@ -58,13 +75,7 @@ describe('ImageCaptureUpload', () => {
 
     fireEvent.press(getByText('Take or Select Photo'));
 
-    // Simulate selecting camera option
-    const alertCall = mockAlert.mock.calls[0];
-    const cameraOption = alertCall[2]?.find((option: any) => option.text === 'Camera');
-    
-    if (cameraOption?.onPress) {
-      await cameraOption.onPress();
-    }
+    await selectAlertOption('Camera');
 
     expect(mockRequest).toHaveBeenCalled();
   });
@@ -78,13 +89,7 @@ describe('ImageCaptureUpload', () => {
 
     fireEvent.press(getByText('Take or Select Photo'));
 
-    // Simulate selecting camera option
-    const alertCall = mockAlert.mock.calls[0];
-    const cameraOption = alertCall[2]?.find((option: any) => option.text === 'Camera');
-    
-    if (cameraOption?.onPress) {
-      await cameraOption.onPress();
-    }
+    await selectAlertOption('Camera');
 
     await waitFor(() => {
       expect(mockAlert).toHaveBeenCalledWith(
@@ -105,13 +110,7 @@ describe('ImageCaptureUpload', () => {
 
     fireEvent.press(getByText('Take or Select Photo'));
 
-    // Simulate selecting camera option
-    const alertCall = mockAlert.mock.calls[0];
-    const cameraOption = alertCall[2]?.find((option: any) => option.text === 'Camera');
-    
-    if (cameraOption?.onPress) {
-      await cameraOption.onPress();
-    }
+    await selectAlertOption('Camera');
 
     await waitFor(() => {
       expect(mockLaunchCamera).toHaveBeenCalledWith(
@@ -127,20 +126,14 @@ describe('ImageCaptureUpload', () => {
     });
   });
 
-  it('should launch image library when gallery option selected', () => {
+  it('should launch image library when gallery option selected', async () => {
     const { getByText } = render(
       <ImageCaptureUpload onImageCapture={mockOnImageCapture} />
     );
 
     fireEvent.press(getByText('Take or Select Photo'));
 
-    // Simulate selecting photo library option
-    const alertCall = mockAlert.mock.calls[0];
-    const libraryOption = alertCall[2]?.find((option: any) => option.text === 'Photo Library');
-    
-    if (libraryOption?.onPress) {
-      libraryOption.onPress();
-    }
+  await selectAlertOption('Photo Library');
 
     expect(mockLaunchImageLibrary).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -154,7 +147,7 @@ describe('ImageCaptureUpload', () => {
     );
   });
 
-  it('should process valid image response correctly', () => {
+  it('should process valid image response correctly', async () => {
     const mockImageResponse = {
       assets: [{
         uri: 'file://test-image.jpg',
@@ -170,16 +163,18 @@ describe('ImageCaptureUpload', () => {
 
     fireEvent.press(getByText('Take or Select Photo'));
 
-    // Simulate camera launch and response
-    const cameraCallback = mockLaunchCamera.mock.calls[0]?.[1];
-    if (cameraCallback) {
-      cameraCallback(mockImageResponse);
-    }
+    await selectAlertOption('Camera');
+    const cameraCallback = getLatestCameraCallback();
+    expect(cameraCallback).toBeTruthy();
+
+    await act(async () => {
+      cameraCallback?.(mockImageResponse as any);
+    });
 
     expect(mockOnImageCapture).toHaveBeenCalledWith(expect.any(FormData));
   });
 
-  it('should reject oversized images', () => {
+  it('should reject oversized images', async () => {
     const mockImageResponse = {
       assets: [{
         uri: 'file://large-image.jpg',
@@ -195,11 +190,13 @@ describe('ImageCaptureUpload', () => {
 
     fireEvent.press(getByText('Take or Select Photo'));
 
-    // Simulate camera launch and response
-    const cameraCallback = mockLaunchCamera.mock.calls[0]?.[1];
-    if (cameraCallback) {
-      cameraCallback(mockImageResponse);
-    }
+    await selectAlertOption('Camera');
+    const cameraCallback = getLatestCameraCallback();
+    expect(cameraCallback).toBeTruthy();
+
+    await act(async () => {
+      cameraCallback?.(mockImageResponse as any);
+    });
 
     expect(mockAlert).toHaveBeenCalledWith(
       'Error',
@@ -208,7 +205,7 @@ describe('ImageCaptureUpload', () => {
     expect(mockOnImageCapture).not.toHaveBeenCalled();
   });
 
-  it('should reject unsupported file types', () => {
+  it('should reject unsupported file types', async () => {
     const mockImageResponse = {
       assets: [{
         uri: 'file://test-image.gif',
@@ -224,11 +221,13 @@ describe('ImageCaptureUpload', () => {
 
     fireEvent.press(getByText('Take or Select Photo'));
 
-    // Simulate camera launch and response
-    const cameraCallback = mockLaunchCamera.mock.calls[0]?.[1];
-    if (cameraCallback) {
-      cameraCallback(mockImageResponse);
-    }
+    await selectAlertOption('Camera');
+    const cameraCallback = getLatestCameraCallback();
+    expect(cameraCallback).toBeTruthy();
+
+    await act(async () => {
+      cameraCallback?.(mockImageResponse as any);
+    });
 
     expect(mockAlert).toHaveBeenCalledWith(
       'Error',
@@ -237,7 +236,7 @@ describe('ImageCaptureUpload', () => {
     expect(mockOnImageCapture).not.toHaveBeenCalled();
   });
 
-  it('should handle cancelled image selection', () => {
+  it('should handle cancelled image selection', async () => {
     const mockImageResponse = {
       didCancel: true,
     };
@@ -248,16 +247,17 @@ describe('ImageCaptureUpload', () => {
 
     fireEvent.press(getByText('Take or Select Photo'));
 
-    // Simulate camera launch and cancellation
-    const cameraCallback = mockLaunchCamera.mock.calls[0]?.[1];
-    if (cameraCallback) {
-      cameraCallback(mockImageResponse);
-    }
+    await selectAlertOption('Camera');
+    const cameraCallback = getLatestCameraCallback();
+
+    await act(async () => {
+      cameraCallback?.(mockImageResponse as any);
+    });
 
     expect(mockOnImageCapture).not.toHaveBeenCalled();
   });
 
-  it('should handle image picker errors', () => {
+  it('should handle image picker errors', async () => {
     const mockImageResponse = {
       errorMessage: 'Camera not available',
     };
@@ -268,25 +268,26 @@ describe('ImageCaptureUpload', () => {
 
     fireEvent.press(getByText('Take or Select Photo'));
 
-    // Simulate camera launch and error
-    const cameraCallback = mockLaunchCamera.mock.calls[0]?.[1];
-    if (cameraCallback) {
-      cameraCallback(mockImageResponse);
-    }
+    await selectAlertOption('Camera');
+    const cameraCallback = getLatestCameraCallback();
+
+    await act(async () => {
+      cameraCallback?.(mockImageResponse as any);
+    });
 
     expect(mockOnImageCapture).not.toHaveBeenCalled();
   });
 
   it('should be disabled when disabled prop is true', () => {
-    const { getByText } = render(
+    const { getByRole } = render(
       <ImageCaptureUpload onImageCapture={mockOnImageCapture} disabled={true} />
     );
 
-    const button = getByText('Take or Select Photo');
-    expect(button.props.accessibilityState?.disabled).toBe(true);
+    const button = getByRole('button', { name: /Take or Select Photo/i });
+    expect(button.props.accessibilityState.disabled).toBe(true);
   });
 
-  it('should show selected image preview', () => {
+  it('should show selected image preview', async () => {
     const mockImageResponse = {
       assets: [{
         uri: 'file://test-image.jpg',
@@ -296,21 +297,25 @@ describe('ImageCaptureUpload', () => {
       }],
     };
 
-    const { getByText, getByDisplayValue } = render(
+    const { getByText } = render(
       <ImageCaptureUpload onImageCapture={mockOnImageCapture} />
     );
 
     fireEvent.press(getByText('Take or Select Photo'));
 
     // Simulate image selection
-    const cameraCallback = mockLaunchCamera.mock.calls[0]?.[1];
-    if (cameraCallback) {
-      cameraCallback(mockImageResponse);
-    }
+    await selectAlertOption('Camera');
+    const cameraCallback = getLatestCameraCallback();
+
+    await act(async () => {
+      cameraCallback?.(mockImageResponse as any);
+    });
 
     // Should show "Change Photo" button after selection
-    expect(getByText('Change Photo')).toBeTruthy();
-    expect(getByText('Analyze This Photo')).toBeTruthy();
+    await waitFor(() => {
+      expect(getByText('Change Photo')).toBeTruthy();
+      expect(getByText('Analyze This Photo')).toBeTruthy();
+    });
   });
 
   it('should have proper accessibility labels', () => {

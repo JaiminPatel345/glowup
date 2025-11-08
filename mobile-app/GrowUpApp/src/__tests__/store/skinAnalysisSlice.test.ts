@@ -221,7 +221,7 @@ describe('skinAnalysisSlice', () => {
     });
 
     it('should handle failed image analysis', async () => {
-      const error = new Error('Analysis failed');
+      const error = new Error('Test error');
       mockSkinAnalysisApi.analyzeImage.mockRejectedValue(error);
       const formData = new FormData();
       
@@ -290,7 +290,7 @@ describe('skinAnalysisSlice', () => {
     });
 
     it('should handle history loading error', async () => {
-      const error = new Error('Failed to load history');
+      const error = new Error('Test error');
       mockSkinAnalysisApi.getAnalysisHistory.mockRejectedValue(error);
       
       await store.dispatch(loadAnalysisHistory({ limit: 10, offset: 0 }));
@@ -330,7 +330,7 @@ describe('skinAnalysisSlice', () => {
     });
 
     it('should handle recommendation loading error', async () => {
-      const error = new Error('Failed to load recommendations');
+      const error = new Error('Test error');
       mockSkinAnalysisApi.getProductRecommendations.mockRejectedValue(error);
       
       await store.dispatch(loadProductRecommendations('issue-1'));

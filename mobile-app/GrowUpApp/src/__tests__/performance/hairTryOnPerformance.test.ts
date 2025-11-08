@@ -1,3 +1,28 @@
+// Mock Redux store BEFORE importing webSocketClient
+const mockDispatch = jest.fn();
+const mockStore = {
+  dispatch: mockDispatch,
+  getState: jest.fn(() => ({})),
+  subscribe: jest.fn(),
+  replaceReducer: jest.fn(),
+  [Symbol.observable]: jest.fn(),
+};
+
+jest.mock('../../store', () => ({
+  __esModule: true,
+  store: mockStore,
+  default: mockStore,
+}));
+
+// Mock the hairTryOnSlice actions
+jest.mock('../../store/slices/hairTryOnSlice', () => ({
+  setWebSocketConnected: jest.fn((payload) => ({ type: 'hairTryOn/setWebSocketConnected', payload })),
+  setWebSocketError: jest.fn((payload) => ({ type: 'hairTryOn/setWebSocketError', payload })),
+  setWebSocketLatency: jest.fn((payload) => ({ type: 'hairTryOn/setWebSocketLatency', payload })),
+  setCurrentFrame: jest.fn((payload) => ({ type: 'hairTryOn/setCurrentFrame', payload })),
+}));
+
+// Import after mocks are set up
 import { webSocketManager, HairTryOnWebSocketClient } from '../../utils/webSocketClient';
 
 // Mock WebSocket
@@ -50,19 +75,10 @@ class MockWebSocket {
 // Mock global WebSocket
 (global as any).WebSocket = MockWebSocket;
 
-// Mock Redux store
-const mockStore = {
-  dispatch: jest.fn(),
-};
-
-jest.mock('../../store', () => ({
-  store: mockStore,
-}));
-
 describe('Hair Try-On Performance Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockStore.dispatch.mockClear();
+    mockDispatch.mockClear();
   });
 
   describe('WebSocket Latency Tests', () => {

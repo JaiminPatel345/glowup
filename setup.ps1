@@ -244,7 +244,7 @@ function Install-Dependencies {
     
     # Install root dependencies
     if (Test-Path "package.json") {
-        npm install
+        yarn install
         Write-Success "Root dependencies installed"
     }
     
@@ -254,7 +254,7 @@ function Install-Dependencies {
         if (Test-Path $packageJsonPath) {
             Write-Status "Installing dependencies for $($_.Name)"
             Set-Location $_.FullName
-            npm install
+            yarn install
             Set-Location $PSScriptRoot
         }
     }
@@ -370,7 +370,7 @@ function Show-NextSteps {
     Write-Host "  docker-compose up -d          # Start all services"
     Write-Host "  docker-compose down           # Stop all services"
     Write-Host "  docker-compose logs [service] # View service logs"
-    Write-Host "  npm run dev                   # Start development (when implemented)"
+    Write-Host "  yarn dev                      # Start development (when implemented)"
     Write-Host ""
     Write-Host "Services will be available at:"
     Write-Host "  - API Gateway: http://localhost"

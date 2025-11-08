@@ -61,7 +61,7 @@ LOG_LEVEL=info
 
 1. Install dependencies:
 ```bash
-npm install
+yarn install
 ```
 
 2. Set up environment variables:
@@ -84,34 +84,34 @@ npx prisma migrate deploy
 
 Start the development server:
 ```bash
-npm run dev
+yarn dev
 ```
 
 Build the project:
 ```bash
-npm run build
+yarn build
 ```
 
 Start the production server:
 ```bash
-npm start
+yarn start
 ```
 
 ## Testing
 
 Run all tests:
 ```bash
-npm test
+yarn test
 ```
 
 Run tests in watch mode:
 ```bash
-npm run test:watch
+yarn test:watch
 ```
 
 Run tests with coverage:
 ```bash
-npm run test:coverage
+yarn test:coverage
 ```
 
 ## Data Models

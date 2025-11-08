@@ -80,11 +80,11 @@ setup_test_environment() {
   # Install test dependencies
   if [ ! -d "node_modules" ]; then
     print_status $YELLOW "📦 Installing dependencies..."
-    npm install
+    yarn install
   fi
   
   # Install test-specific dependencies
-  npm install --save-dev mocha chai supertest autocannon node-fetch
+  yarn add --dev mocha chai supertest autocannon node-fetch
   
   # Create test directories
   mkdir -p tests/fixtures
@@ -191,14 +191,14 @@ describe('Shared Utilities', function() {
 EOF
 
   mkdir -p tests/unit
-  run_test_suite "Unit Tests" "npx mocha tests/unit/*.test.js --timeout 10000"
+  run_test_suite "Unit Tests" "yarn dlx mocha tests/unit/*.test.js --timeout 10000"
 }
 
 # Run end-to-end tests
 run_e2e_tests() {
   print_status $BLUE "🔄 Running end-to-end tests..."
   
-  run_test_suite "E2E Tests" "npx mocha tests/e2e/userWorkflows.test.js --timeout 60000"
+  run_test_suite "E2E Tests" "yarn dlx mocha tests/e2e/userWorkflows.test.js --timeout 60000"
 }
 
 # Run load tests

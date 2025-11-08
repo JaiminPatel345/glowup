@@ -225,7 +225,7 @@ install_dependencies() {
     
     # Install root dependencies
     if [ -f package.json ]; then
-        npm install
+        yarn install
         print_success "Root dependencies installed"
     fi
     
@@ -234,7 +234,7 @@ install_dependencies() {
         if [ -f "${service_dir}package.json" ]; then
             print_status "Installing dependencies for $(basename "$service_dir")"
             cd "$service_dir"
-            npm install
+            yarn install
             cd - > /dev/null
         fi
     done
@@ -338,7 +338,7 @@ show_next_steps() {
     echo "  docker compose up -d          # Start all services"
     echo "  docker compose down           # Stop all services"
     echo "  docker compose logs [service] # View service logs"
-    echo "  npm run dev                   # Start development (when implemented)"
+    echo "  yarn dev                      # Start development (when implemented)"
     echo ""
     echo "Services will be available at:"
     echo "  - API Gateway: http://localhost"

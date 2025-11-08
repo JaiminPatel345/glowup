@@ -49,7 +49,7 @@ src/
 ### Prerequisites
 
 - Node.js (v16 or higher)
-- npm or yarn
+- yarn
 - Expo CLI
 - iOS Simulator (for iOS development)
 - Android Studio (for Android development)
@@ -63,19 +63,19 @@ src/
 
 2. Install dependencies:
    ```bash
-   npm install
+   yarn install
    ```
 
 3. Start the development server:
    ```bash
-   npm start
+   yarn start
    ```
 
 4. Run on specific platform:
    ```bash
-   npm run ios     # iOS simulator
-   npm run android # Android emulator
-   npm run web     # Web browser
+   yarn ios     # iOS simulator
+   yarn android # Android emulator
+   yarn web     # Web browser
    ```
 
 ## Configuration

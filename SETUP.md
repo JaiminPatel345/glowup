@@ -39,7 +39,7 @@ This guide provides detailed instructions for setting up the GrowUp mobile app d
 
 ### Optional but Recommended
 
-- **React Native CLI**: `npm install -g @react-native-community/cli`
+- **React Native CLI**: `yarn global add @react-native-community/cli`
 - **Android Studio** (for Android development)
 - **Xcode** (for iOS development, macOS only)
 
@@ -121,11 +121,11 @@ OPENAI_API_KEY=your_key_here
 
 ```bash
 # Install root dependencies
-npm install
+yarn install
 
 # Install service dependencies (when available)
-cd services/auth-service && npm install && cd ../..
-cd services/user-service && npm install && cd ../..
+cd services/auth-service && yarn install && cd ../..
+cd services/user-service && yarn install && cd ../..
 
 # Install Python dependencies
 pip3 install -r requirements.txt
@@ -321,8 +321,6 @@ HAIR_MODEL_TYPE=pytorch
 
 2. **Install dependencies** (when React Native project is initialized):
    ```bash
-   npm install
-   # or
    yarn install
    ```
 
@@ -347,7 +345,7 @@ Each service can be developed independently:
 1. **Auth Service** (Node.js + TypeScript):
    ```bash
    cd services/auth-service
-   npm run dev
+   yarn dev
    ```
 
 2. **Skin Analysis Service** (FastAPI):

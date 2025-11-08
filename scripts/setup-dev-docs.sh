@@ -49,14 +49,14 @@ install_swagger_tools() {
     log "Installing Swagger UI tools..."
     
     if ! command -v swagger-ui-serve &> /dev/null; then
-        npm install -g swagger-ui-serve
+        yarn global add swagger-ui-serve
         success "Swagger UI serve installed globally"
     else
         log "Swagger UI serve already installed"
     fi
     
     if ! command -v redoc-cli &> /dev/null; then
-        npm install -g redoc-cli
+        yarn global add redoc-cli
         success "Redoc CLI installed globally"
     else
         log "Redoc CLI already installed"
@@ -242,7 +242,7 @@ PORT=${1:-8080}
 DOCS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../docs/api/html" && pwd)"
 
 if [ ! -d "$DOCS_DIR" ]; then
-    echo "Documentation not found. Run 'npm run docs:generate' first."
+    echo "Documentation not found. Run 'yarn docs:generate' first."
     exit 1
 fi
 
@@ -258,7 +258,7 @@ if command -v python3 &> /dev/null; then
 elif command -v python &> /dev/null; then
     python -m SimpleHTTPServer $PORT
 elif command -v node &> /dev/null; then
-    npx http-server -p $PORT
+    yarn dlx http-server -p $PORT
 else
     echo "No suitable HTTP server found. Please install Python or Node.js."
     exit 1
@@ -291,7 +291,7 @@ update_package_scripts() {
         console.log('Updated package.json with documentation scripts');
         "
         
-        success "Added npm scripts for documentation"
+        success "Added yarn scripts for documentation"
     else
         log "No package.json found, skipping script updates"
     fi
@@ -313,7 +313,7 @@ main() {
     echo "Next steps:"
     echo "1. Run 'bash scripts/serve-docs.sh' to start the documentation server"
     echo "2. Open http://localhost:8080 in your browser"
-    echo "3. Or use 'npm run docs:serve' if you have package.json"
+    echo "3. Or use 'yarn docs:serve' if you have package.json"
     echo ""
     echo "Documentation files are located in: docs/api/html/"
 }

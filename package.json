@@ -25,9 +25,9 @@
     "docker:logs": "docker-compose logs",
     "docker:ps": "docker-compose ps",
     "health:check": "node scripts/health-check.js",
-    "db:migrate": "npm run setup:postgres",
-    "db:seed": "npm run setup:mongodb",
-    "db:reset": "npm run dev:clean && npm run dev && sleep 10 && npm run db:migrate && npm run db:seed"
+    "db:migrate": "yarn setup:postgres",
+    "db:seed": "yarn setup:mongodb",
+    "db:reset": "yarn dev:clean && yarn dev && sleep 10 && yarn db:migrate && yarn db:seed"
   },
   "keywords": [
     "mobile-app",
@@ -63,7 +63,7 @@
   },
   "engines": {
     "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+    "yarn": ">=1.22.0"
   },
   "repository": {
     "type": "git",

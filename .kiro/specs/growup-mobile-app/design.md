@@ -603,7 +603,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Run tests
         run: |
-          npm test
+          yarn test
           python -m pytest
 
   build-and-deploy:

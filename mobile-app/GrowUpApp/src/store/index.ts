@@ -1,11 +1,13 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { useDispatch, useSelector, TypedUseSelectorHook } from 'react-redux';
 import authSlice from './slices/authSlice';
+import skinAnalysisSlice from './slices/skinAnalysisSlice';
 
 // Configure the Redux store
 export const store = configureStore({
   reducer: {
     auth: authSlice,
+    skinAnalysis: skinAnalysisSlice,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

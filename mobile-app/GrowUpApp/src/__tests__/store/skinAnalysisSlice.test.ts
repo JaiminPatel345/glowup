@@ -35,15 +35,28 @@ jest.mock('../../utils/errorHandler', () => ({
   default: {
     processError: jest.fn((error, context) => ({
       message: error.message || 'Test error',
-      retryPossible: true,
+      retryable: true,
     })),
   },
 }));
 
 const mockSkinAnalysisApi = SkinAnalysisApi as jest.Mocked<typeof SkinAnalysisApi>;
 
+const getDefaultState = (): SkinAnalysisState =>
+  skinAnalysisReducer(undefined, { type: '@@INIT' }) as SkinAnalysisState;
+
+const createStore = (preloadedState?: Partial<SkinAnalysisState>) =>
+  configureStore({
+    reducer: { skinAnalysis: skinAnalysisReducer },
+    preloadedState: preloadedState
+      ? { skinAnalysis: { ...getDefaultState(), ...preloadedState } }
+      : undefined,
+  });
+
+type AppStore = ReturnType<typeof createStore>;
+
 describe('skinAnalysisSlice', () => {
-  let store: ReturnType<typeof configureStore>;
+  let store: AppStore;
 
   const mockAnalysisResult: SkinAnalysisResult = {
     skinType: 'Combination',
@@ -94,11 +107,7 @@ describe('skinAnalysisSlice', () => {
   };
 
   beforeEach(() => {
-    store = configureStore({
-      reducer: {
-        skinAnalysis: skinAnalysisReducer,
-      },
-    });
+    store = createStore();
     jest.clearAllMocks();
   });
 
@@ -258,10 +267,7 @@ describe('skinAnalysisSlice', () => {
     it('should reject when max retries reached', async () => {
       // Set retry count to max
       const initialState: Partial<SkinAnalysisState> = { retryCount: 3, maxRetries: 3 };
-      store = configureStore({
-        reducer: { skinAnalysis: skinAnalysisReducer },
-        preloadedState: { skinAnalysis: { ...store.getState().skinAnalysis, ...initialState } },
-      });
+      store = createStore(initialState);
       
       const formData = new FormData();
       const result = await store.dispatch(retryAnalysis(formData));
@@ -299,15 +305,7 @@ describe('skinAnalysisSlice', () => {
       const newHistory = [{ ...mockAnalysisResult, skinType: 'Oily' }];
       
       // Set existing history
-      store = configureStore({
-        reducer: { skinAnalysis: skinAnalysisReducer },
-        preloadedState: { 
-          skinAnalysis: { 
-            ...store.getState().skinAnalysis, 
-            analysisHistory: existingHistory 
-          } 
-        },
-      });
+      store = createStore({ analysisHistory: existingHistory });
       
       mockSkinAnalysisApi.getAnalysisHistory.mockResolvedValue(newHistory);
       
@@ -346,15 +344,9 @@ describe('skinAnalysisSlice', () => {
   describe('deleteAnalysis async thunk', () => {
     it('should delete analysis successfully', async () => {
       // Set up initial state with analysis in history
-      store = configureStore({
-        reducer: { skinAnalysis: skinAnalysisReducer },
-        preloadedState: { 
-          skinAnalysis: { 
-            ...store.getState().skinAnalysis, 
-            analysisHistory: [mockAnalysisResult],
-            currentAnalysis: mockAnalysisResult,
-          } 
-        },
+      store = createStore({
+        analysisHistory: [mockAnalysisResult],
+        currentAnalysis: mockAnalysisResult,
       });
       
       mockSkinAnalysisApi.deleteAnalysis.mockResolvedValue();

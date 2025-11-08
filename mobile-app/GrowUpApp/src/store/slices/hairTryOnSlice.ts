@@ -103,10 +103,16 @@ export const startRealTimeSession = createAsyncThunk(
   }
 );
 
-export const fetchHairTryOnHistory = createAsyncThunk(
+export const fetchHairTryOnHistory = createAsyncThunk<
+  HairTryOnHistory[],
+  { limit?: number; offset?: number } | void
+>(
   'hairTryOn/fetchHistory',
-  async (params: { limit?: number; offset?: number } = {}) => {
-    const { limit = 10, offset = 0 } = params;
+  async (params = {}) => {
+    const { limit = 10, offset = 0 } = (params ?? {}) as {
+      limit?: number;
+      offset?: number;
+    };
     return await HairTryOnApi.getHairTryOnHistory(limit, offset);
   }
 );

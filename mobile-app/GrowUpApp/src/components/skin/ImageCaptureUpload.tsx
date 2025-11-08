@@ -7,7 +7,15 @@ import {
   Image,
   Platform,
 } from 'react-native';
-import { launchCamera, launchImageLibrary, ImagePickerResponse, MediaType } from 'react-native-image-picker';
+import {
+  launchCamera,
+  launchImageLibrary,
+  ImagePickerResponse,
+  MediaType,
+  CameraOptions,
+  ImageLibraryOptions,
+  PhotoQuality,
+} from 'react-native-image-picker';
 import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import { Button } from '../common';
 
@@ -103,9 +111,9 @@ const ImageCaptureUpload: React.FC<ImageCaptureUploadProps> = ({
       return;
     }
 
-    const options = {
+    const options: CameraOptions = {
       mediaType: 'photo' as MediaType,
-      quality: 0.8,
+      quality: 0.8 as PhotoQuality,
       maxWidth: 1024,
       maxHeight: 1024,
       includeBase64: false,
@@ -115,9 +123,9 @@ const ImageCaptureUpload: React.FC<ImageCaptureUploadProps> = ({
   };
 
   const handleGallerySelect = () => {
-    const options = {
+    const options: ImageLibraryOptions = {
       mediaType: 'photo' as MediaType,
-      quality: 0.8,
+      quality: 0.8 as PhotoQuality,
       maxWidth: 1024,
       maxHeight: 1024,
       includeBase64: false,

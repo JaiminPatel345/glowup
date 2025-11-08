@@ -6,7 +6,7 @@ import {
   Alert,
   Dimensions,
 } from 'react-native';
-import { Camera, CameraType, CameraView } from 'expo-camera';
+import { Camera, CameraType } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import * as MediaLibrary from 'expo-media-library';
 
@@ -27,7 +27,7 @@ export const VideoCapture: React.FC<VideoCaptureProps> = ({
   const [cameraType, setCameraType] = useState<CameraType>(CameraType.front);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
-  const cameraRef = useRef<CameraView>(null);
+  const cameraRef = useRef<Camera | null>(null);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -86,7 +86,7 @@ export const VideoCapture: React.FC<VideoCaptureProps> = ({
       }, 1000);
 
       const video = await cameraRef.current.recordAsync({
-        maxDuration: maxDuration * 1000, // Convert to milliseconds
+        maxDuration,
         quality: '720p',
       });
 
@@ -104,7 +104,7 @@ export const VideoCapture: React.FC<VideoCaptureProps> = ({
     if (!cameraRef.current || !isRecording) return;
 
     try {
-      await cameraRef.current.stopRecording();
+  await cameraRef.current.stopRecording();
       setIsRecording(false);
       
       if (recordingTimerRef.current) {
@@ -159,14 +159,13 @@ export const VideoCapture: React.FC<VideoCaptureProps> = ({
   return (
     <View className="flex-1 bg-black">
       {/* Camera View */}
-      <CameraView
+      <Camera
         ref={cameraRef}
         style={{
           width: screenWidth,
           height: screenHeight,
         }}
-        facing={cameraType}
-        mode="video"
+        type={cameraType}
       >
         {/* Header */}
         <View className="flex-row items-center justify-between p-4 pt-12 bg-black/50">
@@ -234,7 +233,7 @@ export const VideoCapture: React.FC<VideoCaptureProps> = ({
             )}
           </TouchableOpacity>
         </View>
-      </CameraView>
+  </Camera>
     </View>
   );
 };

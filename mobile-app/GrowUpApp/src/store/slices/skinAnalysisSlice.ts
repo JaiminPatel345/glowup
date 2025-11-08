@@ -77,7 +77,7 @@ export const analyzeImage = createAsyncThunk(
       const processedError = GlobalErrorHandler.processError(error, 'Skin Analysis');
       return rejectWithValue({
         message: processedError.message,
-        retryPossible: processedError.retryPossible || false
+        retryable: processedError.retryable || false,
       });
     }
   }
@@ -92,7 +92,7 @@ export const retryAnalysis = createAsyncThunk(
       if (state.skinAnalysis.retryCount >= state.skinAnalysis.maxRetries) {
         return rejectWithValue({
           message: 'Maximum retry attempts reached',
-          retryPossible: false
+          retryable: false,
         });
       }
       
@@ -102,7 +102,7 @@ export const retryAnalysis = createAsyncThunk(
       const processedError = GlobalErrorHandler.processError(error, 'Skin Analysis Retry');
       return rejectWithValue({
         message: processedError.message,
-        retryPossible: processedError.retryPossible || false
+        retryable: processedError.retryable || false,
       });
     }
   }
@@ -110,7 +110,10 @@ export const retryAnalysis = createAsyncThunk(
 
 export const loadAnalysisHistory = createAsyncThunk(
   'skinAnalysis/loadHistory',
-  async ({ limit = 10, offset = 0 }: { limit?: number; offset?: number }, { rejectWithValue }) => {
+  async (
+    { limit = 10, offset = 0 }: { limit?: number; offset?: number } = {},
+    { rejectWithValue }
+  ) => {
     try {
       const history = await SkinAnalysisApi.getAnalysisHistory(limit, offset);
       return { history, offset };
@@ -207,7 +210,7 @@ const skinAnalysisSlice = createSlice({
       })
       .addCase(analyzeImage.rejected, (state, action) => {
         state.isAnalyzing = false;
-        const payload = action.payload as { message: string; retryPossible: boolean };
+        const payload = action.payload as { message: string; retryable: boolean };
         state.analysisError = payload.message;
         state.retryCount += 1;
       });
@@ -229,7 +232,7 @@ const skinAnalysisSlice = createSlice({
       })
       .addCase(retryAnalysis.rejected, (state, action) => {
         state.isAnalyzing = false;
-        const payload = action.payload as { message: string; retryPossible: boolean };
+        const payload = action.payload as { message: string; retryable: boolean };
         state.analysisError = payload.message;
         state.retryCount += 1;
       });

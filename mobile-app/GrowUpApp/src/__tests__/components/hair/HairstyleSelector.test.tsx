@@ -2,6 +2,7 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { HairstyleSelector } from '../../../components/hair/HairstyleSelector';
 import * as ImagePicker from 'expo-image-picker';
+import { PermissionStatus } from 'expo-image-picker';
 
 // Mock expo-image-picker
 jest.mock('expo-image-picker', () => ({
@@ -58,7 +59,7 @@ describe('HairstyleSelector', () => {
 
   it('handles custom style upload with permission granted', async () => {
     mockImagePicker.requestMediaLibraryPermissionsAsync.mockResolvedValue({
-      status: 'granted',
+      status: PermissionStatus.GRANTED,
       expires: 'never',
       canAskAgain: true,
       granted: true,
@@ -97,7 +98,7 @@ describe('HairstyleSelector', () => {
 
   it('handles permission denied for custom upload', async () => {
     mockImagePicker.requestMediaLibraryPermissionsAsync.mockResolvedValue({
-      status: 'denied',
+      status: PermissionStatus.DENIED,
       expires: 'never',
       canAskAgain: true,
       granted: false,
@@ -118,7 +119,7 @@ describe('HairstyleSelector', () => {
 
   it('handles custom color upload', async () => {
     mockImagePicker.requestMediaLibraryPermissionsAsync.mockResolvedValue({
-      status: 'granted',
+      status: PermissionStatus.GRANTED,
       expires: 'never',
       canAskAgain: true,
       granted: true,

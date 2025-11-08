@@ -7,14 +7,14 @@ import {
   Dimensions,
   Image,
 } from 'react-native';
-import { Camera, CameraType, CameraView } from 'expo-camera';
+import { Camera, CameraType } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppDispatch, useAppSelector } from '../../store';
 import {
   setRealTimeActive,
   setWebSocketConnected,
   setWebSocketError,
-  startRealTimeSession,
+  startRealTimeSession as startRealTimeSessionThunk,
 } from '../../store/slices/hairTryOnSlice';
 import { webSocketManager } from '../../utils/webSocketClient';
 
@@ -35,7 +35,7 @@ export const RealTimeCameraPreview: React.FC<RealTimeCameraPreviewProps> = ({
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [cameraType, setCameraType] = useState<CameraType>(CameraType.front);
   const [isInitializing, setIsInitializing] = useState(false);
-  const cameraRef = useRef<CameraView>(null);
+  const cameraRef = useRef<Camera | null>(null);
   const frameIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -76,7 +76,7 @@ export const RealTimeCameraPreview: React.FC<RealTimeCameraPreviewProps> = ({
     }
   };
 
-  const startRealTimeSession = async () => {
+  const handleStartRealTimeSession = async () => {
     try {
       setIsInitializing(true);
       
@@ -89,7 +89,7 @@ export const RealTimeCameraPreview: React.FC<RealTimeCameraPreviewProps> = ({
       } as any);
 
       // Start WebSocket session
-      const connectionInfo = await dispatch(startRealTimeSession(formData)).unwrap();
+      const connectionInfo = await dispatch(startRealTimeSessionThunk(formData)).unwrap();
       
       // Create WebSocket client
       const wsClient = webSocketManager.createClient(
@@ -220,13 +220,13 @@ export const RealTimeCameraPreview: React.FC<RealTimeCameraPreviewProps> = ({
           />
         ) : (
           // Show camera view
-          <CameraView
+          <Camera
             ref={cameraRef}
             style={{
               width: screenWidth,
               height: screenHeight,
             }}
-            facing={cameraType}
+            type={cameraType}
           />
         )}
 
@@ -294,7 +294,7 @@ export const RealTimeCameraPreview: React.FC<RealTimeCameraPreviewProps> = ({
         <View className="absolute bottom-8 left-0 right-0 items-center">
           {!realTime.isActive ? (
             <TouchableOpacity
-              onPress={startRealTimeSession}
+              onPress={handleStartRealTimeSession}
               disabled={isInitializing}
               className={`px-8 py-4 rounded-full ${
                 isInitializing ? 'bg-gray-600' : 'bg-blue-600'

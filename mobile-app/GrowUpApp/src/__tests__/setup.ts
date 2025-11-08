@@ -38,16 +38,13 @@ jest.mock('react-native-keychain', () => ({
   resetInternetCredentials: jest.fn(() => Promise.resolve()),
 }));
 
-// Mock Alert
-jest.mock('react-native', () => {
-  const RN = jest.requireActual('react-native');
-  return {
-    ...RN,
-    Alert: {
-      alert: jest.fn(),
-    },
-  };
-});
+// Mock Alert module directly to avoid requiring full react-native implementation
+jest.mock('react-native/Libraries/Alert/Alert', () => ({
+  __esModule: true,
+  default: {
+    alert: jest.fn(),
+  },
+}));
 
 // Silence console warnings during tests
 global.console = {

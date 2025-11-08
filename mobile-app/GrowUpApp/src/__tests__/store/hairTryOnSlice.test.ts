@@ -36,12 +36,19 @@ jest.mock('../../api/hair', () => ({
   },
 }));
 
+const getDefaultState = (): HairTryOnState =>
+  hairTryOnSlice(undefined, { type: '@@INIT' }) as HairTryOnState;
+
 const createStore = (initialState?: Partial<HairTryOnState>) => {
+  const preloadedState = initialState
+    ? { hairTryOn: { ...getDefaultState(), ...initialState } }
+    : undefined;
+
   return configureStore({
     reducer: {
       hairTryOn: hairTryOnSlice,
     },
-    preloadedState: initialState ? { hairTryOn: initialState } : undefined,
+    preloadedState,
   });
 };
 

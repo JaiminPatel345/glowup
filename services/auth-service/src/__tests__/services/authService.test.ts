@@ -12,7 +12,7 @@ describe('AuthService', () => {
   beforeEach(async () => {
     await cleanDatabase();
     // Add a small delay to ensure database operations complete
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, 200));
   });
 
   describe('createUser', () => {

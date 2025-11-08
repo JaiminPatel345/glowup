@@ -9,6 +9,10 @@ beforeAll(async () => {
 afterAll(async () => {
   // Clean up after all tests
   await cleanDatabase();
+  
+  // Close database pool to prevent hanging
+  const { resetPool } = require('../config/database');
+  resetPool();
 });
 
 // Clean database helper

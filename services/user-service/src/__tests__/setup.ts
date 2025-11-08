@@ -14,21 +14,37 @@ export const testPrisma = new PrismaClient({
 // Setup test database
 beforeAll(async () => {
   try {
-    // Sync database schema for test database (no migrations needed)
-    execSync('npx prisma db push --force-reset', {
-      env: {
-        ...process.env,
-        DATABASE_URL: process.env.DATABASE_URL || 'postgresql://postgres:root123@localhost:5432/mydb',
-      },
-      stdio: 'inherit',
-    });
-
-    // Connect to test database
+    // Connect to test database first
     await testPrisma.$connect();
     logger.info('Test database connected');
+    
+    // Clean existing data instead of resetting schema
+    // This is faster and doesn't interfere with other test suites
+    await testPrisma.emailVerificationToken.deleteMany();
+    await testPrisma.passwordResetToken.deleteMany();
+    await testPrisma.session.deleteMany();
+    await testPrisma.userPreferences.deleteMany();
+    await testPrisma.user.deleteMany();
+    
+    logger.info('Test database cleaned');
   } catch (error) {
     logger.error('Failed to setup test database:', error);
-    throw error;
+    // If tables don't exist, try to create schema
+    try {
+      logger.info('Attempting to create database schema...');
+      execSync('npx prisma db push --skip-generate', {
+        env: {
+          ...process.env,
+          DATABASE_URL: process.env.DATABASE_URL || 'postgresql://postgres:root123@localhost:5432/mydb',
+        },
+        stdio: 'inherit',
+      });
+      await testPrisma.$connect();
+      logger.info('Database schema created successfully');
+    } catch (schemaError) {
+      logger.error('Failed to create database schema:', schemaError);
+      throw schemaError;
+    }
   }
 });
 

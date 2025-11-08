@@ -39,7 +39,8 @@ export const authMiddleware = async (req: AuthenticatedRequest, res: Response, n
       logger.debug('Token verified locally', { userId: payload.userId });
       return next();
     } catch (jwtError) {
-      logger.debug('Local JWT verification failed, trying auth service', { error: jwtError.message });
+      const error = jwtError as Error;
+      logger.debug('Local JWT verification failed, trying auth service', { error: error.message });
     }
 
     // If local verification fails, validate with auth service
@@ -66,8 +67,9 @@ export const authMiddleware = async (req: AuthenticatedRequest, res: Response, n
         throw new Error('Invalid token response from auth service');
       }
     } catch (authServiceError) {
+      const error = authServiceError as Error;
       logger.warn('Auth service validation failed', { 
-        error: authServiceError.message,
+        error: error.message,
         token: token.substring(0, 10) + '...'
       });
 
@@ -108,7 +110,8 @@ export const optionalAuthMiddleware = async (req: AuthenticatedRequest, res: Res
 
     logger.debug('Optional auth: token verified', { userId: payload.userId });
   } catch (error) {
-    logger.debug('Optional auth: token verification failed', { error: error.message });
+    const err = error as Error;
+    logger.debug('Optional auth: token verification failed', { error: err.message });
     // Continue without setting user
   }
 
@@ -131,7 +134,7 @@ export const requireRole = (roles: string[]) => {
       });
     }
 
-    next();
+    return next();
   };
 };
 
@@ -151,6 +154,6 @@ export const requirePermission = (permission: string) => {
       });
     }
 
-    next();
+    return next();
   };
 };

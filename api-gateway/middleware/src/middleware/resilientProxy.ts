@@ -109,7 +109,8 @@ export function createResilientProxy(options: ResilientProxyOptions) {
       const proxyLogger = correlationLogger.createServiceLogger(correlationId, 'api-gateway');
       
       const duration = Date.now() - ((req as any).startTime || Date.now());
-      const success = proxyRes.statusCode < 400;
+      const statusCode = proxyRes.statusCode || 500;
+      const success = statusCode < 400;
       
       correlationLogger.logExternalApiCall(
         proxyLogger,
@@ -117,7 +118,7 @@ export function createResilientProxy(options: ResilientProxyOptions) {
         req.url || '',
         req.method || 'GET',
         duration,
-        proxyRes.statusCode,
+        statusCode,
         success
       );
     }

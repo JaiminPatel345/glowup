@@ -1,12 +1,4 @@
-import dotenv from 'dotenv';
 import { query } from '../config/database';
-
-// Load test environment variables
-dotenv.config({ path: '.env.test' });
-
-// Set test environment
-process.env.NODE_ENV = 'test';
-process.env.LOG_LEVEL = 'error'; // Reduce log noise during tests
 
 // Global test setup
 beforeAll(async () => {
@@ -20,14 +12,24 @@ afterAll(async () => {
 });
 
 // Clean database helper
-async function cleanDatabase() {
+export async function cleanDatabase() {
   try {
+    // Delete in order to respect foreign keys
+    await query('DELETE FROM password_reset_tokens');
+    await query('DELETE FROM email_verification_tokens');
     await query('DELETE FROM sessions');
+    await query('DELETE FROM user_preferences');
     await query('DELETE FROM users');
+
+    // Reset any sequences if needed
+    await query('ALTER SEQUENCE IF EXISTS users_id_seq RESTART WITH 1');
+    await query('ALTER SEQUENCE IF EXISTS sessions_id_seq RESTART WITH 1');
   } catch (error) {
     console.error('Error cleaning database:', error);
   }
 }
 
-// Export helper for individual tests
-export { cleanDatabase };
+// Helper to wait for rate limit reset
+export async function waitForRateLimit(ms: number = 1000) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}

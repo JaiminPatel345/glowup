@@ -16,7 +16,7 @@ export const loggingMiddleware = (req: Request, res: Response, next: NextFunctio
 
   // Override res.end to log response
   const originalEnd = res.end;
-  res.end = function(chunk?: any, encoding?: any) {
+  res.end = function(chunk?: any, encoding?: any): Response {
     const duration = Date.now() - startTime;
     
     logger.info('Request completed', {
@@ -28,6 +28,8 @@ export const loggingMiddleware = (req: Request, res: Response, next: NextFunctio
       ip: req.ip,
       timestamp: new Date().toISOString()
     });
+
+    return originalEnd.call(this, chunk, encoding);
 
     // Call original end method
     originalEnd.call(this, chunk, encoding);

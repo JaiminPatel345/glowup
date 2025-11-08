@@ -3,8 +3,13 @@ module.exports = {
   testEnvironment: 'node',
   roots: ['<rootDir>/src'],
   testMatch: [
-    '**/__tests__/**/*.ts',
+    '**/__tests__/**/*.test.ts',
     '**/?(*.)+(spec|test).ts'
+  ],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/__tests__/setup.ts',
+    '/__tests__/env-setup.ts'
   ],
   transform: {
     '^.+\\.ts$': 'ts-jest',
@@ -29,6 +34,7 @@ module.exports = {
     'lcov',
     'html'
   ],
+  setupFiles: ['<rootDir>/src/__tests__/env-setup.ts'],
   setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
   testTimeout: 10000,
   maxWorkers: 1, // Run tests serially to avoid database conflicts

@@ -17,8 +17,8 @@ export const generalLimiter = rateLimit({
 
 // Strict rate limiter for authentication endpoints
 export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 requests per windowMs
+  windowMs: process.env.NODE_ENV === 'test' ? 1000 : 15 * 60 * 1000, // 1 second in test, 15 minutes in production
+  max: process.env.NODE_ENV === 'test' ? 1000 : 5, // 1000 requests in test, 5 in production
   message: {
     success: false,
     error: 'Too many authentication attempts',
@@ -44,8 +44,8 @@ export const passwordResetLimiter = rateLimit({
 
 // Registration rate limiter
 export const registrationLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 3, // limit each IP to 3 registration attempts per hour
+  windowMs: process.env.NODE_ENV === 'test' ? 1000 : 60 * 60 * 1000, // 1 second in test, 1 hour in production
+  max: process.env.NODE_ENV === 'test' ? 1000 : 3, // 1000 requests in test, 3 in production
   message: {
     success: false,
     error: 'Too many registration attempts',

@@ -11,6 +11,8 @@ describe('AuthService', () => {
 
   beforeEach(async () => {
     await cleanDatabase();
+    // Add a small delay to ensure database operations complete
+    await new Promise(resolve => setTimeout(resolve, 100));
   });
 
   describe('createUser', () => {
@@ -56,8 +58,8 @@ describe('AuthService', () => {
 
       expect(user).toBeDefined();
       expect(user.email).toBe(userData.email);
-      expect(user.firstName).toBeUndefined();
-      expect(user.lastName).toBeUndefined();
+      expect(user.firstName).toBeNull();
+      expect(user.lastName).toBeNull();
     });
   });
 

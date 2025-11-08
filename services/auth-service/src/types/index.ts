@@ -45,7 +45,7 @@ export interface JWTPayload {
   role: 'user' | 'admin';
   permissions: string[];
   iat: number;
-  exp: number;
+  exp?: number; // Optional since JWT library adds this automatically
 }
 
 import { Request } from 'express';

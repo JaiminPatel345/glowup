@@ -14,7 +14,7 @@ export const rateLimitMiddleware = rateLimit({
   legacyHeaders: false,
   keyGenerator: (req: Request) => {
     // Use IP address as the key, but could be enhanced to use user ID for authenticated requests
-    return req.ip;
+    return req.ip || 'unknown';
   },
   skip: (req: Request) => {
     // Skip rate limiting for health checks

@@ -39,13 +39,14 @@ async function checkServiceHealth(service: { name: string; url: string }): Promi
     };
   } catch (error) {
     const responseTime = Date.now() - startTime;
+    const err = error as Error;
     
     return {
       name: service.name,
       url: service.url,
       status: 'unhealthy',
       responseTime,
-      error: error.message
+      error: err.message
     };
   }
 }
@@ -74,6 +75,7 @@ router.get('/', async (req: Request, res: Response) => {
     const statusCode = allHealthy ? 200 : 503;
     res.status(statusCode).json(response);
   } catch (error) {
+    const err = error as Error;
     logger.error('Health check failed:', error);
     
     res.status(503).json({
@@ -83,7 +85,7 @@ router.get('/', async (req: Request, res: Response) => {
         status: 'unhealthy',
         timestamp: new Date().toISOString(),
         service: 'api-gateway-middleware',
-        error: error.message
+        error: err.message
       }
     });
   }

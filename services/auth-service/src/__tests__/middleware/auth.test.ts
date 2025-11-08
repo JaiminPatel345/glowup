@@ -1,17 +1,22 @@
 import { Request, Response, NextFunction } from 'express';
-import { authenticateToken, optionalAuth, requireRole, requirePermission } from '../../middleware/auth';
-import { AuthService } from '../../services/authService';
 import { AuthenticatedRequest, JWTPayload } from '../../types';
 
-// Mock AuthService
-jest.mock('../../services/authService');
-const MockedAuthService = AuthService as jest.MockedClass<typeof AuthService>;
+// Mock the AuthService module before importing middleware
+const mockVerifyAccessToken = jest.fn();
+
+jest.mock('../../services/authService', () => ({
+  AuthService: jest.fn().mockImplementation(() => ({
+    verifyAccessToken: mockVerifyAccessToken
+  }))
+}));
+
+// Import middleware after mocking
+import { authenticateToken, optionalAuth, requireRole, requirePermission } from '../../middleware/auth';
 
 describe('Auth Middleware', () => {
   let mockReq: Partial<AuthenticatedRequest>;
   let mockRes: Partial<Response>;
   let mockNext: NextFunction;
-  let mockAuthService: jest.Mocked<AuthService>;
 
   beforeEach(() => {
     mockReq = {
@@ -25,10 +30,6 @@ describe('Auth Middleware', () => {
 
     // Reset mocks
     jest.clearAllMocks();
-    
-    // Create mock auth service instance
-    mockAuthService = new MockedAuthService() as jest.Mocked<AuthService>;
-    MockedAuthService.mockImplementation(() => mockAuthService);
   });
 
   describe('authenticateToken', () => {
@@ -38,19 +39,19 @@ describe('Auth Middleware', () => {
         email: 'test@example.com',
         role: 'user',
         permissions: ['read:profile'],
-        iat: Date.now(),
-        exp: Date.now() + 3600
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 3600
       };
 
       mockReq.headers = {
         authorization: 'Bearer valid-token'
       };
 
-      mockAuthService.verifyAccessToken.mockReturnValue(mockPayload);
+      mockVerifyAccessToken.mockReturnValue(mockPayload);
 
       authenticateToken(mockReq as AuthenticatedRequest, mockRes as Response, mockNext);
 
-      expect(mockAuthService.verifyAccessToken).toHaveBeenCalledWith('valid-token');
+      expect(mockVerifyAccessToken).toHaveBeenCalledWith('valid-token');
       expect(mockReq.user).toEqual(mockPayload);
       expect(mockNext).toHaveBeenCalled();
     });
@@ -71,7 +72,7 @@ describe('Auth Middleware', () => {
         authorization: 'Bearer invalid-token'
       };
 
-      mockAuthService.verifyAccessToken.mockImplementation(() => {
+      mockVerifyAccessToken.mockImplementation(() => {
         throw new Error('Invalid token');
       });
 
@@ -107,15 +108,15 @@ describe('Auth Middleware', () => {
         email: 'test@example.com',
         role: 'user',
         permissions: ['read:profile'],
-        iat: Date.now(),
-        exp: Date.now() + 3600
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 3600
       };
 
       mockReq.headers = {
         authorization: 'Bearer valid-token'
       };
 
-      mockAuthService.verifyAccessToken.mockReturnValue(mockPayload);
+      mockVerifyAccessToken.mockReturnValue(mockPayload);
 
       optionalAuth(mockReq as AuthenticatedRequest, mockRes as Response, mockNext);
 
@@ -135,7 +136,7 @@ describe('Auth Middleware', () => {
         authorization: 'Bearer invalid-token'
       };
 
-      mockAuthService.verifyAccessToken.mockImplementation(() => {
+      mockVerifyAccessToken.mockImplementation(() => {
         throw new Error('Invalid token');
       });
 
@@ -153,8 +154,8 @@ describe('Auth Middleware', () => {
         email: 'test@example.com',
         role: 'admin',
         permissions: [],
-        iat: Date.now(),
-        exp: Date.now() + 3600
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 3600
       };
 
       const middleware = requireRole(['admin', 'user']);
@@ -169,8 +170,8 @@ describe('Auth Middleware', () => {
         email: 'test@example.com',
         role: 'user',
         permissions: [],
-        iat: Date.now(),
-        exp: Date.now() + 3600
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 3600
       };
 
       const middleware = requireRole(['admin']);
@@ -203,8 +204,8 @@ describe('Auth Middleware', () => {
         email: 'test@example.com',
         role: 'user',
         permissions: ['read:profile', 'write:profile'],
-        iat: Date.now(),
-        exp: Date.now() + 3600
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 3600
       };
 
       const middleware = requirePermission('read:profile');
@@ -219,8 +220,8 @@ describe('Auth Middleware', () => {
         email: 'test@example.com',
         role: 'user',
         permissions: ['read:profile'],
-        iat: Date.now(),
-        exp: Date.now() + 3600
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 3600
       };
 
       const middleware = requirePermission('admin:users');

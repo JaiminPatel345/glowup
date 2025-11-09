@@ -1,9 +1,7 @@
 import apiClient from './client';
 import {
-  SkinAnalysisRequest,
   SkinAnalysisResult,
-  ProductRecommendations,
-  ApiResponse
+  ProductRecommendations
 } from './types';
 
 export class SkinAnalysisApi {

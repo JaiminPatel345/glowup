@@ -1,5 +1,4 @@
 import apiClient from './client';
-import { ApiResponse } from './types';
 
 export interface Hairstyle {
   id: string;

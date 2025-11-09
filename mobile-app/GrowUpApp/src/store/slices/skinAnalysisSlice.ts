@@ -64,14 +64,18 @@ export const analyzeImage = createAsyncThunk(
   'skinAnalysis/analyzeImage',
   async (imageFormData: FormData, { rejectWithValue, getState }) => {
     try {
-      const state = getState() as { skinAnalysis: SkinAnalysisState };
+      const state = getState() as { skinAnalysis: SkinAnalysisState; auth: { user: { id: string } | null } };
       
-      // Reset retry count on new analysis
-      if (state.skinAnalysis.retryCount > 0) {
-        // This will be handled in the reducer
+      // Get userId from auth state
+      const userId = state.auth.user?.id;
+      if (!userId) {
+        return rejectWithValue({
+          message: 'User not authenticated',
+          retryable: false,
+        });
       }
       
-      const result = await SkinAnalysisApi.analyzeImage(imageFormData);
+      const result = await SkinAnalysisApi.analyzeImage(imageFormData, userId);
       return result;
     } catch (error) {
       const processedError = GlobalErrorHandler.processError(error, 'Skin Analysis');
@@ -87,7 +91,7 @@ export const retryAnalysis = createAsyncThunk(
   'skinAnalysis/retryAnalysis',
   async (imageFormData: FormData, { rejectWithValue, getState }) => {
     try {
-      const state = getState() as { skinAnalysis: SkinAnalysisState };
+      const state = getState() as { skinAnalysis: SkinAnalysisState; auth: { user: { id: string } | null } };
       
       if (state.skinAnalysis.retryCount >= state.skinAnalysis.maxRetries) {
         return rejectWithValue({
@@ -96,7 +100,16 @@ export const retryAnalysis = createAsyncThunk(
         });
       }
       
-      const result = await SkinAnalysisApi.analyzeImage(imageFormData);
+      // Get userId from auth state
+      const userId = state.auth.user?.id;
+      if (!userId) {
+        return rejectWithValue({
+          message: 'User not authenticated',
+          retryable: false,
+        });
+      }
+      
+      const result = await SkinAnalysisApi.analyzeImage(imageFormData, userId);
       return result;
     } catch (error) {
       const processedError = GlobalErrorHandler.processError(error, 'Skin Analysis Retry');
@@ -112,10 +125,18 @@ export const loadAnalysisHistory = createAsyncThunk(
   'skinAnalysis/loadHistory',
   async (
     { limit = 10, offset = 0 }: { limit?: number; offset?: number } = {},
-    { rejectWithValue }
+    { rejectWithValue, getState }
   ) => {
     try {
-      const history = await SkinAnalysisApi.getAnalysisHistory(limit, offset);
+      const state = getState() as { auth: { user: { id: string } | null } };
+      
+      // Get userId from auth state
+      const userId = state.auth.user?.id;
+      if (!userId) {
+        return rejectWithValue('User not authenticated');
+      }
+      
+      const history = await SkinAnalysisApi.getAnalysisHistory(userId, limit, offset);
       return { history, offset };
     } catch (error) {
       const processedError = GlobalErrorHandler.processError(error, 'Load Analysis History');

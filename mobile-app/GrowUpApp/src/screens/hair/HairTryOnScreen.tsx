@@ -12,12 +12,17 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { HairTryOnApi, Hairstyle } from '../../api/hair';
+import { useAppSelector } from '../../store';
 
 const { width } = Dimensions.get('window');
 const GRID_COLUMNS = 3;
 const ITEM_SIZE = (width - 40) / GRID_COLUMNS;
 
 export default function HairTryOnScreen() {
+  // Get userId from auth state
+  const { user } = useAppSelector((state) => state.auth);
+  const userId = user?.id;
+
   const [hairstyles, setHairstyles] = useState<Hairstyle[]>([]);
   const [selectedHairstyle, setSelectedHairstyle] = useState<Hairstyle | null>(null);
   const [customHairstyleUri, setCustomHairstyleUri] = useState<string | null>(null);
@@ -35,7 +40,7 @@ export default function HairTryOnScreen() {
   const requestPermissions = async () => {
     const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
     const { status: libraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
+
     if (cameraStatus !== 'granted' || libraryStatus !== 'granted') {
       Alert.alert('Permission Required', 'Camera and photo library access is required');
     }
@@ -107,12 +112,17 @@ export default function HairTryOnScreen() {
       return;
     }
 
+    if (!userId) {
+      Alert.alert('Authentication Error', 'Please log in to use this feature');
+      return;
+    }
+
     try {
       setLoading(true);
 
       // Prepare user photo
       const userPhotoBlob = await fetch(userPhotoUri).then(r => r.blob());
-      
+
       // Prepare hairstyle
       let hairstyleBlob = null;
       if (customHairstyleUri) {
@@ -124,7 +134,7 @@ export default function HairTryOnScreen() {
         userPhoto: userPhotoBlob,
         hairstyleImage: hairstyleBlob,
         hairstyleId: selectedHairstyle?.id,
-        userId: 'user123', // Replace with actual user ID from auth
+        userId: userId,
         blendRatio,
       });
 
@@ -201,7 +211,7 @@ export default function HairTryOnScreen() {
       {/* Hairstyle Selection */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Select Hairstyle</Text>
-        
+
         {/* Custom Upload Option */}
         <TouchableOpacity
           style={[styles.customUploadButton, customHairstyleUri && styles.customUploadActive]}

@@ -9,7 +9,12 @@
     "web": "expo start --web",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "test:integration": "jest --testPathPattern=integration",
+    "test:integration:verbose": "jest --testPathPattern=integration --verbose",
+    "test:backend": "node scripts/test-backend-integration.sh",
+    "test:backend:windows": "powershell -ExecutionPolicy Bypass -File scripts/test-backend-integration.ps1",
+    "test:api": "jest --testPathPattern=apiEndpoints"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.2",

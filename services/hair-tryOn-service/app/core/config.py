@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     model_path: str = os.getenv("MODEL_PATH", "/app/models")
     hair_model_name: str = os.getenv("HAIR_MODEL_NAME", "hair_fastgan_model.pth")
     
+    # Replicate API Configuration (for cloud-based hair try-on)
+    replicate_api_token: Optional[str] = os.getenv("REPLICATE_API_TOKEN", None)
+    use_replicate_api: bool = os.getenv("USE_REPLICATE_API", "true").lower() == "true"
+    
     # WebSocket Configuration
     websocket_max_connections: int = int(os.getenv("WEBSOCKET_MAX_CONNECTIONS", "100"))
     websocket_timeout: int = int(os.getenv("WEBSOCKET_TIMEOUT", "300"))  # 5 minutes

@@ -47,7 +47,8 @@ async def create_indexes():
         
         logger.info("Database indexes created successfully")
     except Exception as e:
-        logger.error(f"Failed to create indexes: {e}")
+        logger.warning(f"Failed to create indexes (this is OK if MongoDB requires auth): {e}")
+        # Don't raise - indexes are optional for development
 
 def get_database():
     """Get database instance"""

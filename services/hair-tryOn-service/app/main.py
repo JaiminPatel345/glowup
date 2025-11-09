@@ -8,10 +8,8 @@ from contextlib import asynccontextmanager
 
 from app.core.config import settings
 from app.core.database import connect_to_mongo, close_mongo_connection
-from app.api.routes.hair_tryOn import router as hair_tryOn_router
-from app.services.ai_service import ai_service
+from app.api.routes.hair_tryOn_v2 import router as hair_tryOn_router
 from app.services.database_service import database_service
-from app.services.websocket_service import websocket_service
 
 # Configure logging
 logging.basicConfig(
@@ -37,8 +35,6 @@ async def lifespan(app: FastAPI):
         
         # Initialize services
         await database_service.initialize()
-        await ai_service.initialize()
-        await websocket_service.start_service()
         
         logger.info("Hair Try-On Service started successfully")
         
@@ -52,7 +48,6 @@ async def lifespan(app: FastAPI):
         logger.info("Shutting down Hair Try-On Service...")
         
         try:
-            await websocket_service.stop_service()
             await close_mongo_connection()
             logger.info("Hair Try-On Service shut down successfully")
         except Exception as e:
@@ -61,7 +56,7 @@ async def lifespan(app: FastAPI):
 # Create FastAPI application
 app = FastAPI(
     title="Hair Try-On Service",
-    description="AI-powered hair style try-on service with video processing and real-time streaming",
+    description="AI-powered hair style try-on service with local HairFastGAN inference",
     version=settings.service_version,
     lifespan=lifespan
 )
@@ -104,12 +99,18 @@ async def root():
         "service": "Hair Try-On Service",
         "version": settings.service_version,
         "status": "running",
+        "features": [
+            "Local HairFastGAN inference",
+            "PerfectCorp default hairstyles",
+            "Custom hairstyle upload",
+            "Single image processing"
+        ],
         "endpoints": {
-            "upload_video": "/api/hair-tryOn/upload-video",
-            "process_video": "/api/hair-tryOn/process-video",
-            "realtime_websocket": "/api/hair-tryOn/realtime/{session_id}",
-            "get_result": "/api/hair-tryOn/result/{result_id}",
+            "get_hairstyles": "/api/hair-tryOn/hairstyles",
+            "get_hairstyle": "/api/hair-tryOn/hairstyles/{hairstyle_id}",
+            "process": "/api/hair-tryOn/process",
             "get_history": "/api/hair-tryOn/history/{user_id}",
+            "delete_result": "/api/hair-tryOn/result/{result_id}",
             "health_check": "/api/hair-tryOn/health",
             "docs": "/docs"
         }

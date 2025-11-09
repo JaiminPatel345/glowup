@@ -9,30 +9,26 @@ class Settings(BaseSettings):
     
     # Service Configuration
     service_name: str = "hair-tryOn-service"
-    service_version: str = "1.0.0"
+    service_version: str = "2.0.0"
     debug: bool = os.getenv("DEBUG", "false").lower() == "true"
     
     # File Upload Configuration
-    max_video_size: int = int(os.getenv("MAX_VIDEO_SIZE", "50000000"))  # 50MB
-    max_video_duration: int = int(os.getenv("MAX_VIDEO_DURATION", "10"))  # 10 seconds
-    allowed_video_formats: list = ["mp4", "avi", "mov", "webm"]
+    max_image_size: int = int(os.getenv("MAX_IMAGE_SIZE", "10000000"))  # 10MB
     allowed_image_formats: list = ["jpg", "jpeg", "png", "webp"]
     
     # AI Model Configuration
     model_path: str = os.getenv("MODEL_PATH", "/app/models")
     hair_model_name: str = os.getenv("HAIR_MODEL_NAME", "hair_fastgan_model.pth")
+    use_gpu: bool = os.getenv("USE_GPU", "true").lower() == "true"
+    gpu_type: str = os.getenv("GPU_TYPE", "cuda")
     
-    # Replicate API Configuration (for cloud-based hair try-on)
-    replicate_api_token: Optional[str] = os.getenv("REPLICATE_API_TOKEN", None)
-    use_replicate_api: bool = os.getenv("USE_REPLICATE_API", "true").lower() == "true"
-    
-    # WebSocket Configuration
-    websocket_max_connections: int = int(os.getenv("WEBSOCKET_MAX_CONNECTIONS", "100"))
-    websocket_timeout: int = int(os.getenv("WEBSOCKET_TIMEOUT", "300"))  # 5 minutes
+    # PerfectCorp API Configuration
+    perfectcorp_api_key: str = os.getenv("PERFECTCORP_API_KEY", "")
+    perfectcorp_api_url: str = os.getenv("PERFECTCORP_API_URL", "https://yce-api-01.perfectcorp.com/s2s/v2.0")
+    hairstyle_cache_ttl: int = int(os.getenv("HAIRSTYLE_CACHE_TTL", "86400"))  # 24 hours
     
     # Performance Configuration
-    frame_sampling_rate: float = float(os.getenv("FRAME_SAMPLING_RATE", "0.5"))  # 50%
-    target_latency_ms: int = int(os.getenv("TARGET_LATENCY_MS", "200"))
+    image_max_size: int = int(os.getenv("IMAGE_MAX_SIZE", "1024"))
     
     # Storage Configuration
     upload_dir: str = os.getenv("UPLOAD_DIR", "/tmp/uploads")

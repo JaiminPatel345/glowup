@@ -1,0 +1,1567 @@
+{
+  "dataset_name": "Synthetic Test Dataset",
+  "num_samples": 120,
+  "generated_at": "2025-11-09 18:59:07",
+  "samples": [
+    {
+      "image_id": "synthetic_000",
+      "image_filename": "synthetic_000.jpg",
+      "skin_type": "oily",
+      "issues": [
+        "wrinkles"
+      ],
+      "severity": {
+        "wrinkles": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_001",
+      "image_filename": "synthetic_001.jpg",
+      "skin_type": "dry",
+      "issues": [
+        "acne",
+        "dryness"
+      ],
+      "severity": {
+        "acne": "medium",
+        "dryness": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_002",
+      "image_filename": "synthetic_002.jpg",
+      "skin_type": "combination",
+      "issues": [
+        "oiliness",
+        "acne",
+        "enlarged_pores"
+      ],
+      "severity": {
+        "oiliness": "high",
+        "acne": "high",
+        "enlarged_pores": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_003",
+      "image_filename": "synthetic_003.jpg",
+      "skin_type": "sensitive",
+      "issues": [
+        "uneven_tone"
+      ],
+      "severity": {
+        "uneven_tone": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_004",
+      "image_filename": "synthetic_004.jpg",
+      "skin_type": "normal",
+      "issues": [
+        "wrinkles",
+        "dark_spots"
+      ],
+      "severity": {
+        "wrinkles": "medium",
+        "dark_spots": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_005",
+      "image_filename": "synthetic_005.jpg",
+      "skin_type": "oily",
+      "issues": [
+        "enlarged_pores",
+        "redness",
+        "acne"
+      ],
+      "severity": {
+        "enlarged_pores": "high",
+        "redness": "high",
+        "acne": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_006",
+      "image_filename": "synthetic_006.jpg",
+      "skin_type": "dry",
+      "issues": [
+        "dryness"
+      ],
+      "severity": {
+        "dryness": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_007",
+      "image_filename": "synthetic_007.jpg",
+      "skin_type": "combination",
+      "issues": [
+        "wrinkles",
+        "uneven_tone"
+      ],
+      "severity": {
+        "wrinkles": "medium",
+        "uneven_tone": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_008",
+      "image_filename": "synthetic_008.jpg",
+      "skin_type": "sensitive",
+      "issues": [
+        "dark_spots",
+        "dryness",
+        "uneven_tone"
+      ],
+      "severity": {
+        "dark_spots": "high",
+        "dryness": "high",
+        "uneven_tone": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_009",
+      "image_filename": "synthetic_009.jpg",
+      "skin_type": "normal",
+      "issues": [
+        "enlarged_pores"
+      ],
+      "severity": {
+        "enlarged_pores": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_010",
+      "image_filename": "synthetic_010.jpg",
+      "skin_type": "oily",
+      "issues": [
+        "wrinkles",
+        "redness"
+      ],
+      "severity": {
+        "wrinkles": "medium",
+        "redness": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_011",
+      "image_filename": "synthetic_011.jpg",
+      "skin_type": "dry",
+      "issues": [
+        "acne",
+        "dryness",
+        "dark_spots"
+      ],
+      "severity": {
+        "acne": "high",
+        "dryness": "high",
+        "dark_spots": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_012",
+      "image_filename": "synthetic_012.jpg",
+      "skin_type": "combination",
+      "issues": [
+        "enlarged_pores"
+      ],
+      "severity": {
+        "enlarged_pores": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_013",
+      "image_filename": "synthetic_013.jpg",
+      "skin_type": "sensitive",
+      "issues": [
+        "oiliness",
+        "dark_spots"
+      ],
+      "severity": {
+        "oiliness": "medium",
+        "dark_spots": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_014",
+      "image_filename": "synthetic_014.jpg",
+      "skin_type": "normal",
+      "issues": [
+        "redness",
+        "uneven_tone",
+        "oiliness"
+      ],
+      "severity": {
+        "redness": "high",
+        "uneven_tone": "high",
+        "oiliness": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_015",
+      "image_filename": "synthetic_015.jpg",
+      "skin_type": "oily",
+      "issues": [
+        "uneven_tone"
+      ],
+      "severity": {
+        "uneven_tone": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_016",
+      "image_filename": "synthetic_016.jpg",
+      "skin_type": "dry",
+      "issues": [
+        "enlarged_pores",
+        "oiliness"
+      ],
+      "severity": {
+        "enlarged_pores": "medium",
+        "oiliness": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_017",
+      "image_filename": "synthetic_017.jpg",
+      "skin_type": "combination",
+      "issues": [
+        "acne",
+        "dark_spots",
+        "wrinkles"
+      ],
+      "severity": {
+        "acne": "high",
+        "dark_spots": "high",
+        "wrinkles": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_018",
+      "image_filename": "synthetic_018.jpg",
+      "skin_type": "sensitive",
+      "issues": [
+        "dryness"
+      ],
+      "severity": {
+        "dryness": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_019",
+      "image_filename": "synthetic_019.jpg",
+      "skin_type": "normal",
+      "issues": [
+        "enlarged_pores",
+        "oiliness"
+      ],
+      "severity": {
+        "enlarged_pores": "medium",
+        "oiliness": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_020",
+      "image_filename": "synthetic_020.jpg",
+      "skin_type": "oily",
+      "issues": [
+        "uneven_tone",
+        "redness",
+        "oiliness"
+      ],
+      "severity": {
+        "uneven_tone": "high",
+        "redness": "high",
+        "oiliness": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_021",
+      "image_filename": "synthetic_021.jpg",
+      "skin_type": "dry",
+      "issues": [
+        "dryness"
+      ],
+      "severity": {
+        "dryness": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_022",
+      "image_filename": "synthetic_022.jpg",
+      "skin_type": "combination",
+      "issues": [
+        "dark_spots",
+        "wrinkles"
+      ],
+      "severity": {
+        "dark_spots": "medium",
+        "wrinkles": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_023",
+      "image_filename": "synthetic_023.jpg",
+      "skin_type": "sensitive",
+      "issues": [
+        "wrinkles",
+        "dark_spots",
+        "acne"
+      ],
+      "severity": {
+        "wrinkles": "high",
+        "dark_spots": "high",
+        "acne": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_024",
+      "image_filename": "synthetic_024.jpg",
+      "skin_type": "normal",
+      "issues": [
+        "uneven_tone"
+      ],
+      "severity": {
+        "uneven_tone": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_025",
+      "image_filename": "synthetic_025.jpg",
+      "skin_type": "oily",
+      "issues": [
+        "enlarged_pores",
+        "acne"
+      ],
+      "severity": {
+        "enlarged_pores": "medium",
+        "acne": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_026",
+      "image_filename": "synthetic_026.jpg",
+      "skin_type": "dry",
+      "issues": [
+        "dark_spots",
+        "wrinkles",
+        "oiliness"
+      ],
+      "severity": {
+        "dark_spots": "high",
+        "wrinkles": "high",
+        "oiliness": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_027",
+      "image_filename": "synthetic_027.jpg",
+      "skin_type": "combination",
+      "issues": [
+        "dryness"
+      ],
+      "severity": {
+        "dryness": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_028",
+      "image_filename": "synthetic_028.jpg",
+      "skin_type": "sensitive",
+      "issues": [
+        "dryness",
+        "acne"
+      ],
+      "severity": {
+        "dryness": "medium",
+        "acne": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_029",
+      "image_filename": "synthetic_029.jpg",
+      "skin_type": "normal",
+      "issues": [
+        "oiliness",
+        "dark_spots",
+        "redness"
+      ],
+      "severity": {
+        "oiliness": "high",
+        "dark_spots": "high",
+        "redness": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_030",
+      "image_filename": "synthetic_030.jpg",
+      "skin_type": "oily",
+      "issues": [
+        "enlarged_pores"
+      ],
+      "severity": {
+        "enlarged_pores": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_031",
+      "image_filename": "synthetic_031.jpg",
+      "skin_type": "dry",
+      "issues": [
+        "redness",
+        "dryness"
+      ],
+      "severity": {
+        "redness": "medium",
+        "dryness": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_032",
+      "image_filename": "synthetic_032.jpg",
+      "skin_type": "combination",
+      "issues": [
+        "wrinkles",
+        "redness",
+        "enlarged_pores"
+      ],
+      "severity": {
+        "wrinkles": "high",
+        "redness": "high",
+        "enlarged_pores": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_033",
+      "image_filename": "synthetic_033.jpg",
+      "skin_type": "sensitive",
+      "issues": [
+        "oiliness"
+      ],
+      "severity": {
+        "oiliness": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_034",
+      "image_filename": "synthetic_034.jpg",
+      "skin_type": "normal",
+      "issues": [
+        "redness",
+        "dryness"
+      ],
+      "severity": {
+        "redness": "medium",
+        "dryness": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_035",
+      "image_filename": "synthetic_035.jpg",
+      "skin_type": "oily",
+      "issues": [
+        "wrinkles",
+        "dryness",
+        "dark_spots"
+      ],
+      "severity": {
+        "wrinkles": "high",
+        "dryness": "high",
+        "dark_spots": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_036",
+      "image_filename": "synthetic_036.jpg",
+      "skin_type": "dry",
+      "issues": [
+        "oiliness"
+      ],
+      "severity": {
+        "oiliness": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_037",
+      "image_filename": "synthetic_037.jpg",
+      "skin_type": "combination",
+      "issues": [
+        "uneven_tone",
+        "enlarged_pores"
+      ],
+      "severity": {
+        "uneven_tone": "medium",
+        "enlarged_pores": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_038",
+      "image_filename": "synthetic_038.jpg",
+      "skin_type": "sensitive",
+      "issues": [
+        "dryness",
+        "dark_spots",
+        "uneven_tone"
+      ],
+      "severity": {
+        "dryness": "high",
+        "dark_spots": "high",
+        "uneven_tone": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_039",
+      "image_filename": "synthetic_039.jpg",
+      "skin_type": "normal",
+      "issues": [
+        "redness"
+      ],
+      "severity": {
+        "redness": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_040",
+      "image_filename": "synthetic_040.jpg",
+      "skin_type": "oily",
+      "issues": [
+        "dark_spots",
+        "dryness"
+      ],
+      "severity": {
+        "dark_spots": "medium",
+        "dryness": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_041",
+      "image_filename": "synthetic_041.jpg",
+      "skin_type": "dry",
+      "issues": [
+        "oiliness",
+        "dryness",
+        "dark_spots"
+      ],
+      "severity": {
+        "oiliness": "high",
+        "dryness": "high",
+        "dark_spots": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_042",
+      "image_filename": "synthetic_042.jpg",
+      "skin_type": "combination",
+      "issues": [
+        "acne"
+      ],
+      "severity": {
+        "acne": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_043",
+      "image_filename": "synthetic_043.jpg",
+      "skin_type": "sensitive",
+      "issues": [
+        "dark_spots",
+        "oiliness"
+      ],
+      "severity": {
+        "dark_spots": "medium",
+        "oiliness": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_044",
+      "image_filename": "synthetic_044.jpg",
+      "skin_type": "normal",
+      "issues": [
+        "uneven_tone",
+        "dryness",
+        "redness"
+      ],
+      "severity": {
+        "uneven_tone": "high",
+        "dryness": "high",
+        "redness": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_045",
+      "image_filename": "synthetic_045.jpg",
+      "skin_type": "oily",
+      "issues": [
+        "oiliness"
+      ],
+      "severity": {
+        "oiliness": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_046",
+      "image_filename": "synthetic_046.jpg",
+      "skin_type": "dry",
+      "issues": [
+        "redness",
+        "enlarged_pores"
+      ],
+      "severity": {
+        "redness": "medium",
+        "enlarged_pores": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_047",
+      "image_filename": "synthetic_047.jpg",
+      "skin_type": "combination",
+      "issues": [
+        "acne",
+        "enlarged_pores",
+        "uneven_tone"
+      ],
+      "severity": {
+        "acne": "high",
+        "enlarged_pores": "high",
+        "uneven_tone": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_048",
+      "image_filename": "synthetic_048.jpg",
+      "skin_type": "sensitive",
+      "issues": [
+        "enlarged_pores"
+      ],
+      "severity": {
+        "enlarged_pores": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_049",
+      "image_filename": "synthetic_049.jpg",
+      "skin_type": "normal",
+      "issues": [
+        "dryness",
+        "redness"
+      ],
+      "severity": {
+        "dryness": "medium",
+        "redness": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_050",
+      "image_filename": "synthetic_050.jpg",
+      "skin_type": "oily",
+      "issues": [
+        "redness",
+        "acne",
+        "oiliness"
+      ],
+      "severity": {
+        "redness": "high",
+        "acne": "high",
+        "oiliness": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_051",
+      "image_filename": "synthetic_051.jpg",
+      "skin_type": "dry",
+      "issues": [
+        "dark_spots"
+      ],
+      "severity": {
+        "dark_spots": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_052",
+      "image_filename": "synthetic_052.jpg",
+      "skin_type": "combination",
+      "issues": [
+        "uneven_tone",
+        "oiliness"
+      ],
+      "severity": {
+        "uneven_tone": "medium",
+        "oiliness": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_053",
+      "image_filename": "synthetic_053.jpg",
+      "skin_type": "sensitive",
+      "issues": [
+        "wrinkles",
+        "uneven_tone",
+        "oiliness"
+      ],
+      "severity": {
+        "wrinkles": "high",
+        "uneven_tone": "high",
+        "oiliness": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_054",
+      "image_filename": "synthetic_054.jpg",
+      "skin_type": "normal",
+      "issues": [
+        "enlarged_pores"
+      ],
+      "severity": {
+        "enlarged_pores": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_055",
+      "image_filename": "synthetic_055.jpg",
+      "skin_type": "oily",
+      "issues": [
+        "acne",
+        "uneven_tone"
+      ],
+      "severity": {
+        "acne": "medium",
+        "uneven_tone": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_056",
+      "image_filename": "synthetic_056.jpg",
+      "skin_type": "dry",
+      "issues": [
+        "oiliness",
+        "dryness",
+        "dark_spots"
+      ],
+      "severity": {
+        "oiliness": "high",
+        "dryness": "high",
+        "dark_spots": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_057",
+      "image_filename": "synthetic_057.jpg",
+      "skin_type": "combination",
+      "issues": [
+        "dark_spots"
+      ],
+      "severity": {
+        "dark_spots": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_058",
+      "image_filename": "synthetic_058.jpg",
+      "skin_type": "sensitive",
+      "issues": [
+        "oiliness",
+        "dryness"
+      ],
+      "severity": {
+        "oiliness": "medium",
+        "dryness": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_059",
+      "image_filename": "synthetic_059.jpg",
+      "skin_type": "normal",
+      "issues": [
+        "wrinkles",
+        "oiliness",
+        "redness"
+      ],
+      "severity": {
+        "wrinkles": "high",
+        "oiliness": "high",
+        "redness": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_060",
+      "image_filename": "synthetic_060.jpg",
+      "skin_type": "oily",
+      "issues": [
+        "wrinkles"
+      ],
+      "severity": {
+        "wrinkles": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_061",
+      "image_filename": "synthetic_061.jpg",
+      "skin_type": "dry",
+      "issues": [
+        "enlarged_pores",
+        "uneven_tone"
+      ],
+      "severity": {
+        "enlarged_pores": "medium",
+        "uneven_tone": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_062",
+      "image_filename": "synthetic_062.jpg",
+      "skin_type": "combination",
+      "issues": [
+        "dark_spots",
+        "dryness",
+        "wrinkles"
+      ],
+      "severity": {
+        "dark_spots": "high",
+        "dryness": "high",
+        "wrinkles": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_063",
+      "image_filename": "synthetic_063.jpg",
+      "skin_type": "sensitive",
+      "issues": [
+        "redness"
+      ],
+      "severity": {
+        "redness": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_064",
+      "image_filename": "synthetic_064.jpg",
+      "skin_type": "normal",
+      "issues": [
+        "oiliness",
+        "redness"
+      ],
+      "severity": {
+        "oiliness": "medium",
+        "redness": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_065",
+      "image_filename": "synthetic_065.jpg",
+      "skin_type": "oily",
+      "issues": [
+        "oiliness",
+        "enlarged_pores",
+        "dark_spots"
+      ],
+      "severity": {
+        "oiliness": "high",
+        "enlarged_pores": "high",
+        "dark_spots": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_066",
+      "image_filename": "synthetic_066.jpg",
+      "skin_type": "dry",
+      "issues": [
+        "uneven_tone"
+      ],
+      "severity": {
+        "uneven_tone": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_067",
+      "image_filename": "synthetic_067.jpg",
+      "skin_type": "combination",
+      "issues": [
+        "wrinkles",
+        "acne"
+      ],
+      "severity": {
+        "wrinkles": "medium",
+        "acne": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_068",
+      "image_filename": "synthetic_068.jpg",
+      "skin_type": "sensitive",
+      "issues": [
+        "wrinkles",
+        "acne",
+        "dark_spots"
+      ],
+      "severity": {
+        "wrinkles": "high",
+        "acne": "high",
+        "dark_spots": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_069",
+      "image_filename": "synthetic_069.jpg",
+      "skin_type": "normal",
+      "issues": [
+        "wrinkles"
+      ],
+      "severity": {
+        "wrinkles": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_070",
+      "image_filename": "synthetic_070.jpg",
+      "skin_type": "oily",
+      "issues": [
+        "wrinkles",
+        "dryness"
+      ],
+      "severity": {
+        "wrinkles": "medium",
+        "dryness": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_071",
+      "image_filename": "synthetic_071.jpg",
+      "skin_type": "dry",
+      "issues": [
+        "oiliness",
+        "wrinkles",
+        "acne"
+      ],
+      "severity": {
+        "oiliness": "high",
+        "wrinkles": "high",
+        "acne": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_072",
+      "image_filename": "synthetic_072.jpg",
+      "skin_type": "combination",
+      "issues": [
+        "dark_spots"
+      ],
+      "severity": {
+        "dark_spots": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_073",
+      "image_filename": "synthetic_073.jpg",
+      "skin_type": "sensitive",
+      "issues": [
+        "oiliness",
+        "enlarged_pores"
+      ],
+      "severity": {
+        "oiliness": "medium",
+        "enlarged_pores": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_074",
+      "image_filename": "synthetic_074.jpg",
+      "skin_type": "normal",
+      "issues": [
+        "uneven_tone",
+        "dark_spots",
+        "wrinkles"
+      ],
+      "severity": {
+        "uneven_tone": "high",
+        "dark_spots": "high",
+        "wrinkles": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_075",
+      "image_filename": "synthetic_075.jpg",
+      "skin_type": "oily",
+      "issues": [
+        "oiliness"
+      ],
+      "severity": {
+        "oiliness": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_076",
+      "image_filename": "synthetic_076.jpg",
+      "skin_type": "dry",
+      "issues": [
+        "uneven_tone",
+        "oiliness"
+      ],
+      "severity": {
+        "uneven_tone": "medium",
+        "oiliness": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_077",
+      "image_filename": "synthetic_077.jpg",
+      "skin_type": "combination",
+      "issues": [
+        "oiliness",
+        "dark_spots",
+        "dryness"
+      ],
+      "severity": {
+        "oiliness": "high",
+        "dark_spots": "high",
+        "dryness": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_078",
+      "image_filename": "synthetic_078.jpg",
+      "skin_type": "sensitive",
+      "issues": [
+        "dark_spots"
+      ],
+      "severity": {
+        "dark_spots": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_079",
+      "image_filename": "synthetic_079.jpg",
+      "skin_type": "normal",
+      "issues": [
+        "redness",
+        "oiliness"
+      ],
+      "severity": {
+        "redness": "medium",
+        "oiliness": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_080",
+      "image_filename": "synthetic_080.jpg",
+      "skin_type": "oily",
+      "issues": [
+        "dark_spots",
+        "enlarged_pores",
+        "dryness"
+      ],
+      "severity": {
+        "dark_spots": "high",
+        "enlarged_pores": "high",
+        "dryness": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_081",
+      "image_filename": "synthetic_081.jpg",
+      "skin_type": "dry",
+      "issues": [
+        "enlarged_pores"
+      ],
+      "severity": {
+        "enlarged_pores": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_082",
+      "image_filename": "synthetic_082.jpg",
+      "skin_type": "combination",
+      "issues": [
+        "redness",
+        "oiliness"
+      ],
+      "severity": {
+        "redness": "medium",
+        "oiliness": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_083",
+      "image_filename": "synthetic_083.jpg",
+      "skin_type": "sensitive",
+      "issues": [
+        "uneven_tone",
+        "dryness",
+        "redness"
+      ],
+      "severity": {
+        "uneven_tone": "high",
+        "dryness": "high",
+        "redness": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_084",
+      "image_filename": "synthetic_084.jpg",
+      "skin_type": "normal",
+      "issues": [
+        "uneven_tone"
+      ],
+      "severity": {
+        "uneven_tone": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_085",
+      "image_filename": "synthetic_085.jpg",
+      "skin_type": "oily",
+      "issues": [
+        "wrinkles",
+        "dark_spots"
+      ],
+      "severity": {
+        "wrinkles": "medium",
+        "dark_spots": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_086",
+      "image_filename": "synthetic_086.jpg",
+      "skin_type": "dry",
+      "issues": [
+        "oiliness",
+        "dark_spots",
+        "enlarged_pores"
+      ],
+      "severity": {
+        "oiliness": "high",
+        "dark_spots": "high",
+        "enlarged_pores": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_087",
+      "image_filename": "synthetic_087.jpg",
+      "skin_type": "combination",
+      "issues": [
+        "dryness"
+      ],
+      "severity": {
+        "dryness": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_088",
+      "image_filename": "synthetic_088.jpg",
+      "skin_type": "sensitive",
+      "issues": [
+        "acne",
+        "dryness"
+      ],
+      "severity": {
+        "acne": "medium",
+        "dryness": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_089",
+      "image_filename": "synthetic_089.jpg",
+      "skin_type": "normal",
+      "issues": [
+        "wrinkles",
+        "enlarged_pores",
+        "dryness"
+      ],
+      "severity": {
+        "wrinkles": "high",
+        "enlarged_pores": "high",
+        "dryness": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_090",
+      "image_filename": "synthetic_090.jpg",
+      "skin_type": "oily",
+      "issues": [
+        "wrinkles"
+      ],
+      "severity": {
+        "wrinkles": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_091",
+      "image_filename": "synthetic_091.jpg",
+      "skin_type": "dry",
+      "issues": [
+        "enlarged_pores",
+        "oiliness"
+      ],
+      "severity": {
+        "enlarged_pores": "medium",
+        "oiliness": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_092",
+      "image_filename": "synthetic_092.jpg",
+      "skin_type": "combination",
+      "issues": [
+        "dark_spots",
+        "acne",
+        "wrinkles"
+      ],
+      "severity": {
+        "dark_spots": "high",
+        "acne": "high",
+        "wrinkles": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_093",
+      "image_filename": "synthetic_093.jpg",
+      "skin_type": "sensitive",
+      "issues": [
+        "enlarged_pores"
+      ],
+      "severity": {
+        "enlarged_pores": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_094",
+      "image_filename": "synthetic_094.jpg",
+      "skin_type": "normal",
+      "issues": [
+        "wrinkles",
+        "dryness"
+      ],
+      "severity": {
+        "wrinkles": "medium",
+        "dryness": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_095",
+      "image_filename": "synthetic_095.jpg",
+      "skin_type": "oily",
+      "issues": [
+        "dark_spots",
+        "redness",
+        "oiliness"
+      ],
+      "severity": {
+        "dark_spots": "high",
+        "redness": "high",
+        "oiliness": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_096",
+      "image_filename": "synthetic_096.jpg",
+      "skin_type": "dry",
+      "issues": [
+        "uneven_tone"
+      ],
+      "severity": {
+        "uneven_tone": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_097",
+      "image_filename": "synthetic_097.jpg",
+      "skin_type": "combination",
+      "issues": [
+        "acne",
+        "dark_spots"
+      ],
+      "severity": {
+        "acne": "medium",
+        "dark_spots": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_098",
+      "image_filename": "synthetic_098.jpg",
+      "skin_type": "sensitive",
+      "issues": [
+        "dark_spots",
+        "oiliness",
+        "acne"
+      ],
+      "severity": {
+        "dark_spots": "high",
+        "oiliness": "high",
+        "acne": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_099",
+      "image_filename": "synthetic_099.jpg",
+      "skin_type": "normal",
+      "issues": [
+        "acne"
+      ],
+      "severity": {
+        "acne": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_100",
+      "image_filename": "synthetic_100.jpg",
+      "skin_type": "oily",
+      "issues": [
+        "redness",
+        "dark_spots"
+      ],
+      "severity": {
+        "redness": "medium",
+        "dark_spots": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_101",
+      "image_filename": "synthetic_101.jpg",
+      "skin_type": "dry",
+      "issues": [
+        "uneven_tone",
+        "redness",
+        "enlarged_pores"
+      ],
+      "severity": {
+        "uneven_tone": "high",
+        "redness": "high",
+        "enlarged_pores": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_102",
+      "image_filename": "synthetic_102.jpg",
+      "skin_type": "combination",
+      "issues": [
+        "uneven_tone"
+      ],
+      "severity": {
+        "uneven_tone": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_103",
+      "image_filename": "synthetic_103.jpg",
+      "skin_type": "sensitive",
+      "issues": [
+        "wrinkles",
+        "acne"
+      ],
+      "severity": {
+        "wrinkles": "medium",
+        "acne": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_104",
+      "image_filename": "synthetic_104.jpg",
+      "skin_type": "normal",
+      "issues": [
+        "oiliness",
+        "wrinkles",
+        "dryness"
+      ],
+      "severity": {
+        "oiliness": "high",
+        "wrinkles": "high",
+        "dryness": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_105",
+      "image_filename": "synthetic_105.jpg",
+      "skin_type": "oily",
+      "issues": [
+        "acne"
+      ],
+      "severity": {
+        "acne": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_106",
+      "image_filename": "synthetic_106.jpg",
+      "skin_type": "dry",
+      "issues": [
+        "uneven_tone",
+        "dryness"
+      ],
+      "severity": {
+        "uneven_tone": "medium",
+        "dryness": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_107",
+      "image_filename": "synthetic_107.jpg",
+      "skin_type": "combination",
+      "issues": [
+        "dark_spots",
+        "enlarged_pores",
+        "uneven_tone"
+      ],
+      "severity": {
+        "dark_spots": "high",
+        "enlarged_pores": "high",
+        "uneven_tone": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_108",
+      "image_filename": "synthetic_108.jpg",
+      "skin_type": "sensitive",
+      "issues": [
+        "uneven_tone"
+      ],
+      "severity": {
+        "uneven_tone": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_109",
+      "image_filename": "synthetic_109.jpg",
+      "skin_type": "normal",
+      "issues": [
+        "redness",
+        "acne"
+      ],
+      "severity": {
+        "redness": "medium",
+        "acne": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_110",
+      "image_filename": "synthetic_110.jpg",
+      "skin_type": "oily",
+      "issues": [
+        "oiliness",
+        "dryness",
+        "wrinkles"
+      ],
+      "severity": {
+        "oiliness": "high",
+        "dryness": "high",
+        "wrinkles": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_111",
+      "image_filename": "synthetic_111.jpg",
+      "skin_type": "dry",
+      "issues": [
+        "uneven_tone"
+      ],
+      "severity": {
+        "uneven_tone": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_112",
+      "image_filename": "synthetic_112.jpg",
+      "skin_type": "combination",
+      "issues": [
+        "dark_spots",
+        "enlarged_pores"
+      ],
+      "severity": {
+        "dark_spots": "medium",
+        "enlarged_pores": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_113",
+      "image_filename": "synthetic_113.jpg",
+      "skin_type": "sensitive",
+      "issues": [
+        "wrinkles",
+        "acne",
+        "dryness"
+      ],
+      "severity": {
+        "wrinkles": "high",
+        "acne": "high",
+        "dryness": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_114",
+      "image_filename": "synthetic_114.jpg",
+      "skin_type": "normal",
+      "issues": [
+        "oiliness"
+      ],
+      "severity": {
+        "oiliness": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_115",
+      "image_filename": "synthetic_115.jpg",
+      "skin_type": "oily",
+      "issues": [
+        "wrinkles",
+        "dark_spots"
+      ],
+      "severity": {
+        "wrinkles": "medium",
+        "dark_spots": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_116",
+      "image_filename": "synthetic_116.jpg",
+      "skin_type": "dry",
+      "issues": [
+        "acne",
+        "dryness",
+        "enlarged_pores"
+      ],
+      "severity": {
+        "acne": "high",
+        "dryness": "high",
+        "enlarged_pores": "high"
+      }
+    },
+    {
+      "image_id": "synthetic_117",
+      "image_filename": "synthetic_117.jpg",
+      "skin_type": "combination",
+      "issues": [
+        "dark_spots"
+      ],
+      "severity": {
+        "dark_spots": "low"
+      }
+    },
+    {
+      "image_id": "synthetic_118",
+      "image_filename": "synthetic_118.jpg",
+      "skin_type": "sensitive",
+      "issues": [
+        "oiliness",
+        "uneven_tone"
+      ],
+      "severity": {
+        "oiliness": "medium",
+        "uneven_tone": "medium"
+      }
+    },
+    {
+      "image_id": "synthetic_119",
+      "image_filename": "synthetic_119.jpg",
+      "skin_type": "normal",
+      "issues": [
+        "enlarged_pores",
+        "oiliness",
+        "uneven_tone"
+      ],
+      "severity": {
+        "enlarged_pores": "high",
+        "oiliness": "high",
+        "uneven_tone": "high"
+      }
+    }
+  ]
+}

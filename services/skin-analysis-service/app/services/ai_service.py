@@ -1,6 +1,7 @@
 import os
 import logging
 import asyncio
+import time
 from typing import Dict, Any, List, Tuple, Optional
 import cv2
 import numpy as np
@@ -13,79 +14,280 @@ from skimage import segmentation, measure
 from skimage.filters import gaussian
 
 from app.core.config import settings
+from app.core.ml_config import ml_settings
+from app.ml.model_manager import ModelManager
+from app.ml.preprocessor import ImagePreprocessor
+from app.ml.postprocessor import PostProcessor
+from app.ml.exceptions import (
+    ModelError,
+    InferenceError,
+    PreprocessingError,
+    PostprocessingError,
+    ModelNotFoundError,
+    ModelLoadError,
+)
+from app.ml.logging_utils import MLLogger, log_operation
 
 logger = logging.getLogger(__name__)
 
 
 class AIService:
     """
-    AI Service for skin analysis
-    Implements priority: GitHub models → free APIs → custom models
+    AI Service for skin analysis using ML models.
+    
+    Integrates ModelManager, ImagePreprocessor, and PostProcessor for
+    complete skin analysis pipeline with error handling and graceful degradation.
     """
     
     def __init__(self):
-        self.model_version = "github-huggingface-v1.0"
+        self.model_version = ml_settings.MODEL_VERSION
         self.models_dir = settings.MODELS_DIR
-        self.model_loaded = False
-        self.skin_model = None
         self._ensure_models_directory()
         
-        # Model priority configuration
+        # Initialize structured logger
+        self._logger = MLLogger("AIService")
+        
+        # Initialize ML components with error handling
+        try:
+            self._logger.log_operation_start("ml_initialization")
+            
+            self.model_manager = ModelManager(
+                model_path=ml_settings.MODEL_PATH,
+                device=ml_settings.DEVICE,
+                confidence_threshold=ml_settings.CONFIDENCE_THRESHOLD,
+                enable_quantization=ml_settings.ENABLE_QUANTIZATION,
+                enable_caching=ml_settings.ENABLE_PREDICTION_CACHE,
+                cache_size=ml_settings.PREDICTION_CACHE_SIZE,
+                batch_size=ml_settings.MAX_BATCH_SIZE
+            )
+            self.preprocessor = ImagePreprocessor(target_size=ml_settings.INPUT_SIZE)
+            self.postprocessor = PostProcessor(
+                confidence_threshold=ml_settings.CONFIDENCE_THRESHOLD,
+                output_dir=settings.UPLOAD_DIR
+            )
+            self.ml_enabled = True
+            self._inference_count = 0
+            
+            self._logger.log_operation_complete(
+                "ml_initialization",
+                0.0,
+                quantization=ml_settings.ENABLE_QUANTIZATION,
+                caching=ml_settings.ENABLE_PREDICTION_CACHE
+            )
+        except Exception as e:
+            self._logger.log_error("ml_initialization", e)
+            self._logger.log_warning(
+                "ML components initialization failed, falling back to alternative methods"
+            )
+            self.model_manager = None
+            self.preprocessor = None
+            self.postprocessor = None
+            self.ml_enabled = False
+            self._inference_count = 0
+        
+        # Legacy attributes for backward compatibility
+        self.model_loaded = False
+        self.skin_model = None
+        
+        # Model priority configuration (for fallback)
         self.model_sources = [
-            "github_huggingface",  # Priority 1: GitHub/HuggingFace models
-            "free_api",           # Priority 2: Free API services
-            "custom_model"        # Priority 3: Custom trained models
+            "ml_model",           # Priority 1: Local ML model
+            "github_huggingface",  # Priority 2: GitHub/HuggingFace models
+            "free_api",           # Priority 3: Free API services
+            "mock_analysis"       # Priority 4: Mock analysis (fallback)
         ]
         
-        # Initialize model on startup
-        asyncio.create_task(self._initialize_model())
+        # Preload model if configured
+        if ml_settings.PRELOAD_MODEL and self.ml_enabled:
+            asyncio.create_task(self._preload_model())
     
     def _ensure_models_directory(self):
         """Ensure models directory exists"""
         os.makedirs(self.models_dir, exist_ok=True)
     
+    async def _preload_model(self):
+        """Preload ML model on startup if configured."""
+        try:
+            if self.model_manager:
+                logger.info("Preloading ML model...")
+                self.model_manager.load_model()
+                logger.info("ML model preloaded successfully")
+        except Exception as e:
+            logger.error(f"Failed to preload model: {e}")
+    
+    async def analyze_skin(self, image_path: str) -> Dict[str, Any]:
+        """
+        Analyze skin using ML model pipeline.
+        
+        Implements the complete ML inference pipeline:
+        1. Preprocess image using ImagePreprocessor
+        2. Run inference using ModelManager
+        3. Post-process results using PostProcessor
+        
+        Includes error handling with graceful degradation and timing metrics.
+        
+        Args:
+            image_path: Path to the image file to analyze
+            
+        Returns:
+            Dictionary containing:
+                - skin_type: str
+                - issues: List[Dict]
+                - analysis_timestamp: str
+                - model_confidence: float
+                - inference_time: float
+                - device_used: str
+                
+        Raises:
+            Exception: If ML pipeline fails
+        """
+        if not self.ml_enabled:
+            raise Exception("ML components not initialized")
+        
+        try:
+            start_time = time.time()
+            
+            # Step 1: Load and preprocess image
+            logger.debug(f"Loading image from {image_path}")
+            image = Image.open(image_path)
+            
+            # Validate image
+            if not self.preprocessor.validate_image(image):
+                raise ValueError("Invalid image format or quality")
+            
+            preprocess_start = time.time()
+            image_tensor = self.preprocessor.preprocess(image)
+            preprocess_time = time.time() - preprocess_start
+            logger.debug(f"Image preprocessing completed in {preprocess_time:.3f}s")
+            
+            # Step 2: Run inference
+            inference_start = time.time()
+            predictions = self.model_manager.predict(image_tensor, use_cache=ml_settings.ENABLE_PREDICTION_CACHE)
+            inference_time = time.time() - inference_start
+            
+            # Track inference count for memory cleanup
+            self._inference_count += 1
+            
+            # Perform periodic memory cleanup if enabled
+            if ml_settings.AUTO_CLEANUP_MEMORY and self._inference_count % ml_settings.CLEANUP_INTERVAL == 0:
+                logger.debug(f"Performing periodic memory cleanup (inference count: {self._inference_count})")
+                self.model_manager.cleanup_memory()
+            
+            cached_str = " (cached)" if predictions.get("cached", False) else ""
+            logger.debug(f"Model inference completed in {inference_time:.3f}s on {predictions.get('device_used', 'unknown')}{cached_str}")
+            
+            # Step 3: Post-process results
+            postprocess_start = time.time()
+            processed_results = self.postprocessor.process_predictions(
+                predictions,
+                image,
+                analysis_id=None  # Will be auto-generated
+            )
+            postprocess_time = time.time() - postprocess_start
+            logger.debug(f"Post-processing completed in {postprocess_time:.3f}s")
+            
+            # Calculate total time
+            total_time = time.time() - start_time
+            
+            # Format response
+            result = {
+                "skin_type": processed_results["skin_type"],
+                "issues": processed_results["issues"],
+                "analysis_timestamp": datetime.utcnow().isoformat(),
+                "model_confidence": processed_results["metadata"]["skin_type_confidence"],
+                "inference_time": inference_time,
+                "total_processing_time": total_time,
+                "device_used": predictions.get("device_used", "unknown"),
+                "model_version": self.model_version,
+                "timing_breakdown": {
+                    "preprocessing": preprocess_time,
+                    "inference": inference_time,
+                    "postprocessing": postprocess_time,
+                    "total": total_time
+                }
+            }
+            
+            logger.info(f"ML analysis completed successfully in {total_time:.3f}s")
+            logger.info(f"Detected skin type: {result['skin_type']}, Issues: {len(result['issues'])}")
+            
+            return result
+            
+        except InferenceError as e:
+            logger.error(f"ML inference failed: {e}")
+            # Attempt graceful degradation
+            if ml_settings.FALLBACK_ON_ERROR:
+                logger.info("Attempting fallback to mock analysis")
+                raise  # Re-raise to trigger fallback in analyze_skin_image
+            raise
+            
+        except Exception as e:
+            logger.error(f"ML analysis pipeline failed: {type(e).__name__}: {e}")
+            raise
+    
     async def analyze_skin_image(self, image_path: str) -> Dict[str, Any]:
         """
-        Analyze skin image and return detected skin type and issues
-        Uses priority-based model selection: GitHub models → free APIs → custom models
+        Analyze skin image using ML model with graceful degradation.
+        
+        Uses priority-based model selection:
+        1. Local ML model (ModelManager)
+        2. GitHub/HuggingFace models
+        3. Free API services
+        4. Mock analysis (fallback)
+        
+        Args:
+            image_path: Path to the image file to analyze
+            
+        Returns:
+            Dictionary containing analysis results with skin type and issues
         """
         try:
-            start_time = asyncio.get_event_loop().time()
-            
-            # Preprocess image for model input
-            preprocessed_image = await self.preprocess_for_model(image_path)
+            start_time = time.time()
             
             # Try models in priority order
             analysis_result = None
+            model_source_used = None
+            
             for model_source in self.model_sources:
                 try:
-                    if model_source == "github_huggingface":
+                    if model_source == "ml_model" and self.ml_enabled:
+                        analysis_result = await self.analyze_skin(image_path)
+                        model_source_used = "ml_model"
+                    elif model_source == "github_huggingface":
+                        preprocessed_image = await self.preprocess_for_model(image_path)
                         analysis_result = await self._analyze_with_huggingface(preprocessed_image, image_path)
+                        model_source_used = "github_huggingface"
                     elif model_source == "free_api":
+                        preprocessed_image = await self.preprocess_for_model(image_path)
                         analysis_result = await self._analyze_with_free_api(preprocessed_image, image_path)
-                    elif model_source == "custom_model":
-                        analysis_result = await self._analyze_with_custom_model(preprocessed_image, image_path)
+                        model_source_used = "free_api"
+                    elif model_source == "mock_analysis":
+                        image = cv2.imread(image_path)
+                        analysis_result = await self._mock_skin_analysis(image)
+                        model_source_used = "mock_analysis"
                     
                     if analysis_result:
-                        logger.info(f"Analysis successful with {model_source}")
+                        logger.info(f"Analysis successful with {model_source_used}")
                         break
                         
                 except Exception as e:
                     logger.warning(f"Analysis failed with {model_source}: {str(e)}")
                     continue
             
-            # Fallback to mock analysis if all models fail
+            # Ensure we have a result
             if not analysis_result:
-                logger.warning("All AI models failed, using fallback analysis")
-                image = cv2.imread(image_path)
-                analysis_result = await self._mock_skin_analysis(image)
+                logger.error("All analysis methods failed")
+                raise Exception("Unable to analyze image with any available method")
             
-            # Check processing time requirement (5 seconds max)
-            processing_time = asyncio.get_event_loop().time() - start_time
+            # Add timing metrics
+            processing_time = time.time() - start_time
+            analysis_result["processing_time"] = processing_time
+            analysis_result["model_source"] = model_source_used
+            
+            # Check processing time requirement
             if processing_time > settings.MAX_ANALYSIS_TIME:
                 logger.warning(f"Analysis took {processing_time:.2f}s, exceeding {settings.MAX_ANALYSIS_TIME}s limit")
             
-            logger.info(f"Skin analysis completed for image: {image_path} in {processing_time:.2f}s")
+            logger.info(f"Skin analysis completed for image: {image_path} in {processing_time:.2f}s using {model_source_used}")
             return analysis_result
             
         except Exception as e:
@@ -173,6 +375,25 @@ class AIService:
         """Get current model version"""
         return self.model_version
     
+    def get_model_info(self) -> Dict[str, Any]:
+        """
+        Get comprehensive model information and status.
+        
+        Returns:
+            Dictionary with model metadata, status, and configuration
+        """
+        info = {
+            "model_version": self.model_version,
+            "ml_enabled": self.ml_enabled,
+            "model_sources": self.model_sources,
+            "ml_config": ml_settings.get_config_summary() if self.ml_enabled else None
+        }
+        
+        if self.ml_enabled and self.model_manager:
+            info["model_manager"] = self.model_manager.get_model_info()
+        
+        return info
+    
     async def preprocess_for_model(self, image_path: str) -> np.ndarray:
         """
         Preprocess image for AI model input
@@ -235,20 +456,31 @@ class AIService:
         return issues
     
     async def _initialize_model(self):
-        """Initialize AI model on startup"""
+        """
+        Initialize AI model on startup (legacy method for backward compatibility).
+        
+        Note: ML model initialization is now handled in __init__ via ModelManager.
+        This method is kept for backward compatibility with legacy code.
+        """
         try:
-            # Try to load custom model if available
+            # Check if ML model is available
+            if self.ml_enabled and self.model_manager:
+                logger.info("ML model manager initialized and ready")
+                self.model_loaded = True
+                return
+            
+            # Try to load legacy custom model if available
             model_path = os.path.join(self.models_dir, "skin_analysis_model.pkl")
             if os.path.exists(model_path):
                 with open(model_path, 'rb') as f:
                     self.skin_model = pickle.load(f)
                 self.model_loaded = True
-                logger.info("Custom skin analysis model loaded successfully")
+                logger.info("Legacy custom skin analysis model loaded successfully")
             else:
-                logger.info("No custom model found, will use API-based analysis")
+                logger.info("No legacy custom model found, using ML model or fallback methods")
                 
         except Exception as e:
-            logger.error(f"Failed to initialize model: {str(e)}")
+            logger.error(f"Failed to initialize legacy model: {str(e)}")
     
     async def _analyze_with_huggingface(self, image: np.ndarray, image_path: str) -> Dict[str, Any]:
         """

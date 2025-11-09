@@ -14,6 +14,9 @@ from app.services.image_service import ImageService
 from app.services.skin_analysis_service import SkinAnalysisService
 from app.services.product_service import ProductService
 from app.core.database import get_database
+from app.core.ml_config import ml_settings
+from app.ml.model_manager import ModelManager
+from app.ml.models import SkinType, IssueType
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -256,3 +259,91 @@ async def get_service_stats(db=Depends(get_database)):
     except Exception as e:
         logger.error(f"Failed to get service stats: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to retrieve service statistics")
+
+
+@router.get("/model/info")
+async def get_model_info():
+    """
+    Get ML model metadata and status information.
+    
+    Returns information about the currently loaded model including:
+    - Model name and version
+    - Model accuracy metrics
+    - Device being used (GPU/CPU)
+    - Model loading status
+    - Supported skin types and issues
+    """
+    try:
+        # Initialize model manager to get model info
+        model_manager = ModelManager(
+            model_path=ml_settings.MODEL_PATH,
+            device=ml_settings.DEVICE,
+            confidence_threshold=ml_settings.CONFIDENCE_THRESHOLD
+        )
+        
+        # Get model information
+        model_info = model_manager.get_model_info()
+        
+        # Get supported skin types and issues
+        supported_skin_types = [skin_type.value for skin_type in SkinType]
+        supported_issues = [issue_type.value for issue_type in IssueType]
+        
+        # Build response
+        response = {
+            "model": {
+                "name": ml_settings.MODEL_NAME,
+                "version": ml_settings.MODEL_VERSION,
+                "path": str(model_info["model_path"]),
+                "exists": model_info["model_exists"],
+                "size_mb": round(model_info.get("model_size_mb", 0), 2) if model_info["model_exists"] else None
+            },
+            "status": {
+                "loaded": model_info["is_loaded"],
+                "device": model_info["device"] or ml_settings.get_device_string(),
+                "device_preference": model_info["device_preference"]
+            },
+            "accuracy": {
+                "reported_accuracy": ">=90%",
+                "confidence_threshold": ml_settings.CONFIDENCE_THRESHOLD,
+                "note": "Model trained on HAM10000 and Fitzpatrick17k datasets"
+            },
+            "capabilities": {
+                "supported_skin_types": supported_skin_types,
+                "supported_issues": supported_issues,
+                "num_skin_type_classes": ml_settings.NUM_CLASSES_SKIN_TYPE,
+                "num_issue_classes": ml_settings.NUM_CLASSES_ISSUES
+            },
+            "configuration": {
+                "batch_size": ml_settings.BATCH_SIZE,
+                "input_size": ml_settings.INPUT_SIZE,
+                "lazy_loading": ml_settings.LAZY_LOADING,
+                "max_inference_time": ml_settings.MAX_INFERENCE_TIME
+            },
+            "performance": {}
+        }
+        
+        # Add GPU-specific information if available
+        if model_info["is_loaded"] and model_info["device"] == "cuda":
+            response["performance"]["gpu_memory_allocated_mb"] = round(
+                model_info.get("gpu_memory_allocated_mb", 0), 2
+            )
+            response["performance"]["gpu_memory_reserved_mb"] = round(
+                model_info.get("gpu_memory_reserved_mb", 0), 2
+            )
+        
+        # Add optimization flags
+        response["optimizations"] = {
+            "quantization_enabled": ml_settings.ENABLE_QUANTIZATION,
+            "onnx_enabled": ml_settings.ENABLE_ONNX,
+            "highlighted_images_enabled": ml_settings.ENABLE_HIGHLIGHTED_IMAGES
+        }
+        
+        logger.info("Model info retrieved successfully")
+        return response
+        
+    except Exception as e:
+        logger.error(f"Failed to get model info: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to retrieve model information: {str(e)}"
+        )

@@ -11,17 +11,17 @@ export class UserApi {
   /**
    * Get current user profile
    */
-  static async getProfile(): Promise<UserProfile> {
-    const response = await apiClient.get<ApiResponse<UserProfile>>('/user/profile');
+  static async getProfile(userId: string): Promise<UserProfile> {
+    const response = await apiClient.get<ApiResponse<UserProfile>>(`/api/v1/users/${userId}`);
     return response.data.data;
   }
 
   /**
    * Update user profile information
    */
-  static async updateProfile(updates: UpdateUserRequest): Promise<UserProfile> {
+  static async updateProfile(userId: string, updates: UpdateUserRequest): Promise<UserProfile> {
     const response = await apiClient.put<ApiResponse<UserProfile>>(
-      '/user/profile',
+      `/api/v1/users/${userId}`,
       updates
     );
     return response.data.data;
@@ -30,9 +30,9 @@ export class UserApi {
   /**
    * Update user preferences
    */
-  static async updatePreferences(preferences: UpdatePreferencesRequest): Promise<UserPreferences> {
+  static async updatePreferences(userId: string, preferences: UpdatePreferencesRequest): Promise<UserPreferences> {
     const response = await apiClient.put<ApiResponse<UserPreferences>>(
-      '/user/preferences',
+      `/api/v1/users/${userId}/preferences`,
       preferences
     );
     return response.data.data;
@@ -41,17 +41,17 @@ export class UserApi {
   /**
    * Get user preferences
    */
-  static async getPreferences(): Promise<UserPreferences> {
-    const response = await apiClient.get<ApiResponse<UserPreferences>>('/user/preferences');
+  static async getPreferences(userId: string): Promise<UserPreferences> {
+    const response = await apiClient.get<ApiResponse<UserPreferences>>(`/api/v1/users/${userId}/preferences`);
     return response.data.data;
   }
 
   /**
    * Upload profile image
    */
-  static async uploadProfileImage(imageFormData: FormData): Promise<{ imageUrl: string }> {
+  static async uploadProfileImage(userId: string, imageFormData: FormData): Promise<{ imageUrl: string }> {
     const response = await apiClient.post<ApiResponse<{ imageUrl: string }>>(
-      '/user/profile-image',
+      `/api/v1/users/${userId}/profile-image`,
       imageFormData,
       {
         headers: {
@@ -65,15 +65,15 @@ export class UserApi {
   /**
    * Delete user account
    */
-  static async deleteAccount(): Promise<void> {
-    await apiClient.delete('/user/account');
+  static async deleteAccount(userId: string): Promise<void> {
+    await apiClient.delete(`/api/v1/users/${userId}`);
   }
 
   /**
    * Change user password
    */
   static async changePassword(currentPassword: string, newPassword: string): Promise<void> {
-    await apiClient.post('/user/change-password', {
+    await apiClient.post('/api/auth/change-password', {
       currentPassword,
       newPassword,
     });
@@ -81,10 +81,12 @@ export class UserApi {
 
   /**
    * Get user activity summary
+   * Note: This endpoint doesn't exist in backend yet
    */
-  static async getActivitySummary(): Promise<any> {
-    const response = await apiClient.get<ApiResponse<any>>('/user/activity');
-    return response.data.data;
+  static async getActivitySummary(userId: string): Promise<any> {
+    // TODO: Backend needs to implement this endpoint
+    // For now, return mock data or throw not implemented error
+    throw new Error('Activity summary endpoint not implemented in backend');
   }
 }
 

@@ -48,7 +48,7 @@ export class HairTryOnApi {
     }
 
     const response = await apiClient.get<HairstylesResponse>(
-      '/hair-tryOn/hairstyles',
+      '/api/hair-tryOn/hairstyles',
       { params }
     );
     return response.data.hairstyles;
@@ -59,7 +59,7 @@ export class HairTryOnApi {
    */
   static async getHairstyleById(hairstyleId: string): Promise<Hairstyle> {
     const response = await apiClient.get<{ success: boolean; hairstyle: Hairstyle }>(
-      `/hair-tryOn/hairstyles/${hairstyleId}`
+      `/api/hair-tryOn/hairstyles/${hairstyleId}`
     );
     return response.data.hairstyle;
   }
@@ -89,7 +89,7 @@ export class HairTryOnApi {
     formData.append('blend_ratio', String(request.blendRatio || 0.8));
 
     const response = await apiClient.post(
-      '/hair-tryOn/process',
+      '/api/hair-tryOn/process',
       formData,
       {
         headers: {
@@ -112,7 +112,7 @@ export class HairTryOnApi {
     skip: number = 0
   ): Promise<HairTryOnHistory[]> {
     const response = await apiClient.get<{ success: boolean; count: number; history: HairTryOnHistory[] }>(
-      `/hair-tryOn/history/${userId}`,
+      `/api/hair-tryOn/history/${userId}`,
       {
         params: { limit, skip }
       }
@@ -124,7 +124,7 @@ export class HairTryOnApi {
    * Delete a hair try-on result
    */
   static async deleteHairTryOn(resultId: string, userId: string): Promise<void> {
-    await apiClient.delete(`/hair-tryOn/result/${resultId}`, {
+    await apiClient.delete(`/api/hair-tryOn/result/${resultId}`, {
       params: { user_id: userId }
     });
   }
@@ -133,7 +133,7 @@ export class HairTryOnApi {
    * Get service health status
    */
   static async getHealthStatus(): Promise<any> {
-    const response = await apiClient.get('/hair-tryOn/health');
+    const response = await apiClient.get('/api/hair-tryOn/health');
     return response.data;
   }
 
@@ -141,7 +141,7 @@ export class HairTryOnApi {
    * Clear hairstyles cache
    */
   static async clearCache(): Promise<void> {
-    await apiClient.post('/hair-tryOn/cache/clear');
+    await apiClient.post('/api/hair-tryOn/cache/clear');
   }
 }
 

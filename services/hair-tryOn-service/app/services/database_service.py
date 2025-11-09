@@ -41,6 +41,22 @@ class DatabaseService:
             logger.error(f"Failed to create hair try-on result: {e}")
             raise
     
+    async def save_hair_tryOn_result(self, result_data: Dict[str, Any]) -> str:
+        """Save a hair try-on result from dictionary data"""
+        try:
+            result_data["_id"] = result_data.get("result_id", str(ObjectId()))
+            result_data["created_at"] = result_data.get("created_at", datetime.utcnow())
+            result_data["updated_at"] = datetime.utcnow()
+            
+            await self.db.hair_tryOn_history.insert_one(result_data)
+            logger.info(f"Saved hair try-on result: {result_data['_id']}")
+            
+            return result_data["_id"]
+            
+        except Exception as e:
+            logger.error(f"Failed to save hair try-on result: {e}")
+            raise
+    
     async def update_hair_tryOn_result(
         self, 
         result_id: str, 

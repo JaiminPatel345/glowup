@@ -113,26 +113,35 @@ class PerfectCorpService:
                 "page_size": page_size
             }
             
+            # Add starting_token only if provided and not empty
             if starting_token:
                 params["starting_token"] = starting_token
             
+            # PerfectCorp v2 API uses Authorization: Bearer <API_KEY>
             headers = {
                 "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "Accept": "application/json"
             }
             
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, params=params, headers=headers) as response:
-                    if response.status != 200:
-                        error_text = await response.text()
-                        logger.error(f"API request failed: {response.status} - {error_text}")
-                        raise Exception(f"API request failed with status {response.status}")
+                    response_text = await response.text()
                     
-                    data = await response.json()
+                    if response.status != 200:
+                        logger.error(f"API request failed: {response.status} - {response_text}")
+                        raise Exception(f"API request failed with status {response.status}: {response_text}")
+                    
+                    try:
+                        data = json.loads(response_text)
+                    except json.JSONDecodeError as e:
+                        logger.error(f"Failed to parse JSON response: {e}")
+                        logger.error(f"Response text: {response_text}")
+                        raise
             
-            # Parse response
+           # Parse response
             hairstyles = self._parse_hairstyles(data)
-            
+             
             # Update cache
             self._cache = hairstyles
             self._cache_timestamp = datetime.now()
@@ -164,29 +173,52 @@ class PerfectCorpService:
         hairstyles = []
         
         try:
-            # Parse based on actual API response structure
-            # This is a placeholder - adjust based on actual API response
-            items = api_response.get('data', {}).get('items', [])
+            # Log the response structure for debugging
+            logger.debug(f"API Response structure: {json.dumps(api_response, indent=2)[:500]}")
             
-            for item in items:
+            # PerfectCorp API response structure:
+            # {
+            #   "status": 200,
+            #   "data": {
+            #     "templates": [
+            #       {"id": "...", "thumb": "...", "title": "...", "category_name": "..."}
+            #     ],
+            #     "next_token": "..."
+            #   }
+            # }
+            data = api_response.get('data', {})
+            templates = data.get('templates', [])
+            
+            if not templates:
+                logger.warning("No templates found in API response")
+                logger.debug(f"Full response: {api_response}")
+            
+            logger.info(f"Found {len(templates)} templates in response")
+            
+            for template in templates:
                 hairstyle = {
-                    'id': item.get('id') or item.get('template_id'),
-                    'preview_image_url': item.get('preview_image_url') or item.get('thumbnail_url'),
-                    'style_name': item.get('name') or item.get('style_name'),
-                    'category': item.get('category') or 'default',
-                    'description': item.get('description'),
-                    'tags': item.get('tags', [])
+                    'id': str(template.get('id', '')),
+                    'preview_image_url': template.get('thumb', ''),
+                    'style_name': template.get('title', 'Unnamed Style'),
+                    'category': template.get('category_name', 'default'),
+                    'description': template.get('description', ''),
+                    'tags': []
                 }
+                
+                logger.debug(f"Parsed hairstyle: {hairstyle}")
                 
                 # Only add if we have required fields
                 if hairstyle['id'] and hairstyle['preview_image_url']:
                     hairstyles.append(hairstyle)
+                else:
+                    logger.warning(f"Skipping template with missing fields: {template}")
             
             return hairstyles
             
         except Exception as e:
             logger.error(f"Failed to parse hairstyles: {e}")
-            return []
+            logger.error(f"API response: {api_response}")
+            raise
     
     async def get_hairstyle_by_id(self, hairstyle_id: str) -> Optional[Dict]:
         """

@@ -51,7 +51,7 @@ export class AuthApi {
    * Request password reset
    */
   static async forgotPassword(email: string): Promise<void> {
-    await apiClient.post('/auth/forgot-password', { email });
+    await apiClient.post('/api/auth/reset-password', { email });
   }
 
   /**
@@ -69,7 +69,7 @@ export class AuthApi {
    */
   static async verifyToken(): Promise<boolean> {
     try {
-      await apiClient.get('/auth/verify');
+      await apiClient.get('/api/auth/validate');
       return true;
     } catch (error) {
       return false;

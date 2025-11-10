@@ -10,7 +10,7 @@ import base64
 from pathlib import Path
 
 # Service URL
-BASE_URL = "http://localhost:8000"
+BASE_URL = "http://localhost:3004"
 
 def test_health():
     """Test if service is running"""
@@ -148,7 +148,7 @@ import json
 import base64
 
 async def realtime_hair_tryOn():
-    uri = "ws://localhost:8000/api/hair-tryOn/realtime/session123?user_id=test_user"
+    uri = "ws://localhost:3004/api/hair-tryOn/realtime/session123?user_id=test_user"
     
     async with websockets.connect(uri) as websocket:
         # Set style image

@@ -22,7 +22,8 @@ dotenv.config();
 // Initialize Redis connection
 async function initializeRedis() {
   try {
-    await redisCache.connect(process.env.REDIS_URL || 'redis://localhost:6379');
+    const redisUrl = process.env.REDIS_URL || `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || '6379'}`;
+    await redisCache.connect(redisUrl);
     logger.info('Redis cache connected successfully');
   } catch (error) {
     logger.warn('Failed to connect to Redis cache, continuing without cache:', error);
@@ -79,12 +80,19 @@ app.use('/api/hair', authMiddleware);
 // Import resilient proxy
 import { createResilientProxy, registerGateway, getCircuitBreakerStatus } from './middleware/resilientProxy';
 
+// Helper function to build service URL from environment variables
+const buildServiceUrl = (hostEnv: string, portEnv: string, defaultHost: string, defaultPort: string): string => {
+  const host = process.env[hostEnv] || defaultHost;
+  const port = process.env[portEnv] || defaultPort;
+  return `http://${host}:${port}`;
+};
+
 // Resilient proxy configuration for microservices
 const serviceProxies = [
   {
     path: '/api/auth',
     serviceName: 'auth-service',
-    target: process.env.AUTH_SERVICE_URL || 'http://auth-service:3000',
+    target: process.env.AUTH_SERVICE_URL || buildServiceUrl('AUTH_SERVICE_HOST', 'AUTH_SERVICE_PORT', 'localhost', '3001'),
     changeOrigin: true,
     timeout: 60000,
     circuitBreakerOptions: {
@@ -95,7 +103,7 @@ const serviceProxies = [
   {
     path: '/api/users',
     serviceName: 'user-service',
-    target: process.env.USER_SERVICE_URL || 'http://user-service:3000',
+    target: process.env.USER_SERVICE_URL || buildServiceUrl('USER_SERVICE_HOST', 'USER_SERVICE_PORT', 'localhost', '3002'),
     changeOrigin: true,
     timeout: 60000,
     circuitBreakerOptions: {
@@ -106,7 +114,7 @@ const serviceProxies = [
   {
     path: '/api/skin',
     serviceName: 'skin-analysis-service',
-    target: process.env.SKIN_SERVICE_URL || 'http://skin-analysis-service:8000',
+    target: process.env.SKIN_SERVICE_URL || buildServiceUrl('SKIN_SERVICE_HOST', 'SKIN_SERVICE_PORT', 'localhost', '8001'),
     changeOrigin: true,
     timeout: 120000, // Extended timeout for AI processing
     circuitBreakerOptions: {
@@ -120,7 +128,7 @@ const serviceProxies = [
   {
     path: '/api/hair',
     serviceName: 'hair-tryon-service',
-    target: process.env.HAIR_SERVICE_URL || 'http://hair-tryon-service:8000',
+    target: process.env.HAIR_SERVICE_URL || buildServiceUrl('HAIR_SERVICE_HOST', 'HAIR_SERVICE_PORT', 'localhost', '8002'),
     changeOrigin: true,
     timeout: 300000, // Extended timeout for video processing
     circuitBreakerOptions: {
@@ -140,7 +148,7 @@ serviceProxies.forEach(({ path, ...config }) => {
 
 // WebSocket proxy for hair service (separate handling)
 app.use('/ws/hair', createProxyMiddleware({
-  target: process.env.HAIR_SERVICE_URL || 'http://hair-tryon-service:8000',
+  target: process.env.HAIR_SERVICE_URL || buildServiceUrl('HAIR_SERVICE_HOST', 'HAIR_SERVICE_PORT', 'localhost', '8002'),
   changeOrigin: true,
   ws: true,
   onError: (err, req, res) => {

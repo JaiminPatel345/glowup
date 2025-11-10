@@ -1,6 +1,3 @@
-// Import NativeWind styles FIRST
-import './global.css';
-
 import React, { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { Text, View, ActivityIndicator } from 'react-native';
@@ -9,6 +6,7 @@ import { store, useAppDispatch, useAppSelector } from './src/store';
 import { loadStoredAuth } from './src/store/slices/authSlice';
 import { AuthNavigator } from './src/components/auth';
 import { HomeScreen } from './src/screens/main';
+import './global.css'
 
 function AppContent() {
   const dispatch = useAppDispatch();

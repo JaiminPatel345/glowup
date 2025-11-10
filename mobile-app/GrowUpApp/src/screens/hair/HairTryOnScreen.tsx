@@ -7,16 +7,10 @@ import {
   Image,
   ActivityIndicator,
   Alert,
-  StyleSheet,
-  Dimensions,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { HairTryOnApi, Hairstyle } from '../../api/hair';
 import { useAppSelector } from '../../store';
-
-const { width } = Dimensions.get('window');
-const GRID_COLUMNS = 3;
-const ITEM_SIZE = (width - 40) / GRID_COLUMNS;
 
 export default function HairTryOnScreen() {
   // Get userId from auth state
@@ -157,10 +151,8 @@ export default function HairTryOnScreen() {
   const renderHairstyleItem = (item: Hairstyle) => (
     <TouchableOpacity
       key={item.id}
-      style={[
-        styles.hairstyleItem,
-        selectedHairstyle?.id === item.id && styles.selectedHairstyle,
-      ]}
+      className={`w-[30%] mb-3 rounded-lg overflow-hidden border-2 ${selectedHairstyle?.id === item.id ? 'border-primary-600' : 'border-transparent'
+        }`}
       onPress={() => {
         setSelectedHairstyle(item);
         setCustomHairstyleUri(null);
@@ -168,87 +160,91 @@ export default function HairTryOnScreen() {
     >
       <Image
         source={{ uri: item.preview_image_url }}
-        style={styles.hairstyleImage}
+        className="w-full aspect-square"
         resizeMode="cover"
       />
       {selectedHairstyle?.id === item.id && (
-        <View style={styles.selectedOverlay}>
-          <Text style={styles.checkmark}>✓</Text>
+        <View className="absolute top-1 right-1 bg-primary-600 rounded-full w-6 h-6 items-center justify-center">
+          <Text className="text-white text-base font-bold">✓</Text>
         </View>
       )}
-      <Text style={styles.hairstyleName} numberOfLines={1}>
+      <Text className="text-xs text-center p-1 bg-gray-50" numberOfLines={1}>
         {item.style_name || 'Style'}
       </Text>
     </TouchableOpacity>
   );
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Hair Try-On</Text>
+    <ScrollView className="flex-1 bg-gray-50">
+      <Text className="text-3xl font-bold text-center my-5 text-gray-800">Hair Try-On</Text>
 
       {/* User Photo Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Your Photo</Text>
-        <View style={styles.photoContainer}>
+      <View className="bg-white mx-4 mb-4 p-4 rounded-xl shadow-sm">
+        <Text className="text-lg font-semibold mb-3 text-gray-800">Your Photo</Text>
+        <View className="items-center mb-3">
           {userPhotoUri ? (
-            <Image source={{ uri: userPhotoUri }} style={styles.photoPreview} />
+            <Image source={{ uri: userPhotoUri }} className="w-52 h-52 rounded-xl" />
           ) : (
-            <View style={styles.photoPlaceholder}>
-              <Text style={styles.placeholderText}>No photo selected</Text>
+            <View className="w-52 h-52 rounded-xl bg-gray-200 justify-center items-center">
+              <Text className="text-gray-500 text-sm">No photo selected</Text>
             </View>
           )}
         </View>
-        <View style={styles.buttonRow}>
-          <TouchableOpacity style={styles.button} onPress={takePhoto}>
-            <Text style={styles.buttonText}>Take Photo</Text>
+        <View className="flex-row justify-between">
+          <TouchableOpacity className="flex-1 bg-primary-600 p-3 rounded-lg mx-1" onPress={takePhoto}>
+            <Text className="text-white text-center font-semibold text-sm">Take Photo</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.button} onPress={() => pickImage('user')}>
-            <Text style={styles.buttonText}>Choose from Gallery</Text>
+          <TouchableOpacity className="flex-1 bg-primary-600 p-3 rounded-lg mx-1" onPress={() => pickImage('user')}>
+            <Text className="text-white text-center font-semibold text-sm">Choose from Gallery</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Hairstyle Selection */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Select Hairstyle</Text>
+      <View className="bg-white mx-4 mb-4 p-4 rounded-xl shadow-sm">
+        <Text className="text-lg font-semibold mb-3 text-gray-800">Select Hairstyle</Text>
 
         {/* Custom Upload Option */}
         <TouchableOpacity
-          style={[styles.customUploadButton, customHairstyleUri && styles.customUploadActive]}
+          className={`h-32 rounded-xl border-2 ${customHairstyleUri ? 'border-primary-600' : 'border-dashed border-gray-300'
+            } justify-center items-center mb-3`}
           onPress={() => pickImage('custom')}
         >
           {customHairstyleUri ? (
-            <Image source={{ uri: customHairstyleUri }} style={styles.customUploadImage} />
+            <Image source={{ uri: customHairstyleUri }} className="w-full h-full rounded-xl" />
           ) : (
-            <Text style={styles.customUploadText}>+ Upload Custom Hairstyle</Text>
+            <Text className="text-primary-600 text-base font-semibold">+ Upload Custom Hairstyle</Text>
           )}
         </TouchableOpacity>
 
         {/* Default Hairstyles Grid */}
-        <Text style={styles.subsectionTitle}>Or choose from defaults:</Text>
+        <Text className="text-sm font-medium mt-4 mb-2 text-gray-600">Or choose from defaults:</Text>
         {loadingHairstyles ? (
-          <ActivityIndicator size="large" color="#007AFF" style={styles.loader} />
+          <ActivityIndicator size="large" color="#0284c7" className="my-5" />
         ) : (
-          <View style={styles.hairstylesGrid}>
+          <View className="flex-row flex-wrap justify-between">
             {hairstyles.map(renderHairstyleItem)}
           </View>
         )}
       </View>
 
       {/* Blend Ratio Slider */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Blend Intensity: {Math.round(blendRatio * 100)}%</Text>
-        <View style={styles.sliderContainer}>
+      <View className="bg-white mx-4 mb-4 p-4 rounded-xl shadow-sm">
+        <Text className="text-lg font-semibold mb-3 text-gray-800">
+          Blend Intensity: {Math.round(blendRatio * 100)}%
+        </Text>
+        <View className="flex-row justify-between">
           {[0.5, 0.6, 0.7, 0.8, 0.9, 1.0].map((value) => (
             <TouchableOpacity
               key={value}
-              style={[
-                styles.sliderButton,
-                blendRatio === value && styles.sliderButtonActive,
-              ]}
+              className={`flex-1 p-2 mx-0.5 rounded-md ${blendRatio === value ? 'bg-primary-600' : 'bg-gray-200'
+                }`}
               onPress={() => setBlendRatio(value)}
             >
-              <Text style={styles.sliderButtonText}>{Math.round(value * 100)}%</Text>
+              <Text className={`text-center text-xs font-semibold ${blendRatio === value ? 'text-white' : 'text-gray-700'
+                }`}>
+                {Math.round(value * 100)}%
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -256,230 +252,30 @@ export default function HairTryOnScreen() {
 
       {/* Process Button */}
       <TouchableOpacity
-        style={[styles.processButton, loading && styles.processButtonDisabled]}
+        className={`p-4 rounded-xl mx-4 mb-4 ${loading ? 'bg-gray-400' : 'bg-success-600'
+          }`}
         onPress={processHairTryOn}
         disabled={loading}
       >
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.processButtonText}>Try On Hairstyle</Text>
+          <Text className="text-white text-center text-lg font-bold">Try On Hairstyle</Text>
         )}
       </TouchableOpacity>
 
       {/* Result Section */}
       {resultUri && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Result</Text>
-          <Image source={{ uri: resultUri }} style={styles.resultImage} />
-          <TouchableOpacity style={styles.saveButton}>
-            <Text style={styles.saveButtonText}>Save to Gallery</Text>
+        <View className="bg-white mx-4 mb-4 p-4 rounded-xl shadow-sm">
+          <Text className="text-lg font-semibold mb-3 text-gray-800">Result</Text>
+          <Image source={{ uri: resultUri }} className="w-full h-80 rounded-xl mb-3" />
+          <TouchableOpacity className="bg-primary-600 p-3 rounded-lg">
+            <Text className="text-white text-center font-semibold text-base">Save to Gallery</Text>
           </TouchableOpacity>
         </View>
       )}
 
-      <View style={styles.bottomSpacer} />
+      <View className="h-8" />
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginVertical: 20,
-    color: '#333',
-  },
-  section: {
-    backgroundColor: '#fff',
-    marginHorizontal: 15,
-    marginBottom: 15,
-    padding: 15,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
-    color: '#333',
-  },
-  subsectionTitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginTop: 15,
-    marginBottom: 10,
-    color: '#666',
-  },
-  photoContainer: {
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  photoPreview: {
-    width: 200,
-    height: 200,
-    borderRadius: 12,
-  },
-  photoPlaceholder: {
-    width: 200,
-    height: 200,
-    borderRadius: 12,
-    backgroundColor: '#e0e0e0',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  placeholderText: {
-    color: '#999',
-    fontSize: 14,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  button: {
-    flex: 1,
-    backgroundColor: '#007AFF',
-    padding: 12,
-    borderRadius: 8,
-    marginHorizontal: 5,
-  },
-  buttonText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  customUploadButton: {
-    height: 120,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#ddd',
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  customUploadActive: {
-    borderColor: '#007AFF',
-    borderStyle: 'solid',
-  },
-  customUploadText: {
-    color: '#007AFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  customUploadImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 10,
-  },
-  hairstylesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  hairstyleItem: {
-    width: ITEM_SIZE,
-    marginBottom: 10,
-    borderRadius: 8,
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  selectedHairstyle: {
-    borderColor: '#007AFF',
-  },
-  hairstyleImage: {
-    width: '100%',
-    height: ITEM_SIZE,
-  },
-  selectedOverlay: {
-    position: 'absolute',
-    top: 5,
-    right: 5,
-    backgroundColor: '#007AFF',
-    borderRadius: 12,
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkmark: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  hairstyleName: {
-    fontSize: 11,
-    textAlign: 'center',
-    padding: 4,
-    backgroundColor: '#f9f9f9',
-  },
-  sliderContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  sliderButton: {
-    flex: 1,
-    padding: 8,
-    marginHorizontal: 2,
-    borderRadius: 6,
-    backgroundColor: '#e0e0e0',
-  },
-  sliderButtonActive: {
-    backgroundColor: '#007AFF',
-  },
-  sliderButtonText: {
-    textAlign: 'center',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  processButton: {
-    backgroundColor: '#34C759',
-    padding: 16,
-    borderRadius: 12,
-    marginHorizontal: 15,
-    marginBottom: 15,
-  },
-  processButtonDisabled: {
-    backgroundColor: '#ccc',
-  },
-  processButtonText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  resultImage: {
-    width: '100%',
-    height: 300,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  saveButton: {
-    backgroundColor: '#007AFF',
-    padding: 12,
-    borderRadius: 8,
-  },
-  saveButtonText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  loader: {
-    marginVertical: 20,
-  },
-  bottomSpacer: {
-    height: 30,
-  },
-});

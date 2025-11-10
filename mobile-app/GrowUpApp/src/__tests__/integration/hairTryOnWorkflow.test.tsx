@@ -2,7 +2,7 @@ import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
-import { HairTryOnScreen } from '../../screens/hair/HairTryOnScreen';
+import HairTryOnScreen from '../../screens/hair/HairTryOnScreen';
 import hairTryOnSlice from '../../store/slices/hairTryOnSlice';
 import { HairTryOnApi } from '../../api/hair';
 

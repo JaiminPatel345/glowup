@@ -1,22 +1,11 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { HairTryOnApi } from '../../api/hair';
-import { ProcessedVideo, WebSocketConnection } from '../../api/types';
+import type { Draft } from '@reduxjs/toolkit';
+import { HairTryOnApi, type HairTryOnHistoryItem } from '../../api/hair';
+import { ProcessedVideo } from '../../api/types';
+import type { RootState } from '..';
 
 // Types for hair try-on state
-export interface HairTryOnHistory {
-  id: string;
-  type: 'video' | 'realtime';
-  originalMediaUrl: string;
-  styleImageUrl: string;
-  colorImageUrl?: string;
-  resultMediaUrl: string;
-  processingMetadata: {
-    modelVersion: string;
-    processingTime: number;
-    framesProcessed: number;
-  };
-  createdAt: string;
-}
+export type HairTryOnHistory = HairTryOnHistoryItem;
 
 export interface ProcessingStatus {
   sessionId: string;
@@ -45,7 +34,7 @@ export interface HairTryOnState {
     error?: string;
   };
   
-  // Real-time state
+  // Real-time processing state
   realTime: {
     isActive: boolean;
     styleImage?: string;
@@ -105,22 +94,44 @@ export const startRealTimeSession = createAsyncThunk(
 
 export const fetchHairTryOnHistory = createAsyncThunk<
   HairTryOnHistory[],
-  { limit?: number; offset?: number } | void
+  { limit?: number; offset?: number } | void,
+  { state: RootState; rejectValue: string }
 >(
   'hairTryOn/fetchHistory',
-  async (params = {}) => {
+  async (
+    params: { limit?: number; offset?: number } | void,
+    { getState, rejectWithValue }: { getState: () => RootState; rejectWithValue: (value: string) => any }
+  ) => {
     const { limit = 10, offset = 0 } = (params ?? {}) as {
       limit?: number;
       offset?: number;
     };
-    return await HairTryOnApi.getHairTryOnHistory(limit, offset);
+
+    const userId = getState().auth.user?.id;
+    if (!userId) {
+      return rejectWithValue('User not authenticated');
+    }
+
+    return await HairTryOnApi.getHairTryOnHistory(userId, limit, offset);
   }
 );
 
-export const deleteHairTryOn = createAsyncThunk(
+export const deleteHairTryOn = createAsyncThunk<
+  string,
+  string,
+  { state: RootState; rejectValue: string }
+>(
   'hairTryOn/deleteHairTryOn',
-  async (tryOnId: string) => {
-    await HairTryOnApi.deleteHairTryOn(tryOnId);
+  async (
+    tryOnId: string,
+    { getState, rejectWithValue }: { getState: () => RootState; rejectWithValue: (value: string) => any }
+  ) => {
+    const userId = getState().auth.user?.id;
+    if (!userId) {
+      return rejectWithValue('User not authenticated');
+    }
+
+    await HairTryOnApi.deleteHairTryOn(tryOnId, userId);
     return tryOnId;
   }
 );

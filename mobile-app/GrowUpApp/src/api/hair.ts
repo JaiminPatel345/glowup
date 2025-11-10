@@ -1,4 +1,6 @@
+import axios from 'axios';
 import apiClient from './client';
+import type { ProcessedVideo, WebSocketConnection } from './types';
 
 export interface Hairstyle {
   id: string;
@@ -23,13 +25,40 @@ export interface ProcessHairTryOnRequest {
   blendRatio?: number;
 }
 
-export interface HairTryOnHistory {
-  result_id: string;
-  user_id: string;
-  hairstyle_source: string;
-  blend_ratio: number;
-  created_at: string;
-  status: string;
+interface HairTryOnHistoryResponseItem {
+  id?: string;
+  result_id?: string;
+  user_id?: string;
+  type?: 'video' | 'realtime';
+  original_media_url?: string;
+  originalMediaUrl?: string;
+  style_image_url?: string;
+  styleImageUrl?: string;
+  color_image_url?: string | null;
+  colorImageUrl?: string | null;
+  result_media_url?: string | null;
+  resultMediaUrl?: string | null;
+  processing_metadata?: Record<string, any> | null;
+  processingMetadata?: Record<string, any> | null;
+  created_at?: string;
+  createdAt?: string;
+  status?: string;
+}
+
+export interface HairTryOnHistoryItem {
+  id: string;
+  type: 'video' | 'realtime';
+  originalMediaUrl: string;
+  styleImageUrl: string;
+  colorImageUrl?: string;
+  resultMediaUrl: string;
+  processingMetadata: {
+    modelVersion: string;
+    processingTime: number;
+    framesProcessed: number;
+  };
+  createdAt: string;
+  status?: string;
 }
 
 export class HairTryOnApi {
@@ -103,20 +132,86 @@ export class HairTryOnApi {
   }
 
   /**
+   * Process a recorded video using the Hair Try-On service
+   */
+  static async processVideo(
+    videoFormData: FormData,
+    styleImageFormData: FormData,
+    colorImageFormData?: FormData
+  ): Promise<ProcessedVideo> {
+    const formData = HairTryOnApi.mergeFormData(
+      videoFormData,
+      styleImageFormData,
+      colorImageFormData
+    );
+
+    const response = await apiClient.post(
+      '/api/hair-tryOn/process-video',
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+
+    return HairTryOnApi.mapProcessedVideo(response.data);
+  }
+
+  /**
+   * Start a real-time hair try-on session and receive WebSocket connection details
+   */
+  static async startRealTimeSession(
+    styleImageFormData: FormData
+  ): Promise<WebSocketConnection> {
+    const response = await apiClient.post(
+      '/api/hair-tryOn/realtime/session',
+      styleImageFormData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+
+    const data = response.data ?? {};
+    const url = data.url ?? data.connectionUrl ?? data.connection_url;
+    const sessionId = data.sessionId ?? data.session_id;
+
+    if (!url || !sessionId) {
+      throw new Error('Invalid response from real-time session endpoint');
+    }
+
+    return {
+      url,
+      sessionId,
+    };
+  }
+
+  /**
    * Get user's hair try-on history
    */
   static async getHairTryOnHistory(
     userId: string,
     limit: number = 10,
-    skip: number = 0
-  ): Promise<HairTryOnHistory[]> {
-    const response = await apiClient.get<{ success: boolean; count: number; history: HairTryOnHistory[] }>(
+    offset: number = 0
+  ): Promise<HairTryOnHistoryItem[]> {
+    const response = await apiClient.get(
       `/api/hair-tryOn/history/${userId}`,
       {
-        params: { limit, skip }
+        params: {
+          limit,
+          offset,
+          skip: offset,
+        },
       }
     );
-    return response.data.history;
+
+    const payload = response.data ?? {};
+    const history: HairTryOnHistoryResponseItem[] =
+      payload.history ?? payload.results ?? [];
+
+    return history.map(HairTryOnApi.mapHistoryItem);
   }
 
   /**
@@ -126,6 +221,33 @@ export class HairTryOnApi {
     await apiClient.delete(`/api/hair-tryOn/result/${resultId}`, {
       params: { user_id: userId }
     });
+  }
+
+  /**
+   * Cancel an in-progress hair try-on processing session
+   */
+  static async cancelProcessing(sessionId: string): Promise<void> {
+    try {
+      await apiClient.post('/api/hair-tryOn/process/cancel', {
+        session_id: sessionId,
+      });
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const status = error.response?.status;
+        if (status === 404 || status === 501) {
+          // Endpoint not available yet; treat as best-effort cancellation
+          if (__DEV__) {
+            console.warn(
+              'HairTryOnApi.cancelProcessing: endpoint not available, skipping cancel request',
+              { sessionId }
+            );
+          }
+          return;
+        }
+      }
+
+      throw error;
+    }
   }
 
   /**
@@ -141,6 +263,65 @@ export class HairTryOnApi {
    */
   static async clearCache(): Promise<void> {
     await apiClient.post('/api/hair-tryOn/cache/clear');
+  }
+
+  private static mergeFormData(...forms: Array<FormData | undefined>): FormData {
+    const merged = new FormData();
+
+    forms.forEach((form) => {
+      if (!form) {
+        return;
+      }
+
+      form.forEach((value, key) => {
+        merged.append(key, value as any);
+      });
+    });
+
+    return merged;
+  }
+
+  private static mapProcessedVideo(data: any): ProcessedVideo {
+  const metadata = (data?.processing_metadata ?? data?.processingMetadata ?? {}) as Record<string, any>;
+
+    return {
+      resultVideoUrl:
+        data?.resultVideoUrl ?? data?.result_media_url ?? data?.resultMediaUrl ?? '',
+      processingMetadata: {
+        modelVersion:
+          metadata?.modelVersion ?? metadata?.model_version ?? 'unknown',
+        processingTime:
+          metadata?.processingTime ?? metadata?.processing_time ?? 0,
+        framesProcessed:
+          metadata?.framesProcessed ?? metadata?.frames_processed ?? 0,
+      },
+    };
+  }
+
+  private static mapHistoryItem(item: HairTryOnHistoryResponseItem): HairTryOnHistoryItem {
+  const metadata = (item.processing_metadata ?? item.processingMetadata ?? {}) as Record<string, any>;
+
+    return {
+      id: item.id ?? item.result_id ?? '',
+      type: item.type ?? 'video',
+      originalMediaUrl:
+        item.original_media_url ?? item.originalMediaUrl ?? '',
+      styleImageUrl: item.style_image_url ?? item.styleImageUrl ?? '',
+      colorImageUrl:
+        item.color_image_url ?? item.colorImageUrl ?? undefined,
+      resultMediaUrl:
+        item.result_media_url ?? item.resultMediaUrl ?? '',
+      processingMetadata: {
+        modelVersion:
+          metadata?.model_version ?? metadata?.modelVersion ?? 'unknown',
+        processingTime:
+          metadata?.processing_time ?? metadata?.processingTime ?? 0,
+        framesProcessed:
+          metadata?.frames_processed ?? metadata?.framesProcessed ?? 0,
+      },
+      createdAt: item.created_at ?? item.createdAt ?? new Date().toISOString(),
+      status: item.status,
+    };
   }
 }
 

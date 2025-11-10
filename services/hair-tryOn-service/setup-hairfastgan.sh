@@ -3,6 +3,8 @@
 # Works on Linux, macOS, and Windows (via Git Bash/WSL)
 # Auto-detects GPU, installs dependencies, downloads models, and starts service
 
+# Set non-interactive mode for Docker
+export DEBIAN_FRONTEND=noninteractive
 set -e
 
 # Colors for output
@@ -113,6 +115,12 @@ detect_gpu() {
 # Create virtual environment
 create_venv() {
     log_info "Creating Python virtual environment..."
+    
+    # Skip virtual environment in Docker
+    if [ -n "$DOCKER_BUILD" ] || [ -f "/.dockerenv" ]; then
+        log_success "Running in Docker - skipping virtual environment"
+        return
+    fi
     
     if [ -d "venv" ]; then
         log_warning "Virtual environment already exists. Skipping creation."
@@ -260,18 +268,28 @@ else:
 
 # Start service
 start_service() {
+    # Skip starting service in Docker build
+    if [ -n "$DOCKER_BUILD" ] || [ -f "/.dockerenv" ]; then
+        log_info "Running in Docker - service will be started by CMD"
+        return
+    fi
+    
     log_info "Starting Hair Try-On service..."
     
     # Check if service is already running
     if lsof -Pi :8000 -sTCP:LISTEN -t >/dev/null 2>&1; then
         log_warning "Service already running on port 8000"
-        read -p "Do you want to restart it? (y/n) " -n 1 -r
-        echo
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            pkill -f "uvicorn app.main:app" || true
-            sleep 2
+        if [ -t 0 ]; then  # Check if interactive
+            read -p "Do you want to restart it? (y/n) " -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                pkill -f "uvicorn app.main:app" || true
+                sleep 2
+            else
+                log_info "Keeping existing service running"
+                return
+            fi
         else
-            log_info "Keeping existing service running"
             return
         fi
     fi
@@ -317,12 +335,22 @@ main() {
     echo "Python: $PYTHON_VERSION"
     echo ""
     
-    read -p "Do you want to start the service now? (y/n) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        start_service
+    # Skip interactive prompt in Docker
+    if [ -n "$DOCKER_BUILD" ] || [ -f "/.dockerenv" ]; then
+        log_info "Running in Docker - setup complete"
+        return
+    fi
+    
+    if [ -t 0 ]; then  # Check if interactive
+        read -p "Do you want to start the service now? (y/n) " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            start_service
+        else
+            log_info "You can start the service later with: ./start-service.sh"
+        fi
     else
-        log_info "You can start the service later with: ./start-service.sh"
+        log_info "Non-interactive mode - skipping service start"
     fi
 }
 

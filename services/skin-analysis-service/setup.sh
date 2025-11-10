@@ -2,6 +2,8 @@
 # Skin Analysis ML Model Setup Script for Linux
 # This script sets up the development environment for the skin analysis service
 
+# Set non-interactive mode for Docker
+export DEBIAN_FRONTEND=noninteractive
 set -e  # Exit on error
 
 # Color codes for output
@@ -60,26 +62,35 @@ echo ""
 # Step 2: Create virtual environment
 print_step 2 8 "Setting up virtual environment..."
 
-if [ -d "venv" ]; then
-    print_warning "Virtual environment already exists"
-    read -p "Do you want to recreate it? (y/N): " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        print_warning "Removing existing virtual environment..."
-        rm -rf venv
-        python3 -m venv venv
-        print_success "Virtual environment recreated"
-    else
-        print_success "Using existing virtual environment"
-    fi
+# Skip virtual environment in Docker
+if [ -n "$DOCKER_BUILD" ] || [ -f "/.dockerenv" ]; then
+    print_success "Running in Docker - skipping virtual environment"
 else
-    python3 -m venv venv
-    print_success "Virtual environment created"
-fi
+    if [ -d "venv" ]; then
+        print_warning "Virtual environment already exists"
+        if [ -t 0 ]; then  # Check if interactive
+            read -p "Do you want to recreate it? (y/N): " -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                print_warning "Removing existing virtual environment..."
+                rm -rf venv
+                python3 -m venv venv
+                print_success "Virtual environment recreated"
+            else
+                print_success "Using existing virtual environment"
+            fi
+        else
+            print_success "Using existing virtual environment"
+        fi
+    else
+        python3 -m venv venv
+        print_success "Virtual environment created"
+    fi
 
-# Activate virtual environment
-source venv/bin/activate
-print_success "Virtual environment activated"
+    # Activate virtual environment
+    source venv/bin/activate
+    print_success "Virtual environment activated"
+fi
 echo ""
 
 # Step 3: Upgrade pip

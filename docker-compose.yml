@@ -187,11 +187,11 @@ services:
           path: ./services/skin-analysis-service/requirements.txt
 
   # Hair Try-On Service (FastAPI + AI Models + WebSocket)
-  hair-tryOn-service:
+  hair-tryon-service:
     build:
       context: ./services/hair-tryOn-service
       dockerfile: Dockerfile
-    container_name: growup-hair-tryOn
+    container_name: growup-hair-tryon
     env_file:
       - .env.docker
     environment:
@@ -202,7 +202,7 @@ services:
       - LOG_LEVEL=INFO
       - WEBSOCKET_ENABLED=true
       - AUTH_SERVICE_URL=http://${AUTH_SERVICE_HOST:-auth-service}:${AUTH_SERVICE_PORT:-3001}
-    # Port mapping removed - accessible internally via hair-tryOn-service:3004
+    # Port mapping removed - accessible internally via hair-tryon-service:3004
     depends_on:
       mongodb:
         condition: service_healthy
@@ -246,7 +246,7 @@ services:
       - USER_SERVICE_PORT=${USER_SERVICE_PORT:-3002}
       - SKIN_SERVICE_HOST=${SKIN_SERVICE_HOST:-skin-analysis-service}
       - SKIN_SERVICE_PORT=${SKIN_SERVICE_PORT:-3003}
-      - HAIR_SERVICE_HOST=${HAIR_SERVICE_HOST:-hair-tryOn-service}
+      - HAIR_SERVICE_HOST=${HAIR_SERVICE_HOST:-hair-tryon-service}
       - HAIR_SERVICE_PORT=${HAIR_SERVICE_PORT:-3004}
       - REDIS_HOST=${REDIS_HOST:-redis}
       - REDIS_PORT=${REDIS_PORT:-6379}
@@ -262,7 +262,7 @@ services:
         condition: service_healthy
       skin-analysis-service:
         condition: service_healthy
-      hair-tryOn-service:
+      hair-tryon-service:
         condition: service_healthy
       redis:
         condition: service_healthy

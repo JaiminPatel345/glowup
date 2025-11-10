@@ -45,7 +45,7 @@ export const authMiddleware = async (req: AuthenticatedRequest, res: Response, n
 
     // If local verification fails, validate with auth service
     try {
-      const authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://auth-service:3000';
+      const authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://auth-service:3001';
       const response = await axios.get(`${authServiceUrl}/api/auth/validate`, {
         headers: {
           Authorization: `Bearer ${token}`

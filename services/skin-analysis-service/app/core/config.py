@@ -2,6 +2,15 @@ from pydantic_settings import BaseSettings
 from typing import List
 import os
 
+# Determine which .env file to load
+# In Docker: use .env.docker, locally: use .env.local
+def get_env_file():
+    if os.getenv("NODE_ENV") == "production":
+        return ".env"
+    elif os.getenv("DOCKER_ENV") == "true":
+        return ".env.docker"
+    else:
+        return ".env.local"
 
 class Settings(BaseSettings):
     # MongoDB settings
@@ -24,7 +33,7 @@ class Settings(BaseSettings):
     MAX_ANALYSIS_TIME: int = int(os.getenv("MAX_ANALYSIS_TIME", "5"))  # 5 seconds
     
     model_config = {
-        "env_file": ".env",
+        "env_file": get_env_file(),
         "extra": "ignore"
     }
 

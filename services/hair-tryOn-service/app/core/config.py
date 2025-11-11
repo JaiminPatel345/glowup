@@ -2,6 +2,16 @@ import os
 from pydantic_settings import BaseSettings
 from typing import Optional
 
+# Determine which .env file to load
+# In Docker: use .env.docker, locally: use .env.local
+def get_env_file():
+    if os.getenv("NODE_ENV") == "production":
+        return ".env"
+    elif os.getenv("DOCKER_ENV") == "true":
+        return ".env.docker"
+    else:
+        return ".env.local"
+
 class Settings(BaseSettings):
     # MongoDB Configuration
     mongodb_url: str = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
@@ -35,7 +45,7 @@ class Settings(BaseSettings):
     temp_dir: str = os.getenv("TEMP_DIR", "/tmp/temp")
     
     model_config = {
-        "env_file": ".env",
+        "env_file": get_env_file(),
         "extra": "ignore"
     }
 

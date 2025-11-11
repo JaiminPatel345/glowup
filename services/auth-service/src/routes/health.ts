@@ -4,9 +4,9 @@ import { logger } from '../config/logger';
 import { ApiResponse, AuthenticatedRequest } from '../types';
 
 // Import shared utilities
-const redisCache = require('../../../../shared/cache/redis');
-const { circuitBreakerManager } = require('../../../../shared/resilience/circuitBreaker');
-const correlationLogger = require('../../../../shared/logging/correlationLogger');
+const redisCache = require('../../shared/cache/redis');
+const { circuitBreakerManager } = require('../../shared/resilience/circuitBreaker');
+const correlationLogger = require('../../shared/logging/correlationLogger');
 
 const router = Router();
 

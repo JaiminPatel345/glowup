@@ -14,7 +14,7 @@ import {
 } from '../types';
 
 // Import Redis cache
-const redisCache = require('../../../../shared/cache/redis');
+const redisCache = require('../../shared/cache/redis');
 
 export class AuthService {
   private readonly jwtSecret: string;

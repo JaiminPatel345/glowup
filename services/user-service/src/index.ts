@@ -6,7 +6,10 @@ import fs from 'fs';
 import path from 'path';
 
 // Load environment variables
-dotenv.config();
+// In Docker: use .env.docker, locally: use .env.local
+const envFile = process.env.NODE_ENV === 'production' ? '.env' : 
+                process.env.DOCKER_ENV === 'true' ? '.env.docker' : '.env.local';
+dotenv.config({ path: envFile });
 
 const PORT = process.env.PORT || 3002;
 

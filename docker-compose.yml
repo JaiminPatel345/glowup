@@ -27,14 +27,16 @@ services:
     container_name: growup-mongodb
     environment:
       MONGO_INITDB_DATABASE: ${MONGODB_DB:-growup}
-    # Port mapping removed - accessible internally via mongodb:27017
+    command: ["mongod", "--quiet", "--logpath", "/dev/null"]
+    ports:
+      - "${MONGODB_PORT:-27017}:27017"  # Exposed for manually run services
     volumes:
       - mongo_data:/data/db
       - ./database/mongodb/init.js:/docker-entrypoint-initdb.d/init.js:ro
     networks:
       - growup-network
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -60,19 +62,23 @@ services:
   # Authentication Service (Node.js + Better-Auth)
   auth-service:
     build:
-      context: ./services/auth-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./services/auth-service/Dockerfile
+      target: development
     container_name: growup-auth-service
     env_file:
       - .env.docker
     environment:
+      - DOCKER_ENV=true
       - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-root123}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-growup}
       - REDIS_URL=redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}
       - JWT_SECRET=${JWT_SECRET:-your_jwt_secret_key_change_in_production}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
-      - PORT=${AUTH_SERVICE_PORT:-3001}
+      - API_PORT=${AUTH_SERVICE_PORT:-3001}
+      - GRPC_PORT=50051
       - NODE_ENV=${NODE_ENV:-development}
-    # Port mapping removed - accessible internally via auth-service:3001
+    ports:
+      - "${AUTH_SERVICE_PORT:-3001}:3001"  # Exposed for manually run services
     depends_on:
       postgres:
         condition: service_healthy
@@ -81,33 +87,36 @@ services:
     networks:
       - growup-network
     volumes:
-      - ./services/auth-service:/app
-      - /app/node_modules
+      - ./services/auth-service/src:/app/src
+      - ./services/auth-service/package.json:/app/package.json
+      - ./shared:/app/shared:ro
+      - auth-service-node-modules:/app/node_modules
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 60s
     restart: unless-stopped
     develop:
       watch:
         - action: sync
-          path: ./services/auth-service
-          target: /app
-          ignore:
-            - node_modules/
+          path: ./services/auth-service/src
+          target: /app/src
         - action: rebuild
           path: ./services/auth-service/package.json
 
   # User Management Service (Node.js + TypeScript)
   user-service:
     build:
-      context: ./services/user-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./services/user-service/Dockerfile
+      target: development
     container_name: growup-user-service
     env_file:
       - .env.docker
     environment:
+      - DOCKER_ENV=true
       - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-root123}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-growup}
       - REDIS_URL=redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}
       - AUTH_SERVICE_URL=http://${AUTH_SERVICE_HOST:-auth-service}:${AUTH_SERVICE_PORT:-3001}
@@ -124,130 +133,122 @@ services:
     networks:
       - growup-network
     volumes:
-      - ./services/user-service:/app
-      - /app/node_modules
+      - ./services/user-service/src:/app/src
+      - ./services/user-service/package.json:/app/package.json
+      - ./shared:/app/shared:ro
+      - user-service-node-modules:/app/node_modules
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3002/api/v1/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 60s
     restart: unless-stopped
     develop:
       watch:
         - action: sync
-          path: ./services/user-service
-          target: /app
-          ignore:
-            - node_modules/
+          path: ./services/user-service/src
+          target: /app/src
         - action: rebuild
           path: ./services/user-service/package.json
 
-  # Skin Analysis Service (FastAPI + AI Models)
-  skin-analysis-service:
-    build:
-      context: ./services/skin-analysis-service
-      dockerfile: Dockerfile
-    container_name: growup-skin-analysis
-    env_file:
-      - .env.docker
-    environment:
-      - MONGODB_URI=mongodb://${MONGODB_HOST:-mongodb}:${MONGODB_PORT:-27017}/${MONGODB_DB:-growup}
-      - MODEL_PATH=/app/models
-      - PORT=${SKIN_SERVICE_PORT:-3003}
-      - ENVIRONMENT=${NODE_ENV:-development}
-      - LOG_LEVEL=INFO
-      - AUTH_SERVICE_URL=http://${AUTH_SERVICE_HOST:-auth-service}:${AUTH_SERVICE_PORT:-3001}
-    # Port mapping removed - accessible internally via skin-analysis-service:3003
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      auth-service:
-        condition: service_healthy
-    networks:
-      - growup-network
-    volumes:
-      - ./services/skin-analysis-service:/app
-      - ./models:/app/models:ro
-      - skin_uploads:/app/uploads
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3003/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    restart: unless-stopped
-    develop:
-      watch:
-        - action: sync
-          path: ./services/skin-analysis-service
-          target: /app
-          ignore:
-            - __pycache__/
-            - "*.pyc"
-        - action: rebuild
-          path: ./services/skin-analysis-service/requirements.txt
+  # # Skin Analysis Service (FastAPI + AI Models) - COMMENTED OUT - Run manually
+  # skin-analysis-service:
+  #   build:
+  #     context: ./services/skin-analysis-service
+  #     dockerfile: Dockerfile
+  #     cache_from:
+  #       - growup-skin-analysis:latest
+  #   container_name: growup-skin-analysis
+  #   env_file:
+  #     - .env.docker
+  #   environment:
+  #     - MONGODB_URI=mongodb://${MONGODB_HOST:-mongodb}:${MONGODB_PORT:-27017}/${MONGODB_DB:-growup}
+  #     - MODEL_PATH=/app/models
+  #     - PORT=${SKIN_SERVICE_PORT:-3003}
+  #     - ENVIRONMENT=${NODE_ENV:-development}
+  #     - LOG_LEVEL=INFO
+  #     - AUTH_SERVICE_URL=http://${AUTH_SERVICE_HOST:-auth-service}:${AUTH_SERVICE_PORT:-3001}
+  #     - PYTHONUNBUFFERED=1
+  #   # Port mapping removed - accessible internally via skin-analysis-service:3003
+  #   depends_on:
+  #     mongodb:
+  #       condition: service_healthy
+  #     auth-service:
+  #       condition: service_healthy
+  #   networks:
+  #     - growup-network
+  #   volumes:
+  #     - ./services/skin-analysis-service/app:/app/app:ro
+  #     - ./models:/app/models:ro
+  #     - skin_uploads:/app/uploads
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:3003/health"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 40s
+  #   restart: unless-stopped
 
-  # Hair Try-On Service (FastAPI + AI Models + WebSocket)
-  hair-tryon-service:
-    build:
-      context: ./services/hair-tryOn-service
-      dockerfile: Dockerfile
-    container_name: growup-hair-tryon
-    env_file:
-      - .env.docker
-    environment:
-      - MONGODB_URI=mongodb://${MONGODB_HOST:-mongodb}:${MONGODB_PORT:-27017}/${MONGODB_DB:-growup}
-      - MODEL_PATH=/app/models
-      - PORT=${HAIR_SERVICE_PORT:-3004}
-      - ENVIRONMENT=${NODE_ENV:-development}
-      - LOG_LEVEL=INFO
-      - WEBSOCKET_ENABLED=true
-      - AUTH_SERVICE_URL=http://${AUTH_SERVICE_HOST:-auth-service}:${AUTH_SERVICE_PORT:-3001}
-    # Port mapping removed - accessible internally via hair-tryon-service:3004
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      auth-service:
-        condition: service_healthy
-    networks:
-      - growup-network
-    volumes:
-      - ./services/hair-tryOn-service:/app
-      - ./models:/app/models:ro
-      - hair_uploads:/app/uploads
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3004/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    restart: unless-stopped
-    develop:
-      watch:
-        - action: sync
-          path: ./services/hair-tryOn-service
-          target: /app
-          ignore:
-            - __pycache__/
-            - "*.pyc"
-        - action: rebuild
-          path: ./services/hair-tryOn-service/requirements.txt
+  # # Hair Try-On Service (FastAPI + AI Models + WebSocket) - COMMENTED OUT - Run manually
+  # hair-tryon-service:
+  #   build:
+  #     context: ./services/hair-tryOn-service
+  #     dockerfile: Dockerfile
+  #     cache_from:
+  #       - growup-hair-tryon:latest
+  #   container_name: growup-hair-tryon
+  #   env_file:
+  #     - .env.docker
+  #   environment:
+  #     - MONGODB_URI=mongodb://${MONGODB_HOST:-mongodb}:${MONGODB_PORT:-27017}/${MONGODB_DB:-growup}
+  #     - MODEL_PATH=/app/models
+  #     - PORT=${HAIR_SERVICE_PORT:-3004}
+  #     - ENVIRONMENT=${NODE_ENV:-development}
+  #     - LOG_LEVEL=INFO
+  #     - WEBSOCKET_ENABLED=true
+  #     - AUTH_SERVICE_URL=http://${AUTH_SERVICE_HOST:-auth-service}:${AUTH_SERVICE_PORT:-3001}
+  #     - PYTHONUNBUFFERED=1
+  #   # Port mapping removed - accessible internally via hair-tryon-service:3004
+  #   depends_on:
+  #     mongodb:
+  #       condition: service_healthy
+  #     auth-service:
+  #       condition: service_healthy
+  #   networks:
+  #     - growup-network
+  #   volumes:
+  #     - ./services/hair-tryOn-service/app:/app/app:ro
+  #     - ./models:/app/models:ro
+  #     - hair_uploads:/app/uploads
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:3004/health"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 40s
+  #   restart: unless-stopped
 
   # API Gateway (NGINX + Node.js middleware)
   api-gateway:
     build:
-      context: ./api-gateway
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./api-gateway/Dockerfile
+      target: development
     container_name: growup-api-gateway
     env_file:
       - .env.docker
     environment:
+      - DOCKER_ENV=true
       - AUTH_SERVICE_HOST=${AUTH_SERVICE_HOST:-auth-service}
       - AUTH_SERVICE_PORT=${AUTH_SERVICE_PORT:-3001}
       - USER_SERVICE_HOST=${USER_SERVICE_HOST:-user-service}
       - USER_SERVICE_PORT=${USER_SERVICE_PORT:-3002}
-      - SKIN_SERVICE_HOST=${SKIN_SERVICE_HOST:-skin-analysis-service}
-      - SKIN_SERVICE_PORT=${SKIN_SERVICE_PORT:-3003}
-      - HAIR_SERVICE_HOST=${HAIR_SERVICE_HOST:-hair-tryon-service}
-      - HAIR_SERVICE_PORT=${HAIR_SERVICE_PORT:-3004}
+      # Skin and Hair services will be run manually
+      # - SKIN_SERVICE_HOST=${SKIN_SERVICE_HOST:-skin-analysis-service}
+      # - SKIN_SERVICE_PORT=${SKIN_SERVICE_PORT:-3003}
+      # - HAIR_SERVICE_HOST=${HAIR_SERVICE_HOST:-hair-tryon-service}
+      # - HAIR_SERVICE_PORT=${HAIR_SERVICE_PORT:-3004}
       - REDIS_HOST=${REDIS_HOST:-redis}
       - REDIS_PORT=${REDIS_PORT:-6379}
       - REDIS_URL=redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}
@@ -260,16 +261,20 @@ services:
         condition: service_healthy
       user-service:
         condition: service_healthy
-      skin-analysis-service:
-        condition: service_healthy
-      hair-tryon-service:
-        condition: service_healthy
+      # skin-analysis-service:
+      #   condition: service_healthy
+      # hair-tryon-service:
+      #   condition: service_healthy
       redis:
         condition: service_healthy
     networks:
       - growup-network
     volumes:
-      - ./api-gateway:/app
+      - ./api-gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./api-gateway/locations.conf:/etc/nginx/conf.d/locations.conf:ro
+      - ./api-gateway/middleware/src:/app/middleware/src
+      - ./api-gateway/middleware/package.json:/app/middleware/package.json
+      - ./shared:/app/shared:ro
       - gateway_logs:/var/log/nginx
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health"]
@@ -280,10 +285,13 @@ services:
     develop:
       watch:
         - action: sync
-          path: ./api-gateway
-          target: /app
-          ignore:
-            - node_modules/
+          path: ./api-gateway/middleware/src
+          target: /app/middleware/src
+        - action: sync
+          path: ./api-gateway/nginx.conf
+          target: /etc/nginx/nginx.conf
+        - action: rebuild
+          path: ./api-gateway/middleware/package.json
 
 # Named volumes for persistent data
 volumes:
@@ -293,11 +301,15 @@ volumes:
     driver: local
   redis_data:
     driver: local
-  skin_uploads:
-    driver: local
-  hair_uploads:
-    driver: local
+  # skin_uploads:  # Commented out - for manual skin-analysis service
+  #   driver: local
+  # hair_uploads:  # Commented out - for manual hair-tryon service
+  #   driver: local
   gateway_logs:
+    driver: local
+  auth-service-node-modules:
+    driver: local
+  user-service-node-modules:
     driver: local
 
 # Custom network for service communication

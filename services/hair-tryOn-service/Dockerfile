@@ -1,11 +1,13 @@
-# Hair Try-On Service Dockerfile with GPU detection
-FROM python:3.11-slim
+# Hair Try-On Service Dockerfile - Development optimized
+FROM python:3.11-slim as base
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies (minimal set, no CUDA)
-RUN apt-get update && apt-get install -y \
+# Install system dependencies including CMake for dlib
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    cmake \
     libgl1 \
     libglib2.0-0 \
     libsm6 \
@@ -13,21 +15,18 @@ RUN apt-get update && apt-get install -y \
     libxrender-dev \
     libgomp1 \
     curl \
-    bash \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy application code and setup script
+# Copy only requirements first for better caching
+COPY requirements.txt .
+
+# Install Python dependencies (CPU-only by default)
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
 COPY . .
-
-# Make setup script executable
-RUN chmod +x setup-hairfastgan.sh
-
-# Set environment variable to indicate Docker build
-ENV DOCKER_BUILD=1
-
-# Run setup script which auto-detects GPU and installs appropriate dependencies
-# This will install PyTorch with CUDA only if GPU is available
-RUN bash setup-hairfastgan.sh || true
 
 # Create necessary directories
 RUN mkdir -p /app/uploads /app/temp /app/models
@@ -39,5 +38,5 @@ EXPOSE 3004
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:3004/health || exit 1
 
-# Run the application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "3004"]
+# Run with reload for development
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "3004", "--reload", "--log-level", "info"]

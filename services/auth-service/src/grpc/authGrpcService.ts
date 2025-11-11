@@ -4,10 +4,10 @@ import path from 'path';
 import { AuthService } from '../services/authService';
 import { logger } from '../config/logger';
 
-const correlationLogger = require('../../../../shared/logging/correlationLogger');
+const correlationLogger = require('../../shared/logging/correlationLogger');
 
 // Load proto definition
-const PROTO_PATH = path.join(__dirname, '../../../../shared/grpc/protos/auth.proto');
+const PROTO_PATH = path.join(__dirname, '../../shared/grpc/protos/auth.proto');
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
   longs: String,

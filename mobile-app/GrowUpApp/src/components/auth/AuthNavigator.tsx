@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useAppDispatch } from '../../store';
+import { clearError } from '../../store/slices/authSlice';
 import { LoginScreen, RegisterScreen, ForgotPasswordScreen } from '../../screens/auth';
 
 type AuthScreen = 'login' | 'register' | 'forgotPassword';
@@ -8,11 +10,23 @@ interface AuthNavigatorProps {
 }
 
 const AuthNavigator: React.FC<AuthNavigatorProps> = ({ onAuthSuccess }) => {
+  const dispatch = useAppDispatch();
   const [currentScreen, setCurrentScreen] = useState<AuthScreen>('login');
 
-  const navigateToLogin = () => setCurrentScreen('login');
-  const navigateToRegister = () => setCurrentScreen('register');
-  const navigateToForgotPassword = () => setCurrentScreen('forgotPassword');
+  const navigateToLogin = () => {
+    dispatch(clearError());
+    setCurrentScreen('login');
+  };
+  
+  const navigateToRegister = () => {
+    dispatch(clearError());
+    setCurrentScreen('register');
+  };
+  
+  const navigateToForgotPassword = () => {
+    dispatch(clearError());
+    setCurrentScreen('forgotPassword');
+  };
 
   switch (currentScreen) {
     case 'login':

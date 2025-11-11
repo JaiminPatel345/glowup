@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Alert } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { loginUser, clearError } from '../../store/slices/authSlice';
 import { Button, Input } from '../../components/common';
@@ -51,8 +51,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
       await dispatch(loginUser(formData)).unwrap();
       // Navigation will be handled by the parent component based on auth state
     } catch (error) {
-      // Error is already handled by the Redux slice
-      Alert.alert('Login Failed', 'Please check your credentials and try again.');
+      // Error is stored in Redux state and will be displayed in the error view
+      // Form data is preserved, user stays on the login screen
+      console.log('Login failed:', error);
     }
   };
 

@@ -39,6 +39,10 @@ export const validatePassword = (password: string): { isValid: boolean; errors: 
     errors.push('Password must contain at least one number');
   }
   
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+    errors.push('Password must contain at least one special character');
+  }
+  
   return {
     isValid: errors.length === 0,
     errors,

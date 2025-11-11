@@ -1,10 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
 import { createProxyMiddleware, Options } from 'http-proxy-middleware';
+import path from 'path';
 import { logger } from '../config/logger';
 
-const serviceRegistry = require('../../../../shared/discovery/serviceRegistry');
-const { circuitBreakerManager } = require('../../../../shared/resilience/circuitBreaker');
-const correlationLogger = require('../../../../shared/logging/correlationLogger');
+const sharedBasePath = path.resolve(process.cwd(), '../shared');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const serviceRegistry = require(path.join(sharedBasePath, 'discovery/serviceRegistry.js'));
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { circuitBreakerManager } = require(path.join(sharedBasePath, 'resilience/circuitBreaker.js'));
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const correlationLogger = require(path.join(sharedBasePath, 'logging/correlationLogger.js'));
 
 interface ResilientProxyOptions extends Options {
   serviceName: string;
@@ -26,6 +31,8 @@ export function createResilientProxy(options: ResilientProxyOptions) {
     circuitBreakerOptions = {},
     ...proxyOptions
   } = options;
+
+  const disableCircuitBreaker = process.env.DISABLE_CIRCUIT_BREAKER === 'true' || process.env.NODE_ENV !== 'production';
 
   // Configure circuit breaker
   const circuitBreaker = circuitBreakerManager.getBreaker(serviceName, {
@@ -103,6 +110,43 @@ export function createResilientProxy(options: ResilientProxyOptions) {
         0,
         true
       );
+
+      // When body parsers run before the proxy, the original request stream is consumed.
+      // Re-serialize known body types so the upstream service receives the payload.
+      const method = req.method?.toUpperCase();
+      if (!method || ['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+        return;
+      }
+
+      if (!req.body || (typeof req.body === 'object' && Object.keys(req.body).length === 0)) {
+        return;
+      }
+
+      const contentType = proxyReq.getHeader('Content-Type');
+      let bodyBuffer: Buffer | null = null;
+
+      if (Buffer.isBuffer(req.body)) {
+        bodyBuffer = req.body;
+      } else if (typeof req.body === 'string') {
+        bodyBuffer = Buffer.from(req.body);
+      } else if (contentType && contentType.toString().includes('application/json')) {
+        bodyBuffer = Buffer.from(JSON.stringify(req.body));
+      } else if (contentType && contentType.toString().includes('application/x-www-form-urlencoded')) {
+        const formData = new URLSearchParams();
+        Object.entries(req.body as Record<string, unknown>).forEach(([key, value]) => {
+          if (Array.isArray(value)) {
+            value.forEach((item) => formData.append(key, String(item)));
+          } else if (value !== undefined && value !== null) {
+            formData.append(key, String(value));
+          }
+        });
+        bodyBuffer = Buffer.from(formData.toString());
+      }
+
+      if (bodyBuffer) {
+        proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyBuffer));
+        proxyReq.write(bodyBuffer);
+      }
     },
     onProxyRes: (proxyRes, req, res) => {
       const correlationId = (req as any).correlationId || 'unknown';
@@ -126,6 +170,10 @@ export function createResilientProxy(options: ResilientProxyOptions) {
 
   // Wrap with circuit breaker
   return async (req: Request, res: Response, next: NextFunction) => {
+    if (disableCircuitBreaker) {
+      return baseProxy(req, res, next);
+    }
+
     const correlationId = (req as any).correlationId || 'unknown';
     const proxyLogger = correlationLogger.createServiceLogger(correlationId, 'api-gateway');
     
@@ -136,11 +184,37 @@ export function createResilientProxy(options: ResilientProxyOptions) {
           // Add start time for duration calculation
           (req as any).startTime = Date.now();
           
+          const cleanup = () => {
+            res.removeListener('finish', onFinish);
+            res.removeListener('close', onClose);
+            res.removeListener('error', onError);
+          };
+
+          const onFinish = () => {
+            cleanup();
+            resolve();
+          };
+
+          const onClose = () => {
+            cleanup();
+            resolve();
+          };
+
+          const onError = (err: Error) => {
+            cleanup();
+            reject(err);
+          };
+
+          res.once('finish', onFinish);
+          res.once('close', onClose);
+          res.once('error', onError);
+
           // Call the base proxy
           baseProxy(req, res, (error) => {
+            cleanup();
             if (error) {
               reject(error);
-            } else {
+            } else if (!res.writableEnded) {
               resolve();
             }
           });

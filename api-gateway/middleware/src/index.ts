@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import path from 'path';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { authMiddleware } from './middleware/auth';
 import { rateLimitMiddleware } from './middleware/rateLimit';
@@ -10,11 +11,16 @@ import { errorHandler } from './middleware/errorHandler';
 import { healthCheck } from './routes/health';
 import { logger } from './config/logger';
 
-// Import shared utilities
-const serviceRegistry = require('../../../shared/discovery/serviceRegistry');
-const { circuitBreakerManager } = require('../../../shared/resilience/circuitBreaker');
-const correlationLogger = require('../../../shared/logging/correlationLogger');
-const redisCache = require('../../../shared/cache/redis');
+// Resolve shared utilities location explicitly to avoid module resolution issues in dev containers.
+const sharedBasePath = path.resolve(process.cwd(), '../shared');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const serviceRegistry = require(path.join(sharedBasePath, 'discovery/serviceRegistry.js'));
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { circuitBreakerManager } = require(path.join(sharedBasePath, 'resilience/circuitBreaker.js'));
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const correlationLogger = require(path.join(sharedBasePath, 'logging/correlationLogger.js'));
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const redisCache = require(path.join(sharedBasePath, 'cache/redis.js'));
 
 // Load environment variables
 // In Docker: use .env.docker, locally: use .env.local

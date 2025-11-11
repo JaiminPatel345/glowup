@@ -12,11 +12,40 @@ interface ServiceHealth {
   error?: string;
 }
 
+const buildServiceUrl = (
+  urlEnv: string,
+  hostEnv: string,
+  portEnv: string,
+  defaultHost: string,
+  defaultPort: string
+) => {
+  const fullUrl = process.env[urlEnv];
+  if (fullUrl) {
+    return fullUrl;
+  }
+
+  const host = process.env[hostEnv] || defaultHost;
+  const port = process.env[portEnv] || defaultPort;
+  return `http://${host}:${port}`;
+};
+
 const services = [
-  { name: 'auth-service', url: process.env.AUTH_SERVICE_URL || 'http://auth-service:3000' },
-  { name: 'user-service', url: process.env.USER_SERVICE_URL || 'http://user-service:3000' },
-  { name: 'skin-service', url: process.env.SKIN_SERVICE_URL || 'http://skin-service:8000' },
-  { name: 'hair-service', url: process.env.HAIR_SERVICE_URL || 'http://hair-service:8000' }
+  {
+    name: 'auth-service',
+    url: buildServiceUrl('AUTH_SERVICE_URL', 'AUTH_SERVICE_HOST', 'AUTH_SERVICE_PORT', 'auth-service', '3001')
+  },
+  {
+    name: 'user-service',
+    url: buildServiceUrl('USER_SERVICE_URL', 'USER_SERVICE_HOST', 'USER_SERVICE_PORT', 'user-service', '3002')
+  },
+  {
+    name: 'skin-service',
+    url: buildServiceUrl('SKIN_SERVICE_URL', 'SKIN_SERVICE_HOST', 'SKIN_SERVICE_PORT', 'skin-analysis-service', '3003')
+  },
+  {
+    name: 'hair-service',
+    url: buildServiceUrl('HAIR_SERVICE_URL', 'HAIR_SERVICE_HOST', 'HAIR_SERVICE_PORT', 'hair-tryOn-service', '3004')
+  }
 ];
 
 async function checkServiceHealth(service: { name: string; url: string }): Promise<ServiceHealth> {

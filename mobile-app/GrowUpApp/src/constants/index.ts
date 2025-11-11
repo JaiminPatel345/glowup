@@ -1,6 +1,8 @@
+import { API_BASE_URL } from '../config/environment';
+
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: __DEV__ ? 'http://localhost:3000/api' : 'https://api.growup.app/api',
+  BASE_URL: API_BASE_URL,
   TIMEOUT: 30000,
   RETRY_ATTEMPTS: 3,
   RETRY_DELAY: 1000,

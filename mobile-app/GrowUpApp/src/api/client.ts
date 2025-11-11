@@ -1,10 +1,6 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import SecureStorage from '../utils/secureStorage';
-
-// API Configuration
-const API_BASE_URL = __DEV__ 
-  ? 'http://localhost:3000/api' 
-  : 'https://api.growup.app/api';
+import { API_BASE_URL } from '../config/environment';
 
 const API_TIMEOUT = 30000; // 30 seconds
 

@@ -25,12 +25,12 @@ const ProductRecommendations: React.FC<ProductRecommendationsProps> = ({
   const getFilteredProducts = (): Product[] => {
     switch (productFilter) {
       case 'ayurvedic':
-        return recommendations.ayurvedicProducts;
+        return recommendations.ayurvedicProducts || [];
       case 'non-ayurvedic':
-        return recommendations.products.filter(product => !product.isAyurvedic);
+        return recommendations.nonAyurvedicProducts || [];
       case 'all':
       default:
-        return [...recommendations.products, ...recommendations.ayurvedicProducts];
+        return recommendations.allProducts || [];
     }
   };
 
@@ -78,7 +78,7 @@ const ProductRecommendations: React.FC<ProductRecommendationsProps> = ({
           onPress={() => dispatch(setProductFilter('all'))}
         >
           <Text className={getFilterTextStyle('all')}>
-            All ({recommendations.products.length + recommendations.ayurvedicProducts.length})
+            All ({(recommendations.allProducts || []).length})
           </Text>
         </TouchableOpacity>
         
@@ -87,7 +87,7 @@ const ProductRecommendations: React.FC<ProductRecommendationsProps> = ({
           onPress={() => dispatch(setProductFilter('ayurvedic'))}
         >
           <Text className={getFilterTextStyle('ayurvedic')}>
-            Ayurvedic ({recommendations.ayurvedicProducts.length})
+            Ayurvedic ({(recommendations.ayurvedicProducts || []).length})
           </Text>
         </TouchableOpacity>
         
@@ -96,7 +96,7 @@ const ProductRecommendations: React.FC<ProductRecommendationsProps> = ({
           onPress={() => dispatch(setProductFilter('non-ayurvedic'))}
         >
           <Text className={getFilterTextStyle('non-ayurvedic')}>
-            Non-Ayurvedic ({recommendations.products.filter(p => !p.isAyurvedic).length})
+            Non-Ayurvedic ({(recommendations.nonAyurvedicProducts || []).length})
           </Text>
         </TouchableOpacity>
       </View>

@@ -26,8 +26,9 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy application code
 COPY . .
 
-# Create necessary directories
-RUN mkdir -p /app/uploads /app/models /app/logs && \
+# Create necessary directories with full permissions
+RUN mkdir -p /app/uploads /app/models /app/logs /app/temp && \
+    chmod -R 777 /app/uploads /app/logs /app/temp && \
     chmod -R 755 /app
 
 # Expose port

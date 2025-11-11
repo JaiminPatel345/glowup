@@ -68,8 +68,9 @@ export interface SkinIssue {
 
 export interface ProductRecommendations {
   issueId: string;
-  products: Product[];
+  allProducts: Product[];
   ayurvedicProducts: Product[];
+  nonAyurvedicProducts: Product[];
 }
 
 export interface Product {

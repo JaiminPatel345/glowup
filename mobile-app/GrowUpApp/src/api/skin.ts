@@ -39,10 +39,22 @@ export class SkinAnalysisApi {
    * Get product recommendations for a specific skin issue
    */
   static async getProductRecommendations(issueId: string): Promise<ProductRecommendations> {
-    const response = await apiClient.get<ProductRecommendations>(
+    const response = await apiClient.get<{
+      issue_id: string;
+      all_products: any[];
+      ayurvedic_products: any[];
+      non_ayurvedic_products: any[];
+    }>(
       `/v1/recommendations/${issueId}`
     );
-    return response.data;
+    
+    // Transform snake_case to camelCase
+    return {
+      issueId: response.data.issue_id,
+      allProducts: response.data.all_products || [],
+      ayurvedicProducts: response.data.ayurvedic_products || [],
+      nonAyurvedicProducts: response.data.non_ayurvedic_products || [],
+    };
   }
 
   /**

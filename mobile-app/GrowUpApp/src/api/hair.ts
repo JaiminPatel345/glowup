@@ -15,12 +15,21 @@ export interface HairstylesResponse {
   success: boolean;
   count: number;
   hairstyles: Hairstyle[];
+  next_token?: string | null;
 }
 
 export interface ProcessHairTryOnRequest {
-  userPhoto: any; // File/Blob
-  hairstyleImage?: any; // File/Blob (optional)
+  userPhoto: any; // File/Blob or React Native file object {uri, type, name}
+  hairstyleImage?: any; // File/Blob or React Native file object (optional)
   hairstyleId?: string; // (optional)
+  userId: string;
+  blendRatio?: number;
+}
+
+export interface ProcessHairTryOnRequestNative {
+  userPhotoUri: string;
+  hairstyleImageUri?: string;
+  hairstyleId?: string;
   userId: string;
   blendRatio?: number;
 }
@@ -68,9 +77,14 @@ export class HairTryOnApi {
   static async getDefaultHairstyles(
     pageSize: number = 20,
     startingToken?: string,
-    forceRefresh: boolean = false
-  ): Promise<Hairstyle[]> {
-    const params: any = { page_size: pageSize, force_refresh: forceRefresh };
+    forceRefresh: boolean = false,
+    fetchAll: boolean = false
+  ): Promise<HairstylesResponse> {
+    const params: any = { 
+      page_size: pageSize, 
+      force_refresh: forceRefresh,
+      fetch_all: fetchAll
+    };
     if (startingToken) {
       params.starting_token = startingToken;
     }
@@ -79,7 +93,7 @@ export class HairTryOnApi {
       '/hair-tryOn/hairstyles',
       { params }
     );
-    return response.data.hairstyles;
+    return response.data;
   }
 
   /**
@@ -90,6 +104,54 @@ export class HairTryOnApi {
       `/hair-tryOn/hairstyles/${hairstyleId}`
     );
     return response.data.hairstyle;
+  }
+
+  /**
+   * Process hair try-on with either default or custom hairstyle (React Native version)
+   */
+  static async processHairTryOnNative(request: ProcessHairTryOnRequestNative): Promise<string> {
+    const formData = new FormData();
+    
+    // Add user photo
+    formData.append('user_photo', {
+      uri: request.userPhotoUri,
+      type: 'image/jpeg',
+      name: 'user_photo.jpg',
+    } as any);
+    
+    // Add hairstyle (either custom image or ID)
+    if (request.hairstyleImageUri) {
+      formData.append('hairstyle_image', {
+        uri: request.hairstyleImageUri,
+        type: 'image/jpeg',
+        name: 'hairstyle.jpg',
+      } as any);
+    } else if (request.hairstyleId) {
+      formData.append('hairstyle_id', request.hairstyleId);
+    } else {
+      throw new Error('Either hairstyleImageUri or hairstyleId must be provided');
+    }
+    
+    // Add user ID
+    formData.append('user_id', request.userId);
+    
+    // Add blend ratio
+    formData.append('blend_ratio', String(request.blendRatio || 0.8));
+
+    const response = await apiClient.post(
+      '/hair-tryOn/process',
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        responseType: 'blob',
+        timeout: 60000, // 1 minute for image processing
+      }
+    );
+    
+    // Convert blob to base64 for React Native
+    return response.data;
   }
 
   /**

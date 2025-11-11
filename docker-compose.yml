@@ -122,7 +122,8 @@ services:
       - AUTH_SERVICE_URL=http://${AUTH_SERVICE_HOST:-auth-service}:${AUTH_SERVICE_PORT:-3001}
       - PORT=${USER_SERVICE_PORT:-3002}
       - NODE_ENV=${NODE_ENV:-development}
-    # Port mapping removed - accessible internally via user-service:3002
+    ports:
+      - "${USER_SERVICE_PORT:-3002}:3002"  # Exposed for locally run gateway/services
     depends_on:
       postgres:
         condition: service_healthy
@@ -244,11 +245,13 @@ services:
       - AUTH_SERVICE_PORT=${AUTH_SERVICE_PORT:-3001}
       - USER_SERVICE_HOST=${USER_SERVICE_HOST:-user-service}
       - USER_SERVICE_PORT=${USER_SERVICE_PORT:-3002}
-      # Skin and Hair services will be run manually
-      # - SKIN_SERVICE_HOST=${SKIN_SERVICE_HOST:-skin-analysis-service}
-      # - SKIN_SERVICE_PORT=${SKIN_SERVICE_PORT:-3003}
-      # - HAIR_SERVICE_HOST=${HAIR_SERVICE_HOST:-hair-tryon-service}
-      # - HAIR_SERVICE_PORT=${HAIR_SERVICE_PORT:-3004}
+      # Skin and Hair services running on host machine (use host.docker.internal)
+      - SKIN_SERVICE_HOST=host.docker.internal
+      - SKIN_SERVICE_PORT=${SKIN_SERVICE_PORT:-3003}
+      - HAIR_SERVICE_HOST=host.docker.internal
+      - HAIR_SERVICE_PORT=${HAIR_SERVICE_PORT:-3004}
+      - SKIN_SERVICE_URL=http://host.docker.internal:3003
+      - HAIR_SERVICE_URL=http://host.docker.internal:3004
       - REDIS_HOST=${REDIS_HOST:-redis}
       - REDIS_PORT=${REDIS_PORT:-6379}
       - REDIS_URL=redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}
@@ -269,6 +272,8 @@ services:
         condition: service_healthy
     networks:
       - growup-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./api-gateway/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./api-gateway/locations.conf:/etc/nginx/conf.d/locations.conf:ro

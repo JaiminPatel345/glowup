@@ -83,7 +83,7 @@ class PerfectCorpService:
         page_size: int = 20,
         starting_token: Optional[str] = None,
         force_refresh: bool = False
-    ) -> List[Dict]:
+    ) -> Dict:
         """
         Fetch hairstyles from PerfectCorp API
         
@@ -93,16 +93,22 @@ class PerfectCorpService:
             force_refresh: Force refresh cache
             
         Returns:
-            List of hairstyle dictionaries
+            Dictionary with hairstyles list and next_token
         """
         # Check cache first
-        if not force_refresh:
+        if not force_refresh and not starting_token:
             if self._is_cache_valid():
                 logger.info("Returning hairstyles from memory cache")
-                return self._cache
+                return {
+                    "hairstyles": self._cache,
+                    "next_token": None
+                }
             
             if self._load_cache_from_file():
-                return self._cache
+                return {
+                    "hairstyles": self._cache,
+                    "next_token": None
+                }
         
         # Fetch from API
         try:
@@ -140,27 +146,36 @@ class PerfectCorpService:
                         raise
             
            # Parse response
-            hairstyles = self._parse_hairstyles(data)
+            result = self._parse_hairstyles(data)
+            hairstyles = result.get("hairstyles", [])
+            next_token = result.get("next_token")
              
-            # Update cache
-            self._cache = hairstyles
-            self._cache_timestamp = datetime.now()
-            self._save_cache_to_file()
+            # Update cache (only cache if no starting_token - first page)
+            if not starting_token:
+                self._cache = hairstyles
+                self._cache_timestamp = datetime.now()
+                self._save_cache_to_file()
             
             logger.info(f"Fetched {len(hairstyles)} hairstyles from API")
-            return hairstyles
+            return {
+                "hairstyles": hairstyles,
+                "next_token": next_token
+            }
             
         except Exception as e:
             logger.error(f"Failed to fetch hairstyles: {e}")
             
             # Return cached data if available
-            if self._cache:
+            if self._cache and not starting_token:
                 logger.warning("Returning stale cache due to API error")
-                return self._cache
+                return {
+                    "hairstyles": self._cache,
+                    "next_token": None
+                }
             
             raise
     
-    def _parse_hairstyles(self, api_response: Dict) -> List[Dict]:
+    def _parse_hairstyles(self, api_response: Dict) -> Dict:
         """
         Parse API response and extract hairstyle information
         
@@ -168,9 +183,10 @@ class PerfectCorpService:
             api_response: Raw API response
             
         Returns:
-            List of parsed hairstyle dictionaries
+            Dictionary with hairstyles list and next_token
         """
         hairstyles = []
+        next_token = None
         
         try:
             # Log the response structure for debugging
@@ -188,6 +204,7 @@ class PerfectCorpService:
             # }
             data = api_response.get('data', {})
             templates = data.get('templates', [])
+            next_token = data.get('next_token')
             
             if not templates:
                 logger.warning("No templates found in API response")
@@ -213,7 +230,10 @@ class PerfectCorpService:
                 else:
                     logger.warning(f"Skipping template with missing fields: {template}")
             
-            return hairstyles
+            return {
+                "hairstyles": hairstyles,
+                "next_token": next_token
+            }
             
         except Exception as e:
             logger.error(f"Failed to parse hairstyles: {e}")
@@ -230,7 +250,8 @@ class PerfectCorpService:
         Returns:
             Hairstyle dictionary or None
         """
-        hairstyles = await self.fetch_hairstyles()
+        result = await self.fetch_hairstyles()
+        hairstyles = result.get("hairstyles", [])
         
         for hairstyle in hairstyles:
             if hairstyle['id'] == hairstyle_id:

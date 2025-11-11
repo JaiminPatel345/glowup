@@ -156,11 +156,13 @@ const SkinAnalysisScreen: React.FC = () => {
 
           {/* Analysis Results */}
           {currentAnalysis && !isAnalyzing && (
-            <Animated.View entering={FadeInDown.springify()}>
-              <SkinAnalysisResults analysis={currentAnalysis} />
+            <Animated.View entering={FadeInDown.springify()} className="px-4">
+              <View className="mb-6">
+                <SkinAnalysisResults analysis={currentAnalysis} />
+              </View>
               
               {/* New Analysis Button */}
-              <View className="mt-6">
+              <View className="mb-8">
                 <Button
                   title="Analyze Another Photo"
                   onPress={handleNewAnalysis}

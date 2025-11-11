@@ -26,7 +26,11 @@ export default function HairTryOnScreen() {
   const [resultUri, setResultUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingHairstyles, setLoadingHairstyles] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [blendRatio, setBlendRatio] = useState(0.8);
+  const [nextToken, setNextToken] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<'Male' | 'Female' | 'all'>('all');
+  const [imageSelectionMode, setImageSelectionMode] = useState<'own' | 'default'>('own');
 
   useEffect(() => {
     loadHairstyles();
@@ -42,16 +46,38 @@ export default function HairTryOnScreen() {
     }
   };
 
-  const loadHairstyles = async () => {
+  const loadHairstyles = async (token?: string) => {
     try {
-      setLoadingHairstyles(true);
-      const styles = await HairTryOnApi.getDefaultHairstyles(20);
-      setHairstyles(styles);
+      if (!token) {
+        setLoadingHairstyles(true);
+        setHairstyles([]);
+      } else {
+        setLoadingMore(true);
+      }
+      
+      // On initial load, fetch all hairstyles from multiple tokens
+      const fetchAll = !token;
+      const response = await HairTryOnApi.getDefaultHairstyles(10, token, false, fetchAll);
+      
+      if (!token) {
+        setHairstyles(response.hairstyles);
+      } else {
+        setHairstyles(prev => [...prev, ...response.hairstyles]);
+      }
+      
+      setNextToken(response.next_token || null);
     } catch (error) {
       console.error('Failed to load hairstyles:', error);
       Alert.alert('Error', 'Failed to load hairstyles');
     } finally {
       setLoadingHairstyles(false);
+      setLoadingMore(false);
+    }
+  };
+
+  const loadMoreHairstyles = () => {
+    if (nextToken && !loadingMore) {
+      loadHairstyles(nextToken);
     }
   };
 
@@ -70,6 +96,7 @@ export default function HairTryOnScreen() {
         } else {
           setCustomHairstyleUri(result.assets[0].uri);
           setSelectedHairstyle(null); // Clear default selection
+          setImageSelectionMode('own');
         }
       }
     } catch (error) {
@@ -115,69 +142,109 @@ export default function HairTryOnScreen() {
     try {
       setLoading(true);
 
-      // Prepare user photo
-      const userPhotoBlob = await fetch(userPhotoUri).then(r => r.blob());
+      console.log('🎨 Starting hair try-on process...', {
+        userId,
+        hasCustomHairstyle: !!customHairstyleUri,
+        selectedHairstyleId: selectedHairstyle?.id,
+        blendRatio
+      });
 
-      // Prepare hairstyle
-      let hairstyleBlob = null;
-      if (customHairstyleUri) {
-        hairstyleBlob = await fetch(customHairstyleUri).then(r => r.blob());
-      }
+      console.log('📦 Calling API with URIs...');
 
-      // Process
-      const resultBlob = await HairTryOnApi.processHairTryOn({
-        userPhoto: userPhotoBlob,
-        hairstyleImage: hairstyleBlob,
+      // Process using React Native native method
+      const result = await HairTryOnApi.processHairTryOnNative({
+        userPhotoUri: userPhotoUri,
+        hairstyleImageUri: customHairstyleUri || undefined,
         hairstyleId: selectedHairstyle?.id,
         userId: userId,
         blendRatio,
       });
 
-      // Convert blob to URI
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setResultUri(reader.result as string);
-      };
-      reader.readAsDataURL(resultBlob);
+      console.log('✅ API call successful, setting result...');
+
+      // Set the result - it should be a blob or data URL
+      if (typeof result === 'string') {
+        setResultUri(result.startsWith('data:') ? result : `data:image/jpeg;base64,${result}`);
+      } else {
+        // If it's a blob, convert it
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setResultUri(reader.result as string);
+        };
+        reader.readAsDataURL(result as any);
+      }
+      
+      console.log('🎉 Hair try-on completed successfully!');
 
       Alert.alert('Success', 'Hair try-on completed!');
-    } catch (error) {
-      console.error('Failed to process hair try-on:', error);
-      Alert.alert('Error', 'Failed to process hair try-on. Please try again.');
+    } catch (error: any) {
+      console.error('❌ Failed to process hair try-on:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        stack: error.stack
+      });
+      
+      let errorMessage = 'Failed to process hair try-on. Please try again.';
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        errorMessage = 'Authentication failed. Please log out and log in again.';
+      } else if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      Alert.alert('Error', errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  const renderHairstyleItem = (item: Hairstyle) => (
-    <TouchableOpacity
-      key={item.id}
-      className={`w-[30%] mb-3 rounded-lg overflow-hidden border-2 ${selectedHairstyle?.id === item.id ? 'border-primary-600' : 'border-transparent'
-        }`}
-      onPress={() => {
-        setSelectedHairstyle(item);
-        setCustomHairstyleUri(null);
-      }}
-    >
-      <Image
-        source={{ uri: item.preview_image_url }}
-        className="w-full aspect-square"
-        resizeMode="cover"
-      />
-      {selectedHairstyle?.id === item.id && (
-        <View className="absolute top-1 right-1 bg-primary-600 rounded-full w-6 h-6 items-center justify-center">
-          <Text className="text-white text-base font-bold">✓</Text>
-        </View>
-      )}
-      <Text className="text-xs text-center p-1 bg-gray-50" numberOfLines={1}>
-        {item.style_name || 'Style'}
-      </Text>
-    </TouchableOpacity>
+  const renderHairstyleItem = (item: Hairstyle) => {
+    // Filter by category
+    if (selectedCategory !== 'all' && item.category !== selectedCategory) {
+      return null;
+    }
+    
+    return (
+      <TouchableOpacity
+        key={item.id}
+        className={`w-[30%] mb-3 rounded-lg overflow-hidden border-2 ${selectedHairstyle?.id === item.id ? 'border-secondary-600' : 'border-transparent'
+          }`}
+        onPress={() => {
+          setSelectedHairstyle(item);
+          setCustomHairstyleUri(null);
+          setImageSelectionMode('default');
+        }}
+      >
+        <Image
+          source={{ uri: item.preview_image_url }}
+          className="w-full aspect-square"
+          resizeMode="cover"
+        />
+        {selectedHairstyle?.id === item.id && (
+          <View className="absolute top-1 right-1 bg-secondary-600 rounded-full w-6 h-6 items-center justify-center">
+            <Text className="text-white text-base font-bold">✓</Text>
+          </View>
+        )}
+        <Text className="text-xs text-center p-1 bg-gray-50" numberOfLines={1}>
+          {item.style_name || 'Style'}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
+
+  const filteredHairstyles = hairstyles.filter(
+    (item) => selectedCategory === 'all' || item.category === selectedCategory
   );
 
   return (
     <View className="flex-1 bg-gray-50">
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
         {/* Header */}
         <Animated.View
           entering={FadeInDown.springify()}
@@ -235,38 +302,117 @@ export default function HairTryOnScreen() {
           entering={FadeInDown.delay(200).springify()}
           className="bg-white mx-4 mb-4 p-4 rounded-2xl shadow-sm"
         >
-          <Text className="text-lg font-semibold mb-3 text-gray-800">Select Hairstyle</Text>
+          <Text className="text-lg font-semibold mb-3 text-gray-800">Select Hairstyle Option</Text>
+
+          {/* Selection Mode Tabs */}
+          <View className="flex-row mb-4 bg-gray-100 rounded-xl p-1">
+            <TouchableOpacity
+              className={`flex-1 py-3 rounded-lg ${imageSelectionMode === 'own' ? 'bg-secondary-600' : 'bg-transparent'}`}
+              onPress={() => setImageSelectionMode('own')}
+            >
+              <Text className={`text-center font-semibold ${imageSelectionMode === 'own' ? 'text-white' : 'text-gray-600'}`}>
+                Upload Own Image
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              className={`flex-1 py-3 rounded-lg ${imageSelectionMode === 'default' ? 'bg-secondary-600' : 'bg-transparent'}`}
+              onPress={() => setImageSelectionMode('default')}
+            >
+              <Text className={`text-center font-semibold ${imageSelectionMode === 'default' ? 'text-white' : 'text-gray-600'}`}>
+                Select Default
+              </Text>
+            </TouchableOpacity>
+          </View>
 
           {/* Custom Upload Option */}
-          <TouchableOpacity
-            className={`h-32 rounded-xl border-2 ${
-              customHairstyleUri ? 'border-secondary-600' : 'border-dashed border-gray-300'
-            } justify-center items-center mb-3 bg-gray-50`}
-            onPress={() => pickImage('custom')}
-          >
-            {customHairstyleUri ? (
-              <Image source={{ uri: customHairstyleUri }} className="w-full h-full rounded-xl" />
-            ) : (
-              <View className="items-center">
-                <Ionicons name="cloud-upload-outline" size={32} color="#ec4899" />
-                <Text className="text-secondary-600 text-base font-semibold mt-2">
-                  Upload Custom Hairstyle
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
+          {imageSelectionMode === 'own' && (
+            <TouchableOpacity
+              className={`h-32 rounded-xl border-2 ${
+                customHairstyleUri ? 'border-secondary-600' : 'border-dashed border-gray-300'
+              } justify-center items-center bg-gray-50`}
+              onPress={() => pickImage('custom')}
+            >
+              {customHairstyleUri ? (
+                <Image source={{ uri: customHairstyleUri }} className="w-full h-full rounded-xl" />
+              ) : (
+                <View className="items-center">
+                  <Ionicons name="cloud-upload-outline" size={32} color="#ec4899" />
+                  <Text className="text-secondary-600 text-base font-semibold mt-2">
+                    Upload Custom Hairstyle
+                  </Text>
+                  <Text className="text-gray-500 text-xs mt-1">
+                    Choose a hairstyle image from your gallery
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          )}
 
           {/* Default Hairstyles Grid */}
-          <Text className="text-sm font-medium mt-4 mb-2 text-gray-600">Or choose from defaults:</Text>
-          {loadingHairstyles ? (
-            <View className="py-8">
-              <ActivityIndicator size="large" color="#ec4899" />
-              <Text className="text-center text-gray-500 mt-3">Loading hairstyles...</Text>
-            </View>
-          ) : (
-            <View className="flex-row flex-wrap justify-between">
-              {hairstyles.map(renderHairstyleItem)}
-            </View>
+          {imageSelectionMode === 'default' && (
+            <>
+              {/* Category Filter */}
+              <View className="flex-row mb-3 bg-gray-100 rounded-xl p-1">
+                <TouchableOpacity
+                  className={`flex-1 py-2 rounded-lg ${selectedCategory === 'all' ? 'bg-secondary-600' : 'bg-transparent'}`}
+                  onPress={() => setSelectedCategory('all')}
+                >
+                  <Text className={`text-center text-sm font-semibold ${selectedCategory === 'all' ? 'text-white' : 'text-gray-600'}`}>
+                    All
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className={`flex-1 py-2 rounded-lg ${selectedCategory === 'Male' ? 'bg-secondary-600' : 'bg-transparent'}`}
+                  onPress={() => setSelectedCategory('Male')}
+                >
+                  <Text className={`text-center text-sm font-semibold ${selectedCategory === 'Male' ? 'text-white' : 'text-gray-600'}`}>
+                    Male
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className={`flex-1 py-2 rounded-lg ${selectedCategory === 'Female' ? 'bg-secondary-600' : 'bg-transparent'}`}
+                  onPress={() => setSelectedCategory('Female')}
+                >
+                  <Text className={`text-center text-sm font-semibold ${selectedCategory === 'Female' ? 'text-white' : 'text-gray-600'}`}>
+                    Female
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {loadingHairstyles ? (
+                <View className="py-8">
+                  <ActivityIndicator size="large" color="#ec4899" />
+                  <Text className="text-center text-gray-500 mt-3">Loading hairstyles...</Text>
+                </View>
+              ) : (
+                <>
+                  <View className="flex-row flex-wrap justify-between">
+                    {filteredHairstyles.map(renderHairstyleItem)}
+                  </View>
+                  
+                  {/* Load More Button */}
+                  {nextToken && (
+                    <TouchableOpacity
+                      className="mt-3 bg-secondary-100 py-3 rounded-xl flex-row items-center justify-center"
+                      onPress={loadMoreHairstyles}
+                      disabled={loadingMore}
+                    >
+                      {loadingMore ? (
+                        <>
+                          <ActivityIndicator size="small" color="#ec4899" />
+                          <Text className="text-secondary-600 font-semibold ml-2">Loading...</Text>
+                        </>
+                      ) : (
+                        <>
+                          <Ionicons name="chevron-down-circle-outline" size={20} color="#ec4899" />
+                          <Text className="text-secondary-600 font-semibold ml-2">Load More Styles</Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  )}
+                </>
+              )}
+            </>
           )}
         </Animated.View>
 
@@ -299,29 +445,6 @@ export default function HairTryOnScreen() {
           </View>
         </Animated.View>
 
-        {/* Process Button */}
-        <Animated.View entering={FadeInDown.delay(400).springify()} className="px-4 mb-6">
-          <TouchableOpacity
-            className={`h-14 rounded-xl justify-center items-center flex-row shadow-lg ${
-              loading ? 'bg-gray-400' : 'bg-secondary-600'
-            }`}
-            onPress={processHairTryOn}
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <ActivityIndicator size="small" color="#ffffff" />
-                <Text className="text-white text-base font-bold ml-2">Processing...</Text>
-              </>
-            ) : (
-              <>
-                <Ionicons name="color-wand" size={22} color="#ffffff" />
-                <Text className="text-white text-base font-bold ml-2">Try On Hairstyle</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        </Animated.View>
-
         {/* Result Section */}
         {resultUri && (
           <Animated.View
@@ -338,9 +461,33 @@ export default function HairTryOnScreen() {
             </TouchableOpacity>
           </Animated.View>
         )}
-
-        <View className="h-8" />
       </ScrollView>
+
+      {/* Sticky Process Button at Bottom */}
+      <Animated.View 
+        entering={FadeInDown.delay(400).springify()} 
+        className="absolute bottom-0 left-0 right-0 bg-white px-4 py-3 border-t border-gray-200 shadow-lg"
+      >
+        <TouchableOpacity
+          className={`h-14 rounded-xl justify-center items-center flex-row shadow-lg ${
+            loading ? 'bg-gray-400' : 'bg-secondary-600'
+          }`}
+          onPress={processHairTryOn}
+          disabled={loading}
+        >
+          {loading ? (
+            <>
+              <ActivityIndicator size="small" color="#ffffff" />
+              <Text className="text-white text-base font-bold ml-2">Processing...</Text>
+            </>
+          ) : (
+            <>
+              <Ionicons name="color-wand" size={22} color="#ffffff" />
+              <Text className="text-white text-base font-bold ml-2">Try On Hairstyle</Text>
+            </>
+          )}
+        </TouchableOpacity>
+      </Animated.View>
     </View>
   );
 }

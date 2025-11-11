@@ -47,31 +47,65 @@ async def startup():
 async def get_default_hairstyles(
     page_size: int = 20,
     starting_token: Optional[str] = None,
-    force_refresh: bool = False
+    force_refresh: bool = False,
+    fetch_all: bool = False
 ):
     """
     Get default hairstyles from PerfectCorp API
     
     Args:
-        page_size: Number of hairstyles to return
+        page_size: Number of hairstyles to return per call
         starting_token: Pagination token
         force_refresh: Force refresh cache
+        fetch_all: If True, makes multiple API calls with predefined tokens (99, 79, 59, 39, 19) and combines results
         
     Returns:
         List of hairstyles with preview images
     """
     try:
-        hairstyles = await perfectcorp_service.fetch_hairstyles(
-            page_size=page_size,
-            starting_token=starting_token,
-            force_refresh=force_refresh
-        )
-        
-        return {
-            "success": True,
-            "count": len(hairstyles),
-            "hairstyles": hairstyles
-        }
+        if fetch_all:
+            # Make multiple API calls with predefined tokens
+            tokens = ["99", "79", "59", "39", "19"]
+            all_hairstyles = []
+            
+            logger.info(f"Fetching all hairstyles with tokens: {tokens}")
+            
+            for token in tokens:
+                try:
+                    result = await perfectcorp_service.fetch_hairstyles(
+                        page_size=page_size,
+                        starting_token=token,
+                        force_refresh=force_refresh
+                    )
+                    hairstyles = result.get("hairstyles", [])
+                    all_hairstyles.extend(hairstyles)
+                    logger.info(f"Fetched {len(hairstyles)} hairstyles with token {token}")
+                except Exception as e:
+                    logger.warning(f"Failed to fetch hairstyles with token {token}: {e}")
+                    continue
+            
+            logger.info(f"Total hairstyles fetched: {len(all_hairstyles)}")
+            
+            return {
+                "success": True,
+                "count": len(all_hairstyles),
+                "hairstyles": all_hairstyles,
+                "next_token": None  # No pagination when fetching all
+            }
+        else:
+            # Single API call with optional token
+            result = await perfectcorp_service.fetch_hairstyles(
+                page_size=page_size,
+                starting_token=starting_token,
+                force_refresh=force_refresh
+            )
+            
+            return {
+                "success": True,
+                "count": len(result.get("hairstyles", [])),
+                "hairstyles": result.get("hairstyles", []),
+                "next_token": result.get("next_token")
+            }
         
     except Exception as e:
         logger.error(f"Failed to fetch hairstyles: {e}")

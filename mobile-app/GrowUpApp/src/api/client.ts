@@ -59,13 +59,16 @@ apiClient.interceptors.response.use(
     if (__DEV__) {
       console.error(`❌ API Error: ${error.config?.method?.toUpperCase()} ${error.config?.url}`, {
         status: error.response?.status,
+        statusText: error.response?.statusText,
         data: error.response?.data,
         message: error.message,
+        headers: error.config?.headers,
       });
     }
 
     // Handle 401 Unauthorized - token expired
     if (error.response?.status === 401) {
+      console.warn('🚨 Unauthorized - clearing auth tokens');
       try {
         await SecureStorage.clearAuthTokens();
         // Note: Navigation to login will be handled by the global error handler

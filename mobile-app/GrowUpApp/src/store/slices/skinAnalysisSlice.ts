@@ -6,6 +6,7 @@ import {
   SkinIssue 
 } from '../../api/types';
 import GlobalErrorHandler from '../../utils/errorHandler';
+import { loginUser, registerUser } from './authSlice';
 
 // Skin Analysis state interface
 export interface SkinAnalysisState {
@@ -69,15 +70,28 @@ export const analyzeImage = createAsyncThunk(
       // Get userId from auth state
       const userId = state.auth.user?.id;
       if (!userId) {
+        console.error('❌ User not authenticated - no userId found');
         return rejectWithValue({
           message: 'User not authenticated',
           retryable: false,
         });
       }
       
+      console.log('🔬 Starting skin analysis...', { userId });
+      
       const result = await SkinAnalysisApi.analyzeImage(imageFormData, userId);
+      
+      console.log('✅ Skin analysis completed successfully');
       return result;
-    } catch (error) {
+    } catch (error: any) {
+      console.error('❌ Skin analysis failed:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        stack: error.stack
+      });
+      
       const processedError = GlobalErrorHandler.processError(error, 'Skin Analysis');
       return rejectWithValue({
         message: processedError.message,
@@ -317,6 +331,19 @@ const skinAnalysisSlice = createSlice({
           state.currentAnalysis = null;
           state.selectedIssue = null;
         }
+      });
+    
+    // Clear errors on login/register success
+    builder
+      .addCase(loginUser.fulfilled, (state) => {
+        state.analysisError = null;
+        state.historyError = null;
+        state.recommendationErrors = {};
+      })
+      .addCase(registerUser.fulfilled, (state) => {
+        state.analysisError = null;
+        state.historyError = null;
+        state.recommendationErrors = {};
       });
   },
 });

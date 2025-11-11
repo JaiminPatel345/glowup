@@ -118,20 +118,50 @@ export const loadStoredAuth = createAsyncThunk(
       const tokens = await SecureStorage.getAuthTokens();
       
       if (!tokens) {
+        console.log('📦 No stored tokens found');
         return null;
       }
       
-      // Verify token is still valid
-      const isValid = await AuthApi.verifyToken();
+      console.log('📦 Loading stored auth tokens...');
       
-      if (!isValid) {
+      // Verify token and get basic user data
+      const result = await AuthApi.verifyToken();
+      
+      if (!result.valid || !result.user) {
+        console.warn('⚠️ Stored token is invalid, clearing...');
         // Clear invalid tokens
         await SecureStorage.clearAuthTokens();
         return null;
       }
       
-      return tokens;
+      console.log('✅ Stored token is valid, user data:', result.user);
+      
+      // Try to get full user profile if UserApi is available
+      let fullUser = result.user;
+      try {
+        const { UserApi } = await import('../../api');
+        const profile = await UserApi.getProfile(result.user.id);
+        fullUser = {
+          ...result.user,
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          profileImageUrl: profile.profileImageUrl,
+          createdAt: '',
+          updatedAt: '',
+        };
+        console.log('✅ Full user profile loaded:', fullUser);
+      } catch (profileError) {
+        console.warn('⚠️ Could not fetch full user profile, using basic data:', profileError);
+      }
+      
+      // Return complete auth data
+      return {
+        user: fullUser,
+        token: tokens.token,
+        refreshToken: tokens.refreshToken,
+      };
     } catch (error) {
+      console.error('❌ Error loading stored auth:', error);
       // Clear tokens on error
       await SecureStorage.clearAuthTokens();
       
@@ -257,9 +287,14 @@ const authSlice = createSlice({
       .addCase(loadStoredAuth.fulfilled, (state, action) => {
         state.isLoading = false;
         if (action.payload) {
+          state.user = action.payload.user;
           state.token = action.payload.token;
           state.refreshToken = action.payload.refreshToken;
           state.isAuthenticated = true;
+          console.log('✅ Auth state restored from storage:', {
+            userId: action.payload.user?.id,
+            email: action.payload.user?.email
+          });
         }
       })
       .addCase(loadStoredAuth.rejected, (state) => {

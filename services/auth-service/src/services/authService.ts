@@ -117,7 +117,7 @@ export class AuthService {
     };
   }
 
-  async refreshAccessToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
+  async refreshAccessToken(refreshToken: string): Promise<LoginResponse> {
     // Verify refresh token
     const session = await this.findSessionByToken(refreshToken);
     if (!session || session.expiresAt < new Date()) {
@@ -142,6 +142,7 @@ export class AuthService {
     logger.info('Access token refreshed', { userId: user.id });
 
     return {
+      user,
       accessToken: newAccessToken,
       refreshToken: newRefreshToken
     };

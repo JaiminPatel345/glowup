@@ -105,7 +105,6 @@ const ImageCaptureUpload: React.FC<ImageCaptureUploadProps> = ({
     }
 
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.8,
       allowsEditing: false,
       aspect: [4, 3],
@@ -116,7 +115,6 @@ const ImageCaptureUpload: React.FC<ImageCaptureUploadProps> = ({
 
   const handleGallerySelect = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.8,
       allowsEditing: false,
       aspect: [4, 3],

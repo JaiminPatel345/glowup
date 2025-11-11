@@ -5,7 +5,7 @@ import { Provider } from 'react-redux';
 import { store, useAppDispatch, useAppSelector } from './src/store';
 import { loadStoredAuth } from './src/store/slices/authSlice';
 import { AuthNavigator } from './src/components/auth';
-import { HomeScreen } from './src/screens/main';
+import { MainNavigator } from './src/components/navigation';
 import './global.css'
 
 function AppContent() {
@@ -29,7 +29,7 @@ function AppContent() {
 
   return (
     <>
-      {isAuthenticated ? <HomeScreen /> : <AuthNavigator />}
+      {isAuthenticated ? <MainNavigator /> : <AuthNavigator />}
       <StatusBar style="auto" />
     </>
   );

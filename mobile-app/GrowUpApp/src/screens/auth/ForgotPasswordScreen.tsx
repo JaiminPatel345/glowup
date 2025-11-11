@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Alert } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { forgotPassword, clearError } from '../../store/slices/authSlice';
 import { Button, Input } from '../../components/common';
@@ -42,14 +42,9 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
     try {
       await dispatch(forgotPassword(formData.email)).unwrap();
       setIsEmailSent(true);
-      Alert.alert(
-        'Email Sent',
-        'Password reset instructions have been sent to your email address.',
-        [{ text: 'OK' }]
-      );
     } catch (error) {
-      // Error is already handled by the Redux slice
-      Alert.alert('Error', 'Failed to send reset email. Please try again.');
+      // Error is stored in Redux state and will be displayed in the error view
+      console.log('Forgot password failed:', error);
     }
   };
 

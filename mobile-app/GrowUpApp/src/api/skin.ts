@@ -13,7 +13,7 @@ export class SkinAnalysisApi {
     imageFormData.append('user_id', userId);
 
     const response = await apiClient.post<any>(
-      '/api/v1/analyze',
+      '/v1/analyze',
       imageFormData,
       {
         headers: {
@@ -40,7 +40,7 @@ export class SkinAnalysisApi {
    */
   static async getProductRecommendations(issueId: string): Promise<ProductRecommendations> {
     const response = await apiClient.get<ProductRecommendations>(
-      `/api/v1/recommendations/${issueId}`
+      `/v1/recommendations/${issueId}`
     );
     return response.data;
   }
@@ -50,7 +50,7 @@ export class SkinAnalysisApi {
    */
   static async getAnalysisHistory(userId: string, limit: number = 10, offset: number = 0): Promise<SkinAnalysisResult[]> {
     const response = await apiClient.get<{ user_id: string; analyses: any[]; total: number }>(
-      `/api/v1/user/${userId}/history`,
+      `/v1/user/${userId}/history`,
       {
         params: { limit, offset }
       }
@@ -72,7 +72,7 @@ export class SkinAnalysisApi {
    * Delete a specific skin analysis result
    */
   static async deleteAnalysis(analysisId: string): Promise<void> {
-    await apiClient.delete(`/api/v1/analysis/${analysisId}`);
+    await apiClient.delete(`/v1/analysis/${analysisId}`);
   }
 
   /**
@@ -80,7 +80,7 @@ export class SkinAnalysisApi {
    */
   static async getIssueDetails(issueId: string): Promise<any> {
     const response = await apiClient.get<any>(
-      `/api/v1/issues/${issueId}`
+      `/v1/issues/${issueId}`
     );
     return response.data;
   }

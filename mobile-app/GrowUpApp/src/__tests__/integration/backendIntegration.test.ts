@@ -34,11 +34,11 @@ describe('Backend Integration Tests', () => {
       expect(response).toBeDefined();
       expect(response.user).toBeDefined();
       expect(response.user.email).toBe(TEST_USER.email);
-      expect(response.token).toBeDefined();
+      expect(response.accessToken).toBeDefined();
       expect(response.refreshToken).toBeDefined();
       
       // Store for subsequent tests
-      authToken = response.token;
+      authToken = response.accessToken;
       userId = response.user.id;
     }, 10000);
 
@@ -50,10 +50,10 @@ describe('Backend Integration Tests', () => {
       
       expect(response).toBeDefined();
       expect(response.user).toBeDefined();
-      expect(response.token).toBeDefined();
+      expect(response.accessToken).toBeDefined();
       expect(response.refreshToken).toBeDefined();
       
-      authToken = response.token;
+      authToken = response.accessToken;
       userId = response.user.id;
     }, 10000);
 
@@ -71,8 +71,8 @@ describe('Backend Integration Tests', () => {
       const response = await AuthApi.refreshToken(loginResponse.refreshToken);
       
       expect(response).toBeDefined();
-      expect(response.token).toBeDefined();
-      expect(response.token).not.toBe(loginResponse.token);
+      expect(response.accessToken).toBeDefined();
+      expect(response.accessToken).not.toBe(loginResponse.accessToken);
     }, 10000);
   });
 

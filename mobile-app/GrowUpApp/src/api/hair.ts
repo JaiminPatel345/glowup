@@ -76,7 +76,7 @@ export class HairTryOnApi {
     }
 
     const response = await apiClient.get<HairstylesResponse>(
-      '/api/hair-tryOn/hairstyles',
+      '/hair-tryOn/hairstyles',
       { params }
     );
     return response.data.hairstyles;
@@ -87,7 +87,7 @@ export class HairTryOnApi {
    */
   static async getHairstyleById(hairstyleId: string): Promise<Hairstyle> {
     const response = await apiClient.get<{ success: boolean; hairstyle: Hairstyle }>(
-      `/api/hair-tryOn/hairstyles/${hairstyleId}`
+      `/hair-tryOn/hairstyles/${hairstyleId}`
     );
     return response.data.hairstyle;
   }
@@ -117,7 +117,7 @@ export class HairTryOnApi {
     formData.append('blend_ratio', String(request.blendRatio || 0.8));
 
     const response = await apiClient.post(
-      '/api/hair-tryOn/process',
+      '/hair-tryOn/process',
       formData,
       {
         headers: {
@@ -146,7 +146,7 @@ export class HairTryOnApi {
     );
 
     const response = await apiClient.post(
-      '/api/hair-tryOn/process-video',
+      '/hair-tryOn/process-video',
       formData,
       {
         headers: {
@@ -165,7 +165,7 @@ export class HairTryOnApi {
     styleImageFormData: FormData
   ): Promise<WebSocketConnection> {
     const response = await apiClient.post(
-      '/api/hair-tryOn/realtime/session',
+      '/hair-tryOn/realtime/session',
       styleImageFormData,
       {
         headers: {
@@ -197,7 +197,7 @@ export class HairTryOnApi {
     offset: number = 0
   ): Promise<HairTryOnHistoryItem[]> {
     const response = await apiClient.get(
-      `/api/hair-tryOn/history/${userId}`,
+      `/hair-tryOn/history/${userId}`,
       {
         params: {
           limit,
@@ -218,7 +218,7 @@ export class HairTryOnApi {
    * Delete a hair try-on result
    */
   static async deleteHairTryOn(resultId: string, userId: string): Promise<void> {
-    await apiClient.delete(`/api/hair-tryOn/result/${resultId}`, {
+    await apiClient.delete(`/hair-tryOn/result/${resultId}`, {
       params: { user_id: userId }
     });
   }
@@ -228,7 +228,7 @@ export class HairTryOnApi {
    */
   static async cancelProcessing(sessionId: string): Promise<void> {
     try {
-      await apiClient.post('/api/hair-tryOn/process/cancel', {
+      await apiClient.post('/hair-tryOn/process/cancel', {
         session_id: sessionId,
       });
     } catch (error) {
@@ -254,7 +254,7 @@ export class HairTryOnApi {
    * Get service health status
    */
   static async getHealthStatus(): Promise<any> {
-    const response = await apiClient.get('/api/hair-tryOn/health');
+    const response = await apiClient.get('/hair-tryOn/health');
     return response.data;
   }
 
@@ -262,7 +262,7 @@ export class HairTryOnApi {
    * Clear hairstyles cache
    */
   static async clearCache(): Promise<void> {
-    await apiClient.post('/api/hair-tryOn/cache/clear');
+    await apiClient.post('/hair-tryOn/cache/clear');
   }
 
   private static mergeFormData(...forms: Array<FormData | undefined>): FormData {

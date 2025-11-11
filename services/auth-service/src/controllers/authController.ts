@@ -11,9 +11,15 @@ export class AuthController {
       const userData: CreateUserRequest = req.body;
       const user = await authService.createUser(userData);
 
+      // Automatically authenticate the user after registration
+      const authResult = await authService.authenticateUser({
+        email: userData.email,
+        password: userData.password
+      });
+
       const response: ApiResponse = {
         success: true,
-        data: { user },
+        data: authResult,
         message: 'User registered successfully'
       };
 

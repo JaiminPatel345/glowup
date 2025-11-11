@@ -240,9 +240,9 @@ function Start-Service {
     Start-Sleep -Seconds 3
     
     try {
-        $response = Invoke-WebRequest -Uri "http://localhost:8000" -TimeoutSec 5 -ErrorAction Stop
-        Write-Success "Service started successfully on http://localhost:8000"
-        Write-Info "API documentation available at http://localhost:8000/docs"
+        $response = Invoke-WebRequest -Uri "http://localhost:3004" -TimeoutSec 5 -ErrorAction Stop
+        Write-Success "Service started successfully on http://localhost:3004"
+        Write-Info "API documentation available at http://localhost:3004/docs"
         Write-Info "Logs: Get-Content service.log -Wait"
     } catch {
         Write-Error "Failed to start service. Check service.log and service_error.log for details"

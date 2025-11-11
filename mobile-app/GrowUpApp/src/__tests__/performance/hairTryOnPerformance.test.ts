@@ -83,7 +83,7 @@ describe('Hair Try-On Performance Tests', () => {
 
   describe('WebSocket Latency Tests', () => {
     it('should measure and report latency under 200ms target', async () => {
-      const client = new HairTryOnWebSocketClient('ws://localhost:8000', 'test-session');
+      const client = new HairTryOnWebSocketClient('ws://localhost:3004', 'test-session');
       
       const startTime = Date.now();
       await client.connect();
@@ -120,7 +120,7 @@ describe('Hair Try-On Performance Tests', () => {
     });
 
     it('should handle high-frequency frame sending without blocking', async () => {
-      const client = new HairTryOnWebSocketClient('ws://localhost:8000', 'test-session');
+      const client = new HairTryOnWebSocketClient('ws://localhost:3004', 'test-session');
       await client.connect();
 
       const frameCount = 100;
@@ -192,7 +192,7 @@ describe('Hair Try-On Performance Tests', () => {
 
   describe('Memory and Resource Management', () => {
     it('should properly cleanup resources on disconnect', async () => {
-      const client = new HairTryOnWebSocketClient('ws://localhost:8000', 'test-session');
+      const client = new HairTryOnWebSocketClient('ws://localhost:3004', 'test-session');
       await client.connect();
 
       expect(client.isConnected).toBe(true);
@@ -207,7 +207,7 @@ describe('Hair Try-On Performance Tests', () => {
       const cycles = 10;
       
       for (let i = 0; i < cycles; i++) {
-        const client = new HairTryOnWebSocketClient('ws://localhost:8000', `session-${i}`);
+        const client = new HairTryOnWebSocketClient('ws://localhost:3004', `session-${i}`);
         
         await client.connect();
         expect(client.isConnected).toBe(true);
@@ -221,7 +221,7 @@ describe('Hair Try-On Performance Tests', () => {
     });
 
     it('should handle large frame data efficiently', async () => {
-      const client = new HairTryOnWebSocketClient('ws://localhost:8000', 'test-session');
+      const client = new HairTryOnWebSocketClient('ws://localhost:3004', 'test-session');
       await client.connect();
 
       // Test with larger frame sizes (simulating high-quality video frames)
@@ -245,7 +245,7 @@ describe('Hair Try-On Performance Tests', () => {
 
   describe('Reconnection Performance', () => {
     it('should reconnect quickly after connection loss', async () => {
-      const client = new HairTryOnWebSocketClient('ws://localhost:8000', 'test-session');
+      const client = new HairTryOnWebSocketClient('ws://localhost:3004', 'test-session');
       await client.connect();
 
       expect(client.isConnected).toBe(true);
@@ -288,7 +288,7 @@ describe('Hair Try-On Performance Tests', () => {
       const testDuration = 1000; // 1 second test
       const expectedFrames = Math.floor((testDuration / 1000) * targetFPS);
       
-      const client = new HairTryOnWebSocketClient('ws://localhost:8000', 'test-session');
+      const client = new HairTryOnWebSocketClient('ws://localhost:3004', 'test-session');
       await client.connect();
 
       let framesSent = 0;

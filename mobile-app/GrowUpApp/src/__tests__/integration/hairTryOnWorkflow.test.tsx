@@ -231,7 +231,7 @@ describe('Hair Try-On Workflow Integration Tests', () => {
   describe('Real-Time Workflow', () => {
     it('should handle real-time session initialization', async () => {
       mockHairTryOnApi.startRealTimeSession.mockResolvedValue({
-        url: 'ws://localhost:8000/ws',
+        url: 'ws://localhost:3004/ws',
         sessionId: 'session-123',
       });
 
@@ -242,7 +242,7 @@ describe('Hair Try-On Workflow Integration Tests', () => {
         store.dispatch({
           type: 'hairTryOn/startRealTimeSession/fulfilled',
           payload: {
-            url: 'ws://localhost:8000/ws',
+            url: 'ws://localhost:3004/ws',
             sessionId: 'session-123',
           },
           meta: { requestId: 'test-request' },
@@ -250,7 +250,7 @@ describe('Hair Try-On Workflow Integration Tests', () => {
       });
 
       const state = store.getState().hairTryOn;
-      expect(state.realTime.webSocket.connectionUrl).toBe('ws://localhost:8000/ws');
+      expect(state.realTime.webSocket.connectionUrl).toBe('ws://localhost:3004/ws');
       expect(state.realTime.webSocket.sessionId).toBe('session-123');
     });
   });

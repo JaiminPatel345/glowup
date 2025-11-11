@@ -231,7 +231,7 @@ echo   3. Run tests:
 echo      pytest tests/ -v
 echo.
 echo   4. View API documentation:
-echo      http://localhost:8000/docs
+echo      http://localhost:3003/docs
 echo.
 echo For troubleshooting, check the README.md file
 echo ==========================================

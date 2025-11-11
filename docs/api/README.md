@@ -31,7 +31,7 @@ The GrowUp platform consists of the following microservices:
 - Admin user management
 
 ### 3. Skin Analysis Service
-- **Port**: 8001 (development)
+- **Port**: 3003 (development)
 - **Technology**: FastAPI + Python
 - **Database**: MongoDB
 - **Documentation**: [skin-analysis-service-openapi.yaml](./skin-analysis-service-openapi.yaml)
@@ -43,7 +43,7 @@ The GrowUp platform consists of the following microservices:
 - Analysis history tracking
 
 ### 4. Hair Try-On Service
-- **Port**: 8002 (development)
+- **Port**: 3004 (development)
 - **Technology**: FastAPI + Python + WebSockets
 - **Database**: MongoDB
 - **Documentation**: [hair-tryon-service-openapi.yaml](./hair-tryon-service-openapi.yaml)
@@ -69,8 +69,8 @@ All external API requests are routed through an NGINX-based API Gateway that pro
 ```
 http://localhost:3000/auth/*    → Authentication Service (localhost:3001)
 http://localhost:3000/user/*    → User Service (localhost:3002)
-http://localhost:3000/skin/*    → Skin Analysis Service (localhost:8001)
-http://localhost:3000/hair/*    → Hair Try-On Service (localhost:8002)
+http://localhost:3000/skin/*    → Skin Analysis Service (localhost:3003)
+http://localhost:3000/hair/*    → Hair Try-On Service (localhost:3004)
 ```
 
 ## Authentication
@@ -167,10 +167,10 @@ http://localhost:3001/api/auth
 http://localhost:3002/api/v1
 
 # Skin Analysis Service
-http://localhost:8001/api/v1
+http://localhost:3003/api/v1
 
 # Hair Try-On Service
-http://localhost:8002/api/hair-tryOn
+http://localhost:3004/api/hair-tryOn
 ```
 
 ### API Documentation Viewers
@@ -187,8 +187,8 @@ You can view the interactive API documentation using:
 # Health checks
 curl http://localhost:3001/api/health
 curl http://localhost:3002/api/v1/health  
-curl http://localhost:8001/health
-curl http://localhost:8002/api/hair-tryOn/health
+curl http://localhost:3003/health
+curl http://localhost:3004/api/hair-tryOn/health
 
 # Authentication flow
 curl -X POST http://localhost:3001/api/auth/login \

@@ -195,7 +195,7 @@ GET /api/hair-tryOn/health
 import requests
 
 # Get default hairstyles
-response = requests.get("http://localhost:8000/api/hair-tryOn/hairstyles")
+response = requests.get("http://localhost:3004/api/hair-tryOn/hairstyles")
 hairstyles = response.json()["hairstyles"]
 
 # Process with default hairstyle
@@ -207,7 +207,7 @@ with open("user_photo.jpg", "rb") as f:
         "blend_ratio": 0.8
     }
     response = requests.post(
-        "http://localhost:8000/api/hair-tryOn/process",
+        "http://localhost:3004/api/hair-tryOn/process",
         files=files,
         data=data
     )
@@ -221,10 +221,10 @@ with open("user_photo.jpg", "rb") as f:
 
 ```bash
 # Get hairstyles
-curl http://localhost:8000/api/hair-tryOn/hairstyles
+curl http://localhost:3004/api/hair-tryOn/hairstyles
 
 # Process with custom hairstyle
-curl -X POST http://localhost:8000/api/hair-tryOn/process \
+curl -X POST http://localhost:3004/api/hair-tryOn/process \
   -F "user_photo=@user_photo.jpg" \
   -F "hairstyle_image=@hairstyle.jpg" \
   -F "user_id=user123" \
@@ -297,7 +297,7 @@ docker build -t hair-tryOn-service .
 
 # Run container
 docker run -d \
-  -p 8000:8000 \
+  -p 8000:3004 \
   -e MONGODB_URL=mongodb://host.docker.internal:27017 \
   -e PERFECTCORP_API_KEY=your_key \
   -v ./models:/app/models \
@@ -382,5 +382,5 @@ Part of the GrowUp application suite.
 
 For issues or questions:
 - Check logs: `tail -f service.log`
-- API docs: http://localhost:8000/docs
-- Health check: http://localhost:8000/api/hair-tryOn/health
+- API docs: http://localhost:3004/docs
+- Health check: http://localhost:3004/api/hair-tryOn/health

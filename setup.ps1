@@ -130,8 +130,8 @@ JWT_EXPIRES_IN=7d
 
 # API Configuration
 API_PORT=3000
-SKIN_SERVICE_PORT=8001
-HAIR_SERVICE_PORT=8002
+SKIN_SERVICE_PORT=3003
+HAIR_SERVICE_PORT=3004
 GATEWAY_PORT=80
 
 # File Upload Configuration
@@ -177,7 +177,7 @@ NODE_ENV=development
         $skinEnvContent = @"
 MONGODB_URI=mongodb://localhost:27017/growup
 MODEL_PATH=/app/models
-PORT=8001
+PORT=3003
 ENVIRONMENT=development
 LOG_LEVEL=INFO
 "@
@@ -190,7 +190,7 @@ LOG_LEVEL=INFO
         $hairEnvContent = @"
 MONGODB_URI=mongodb://localhost:27017/growup
 MODEL_PATH=/app/models
-PORT=8002
+PORT=3004
 ENVIRONMENT=development
 LOG_LEVEL=INFO
 WEBSOCKET_ENABLED=true
@@ -375,8 +375,8 @@ function Show-NextSteps {
     Write-Host "Services will be available at:"
     Write-Host "  - API Gateway: http://localhost"
     Write-Host "  - Auth Service: http://localhost:3001"
-    Write-Host "  - Skin Analysis: http://localhost:8001"
-    Write-Host "  - Hair Try-On: http://localhost:8002"
+    Write-Host "  - Skin Analysis: http://localhost:3003"
+    Write-Host "  - Hair Try-On: http://localhost:3004"
     Write-Host "  - PostgreSQL: localhost:5432"
     Write-Host "  - MongoDB: localhost:27017"
     Write-Host "  - Redis: localhost:6379"

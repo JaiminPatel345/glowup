@@ -19,9 +19,9 @@ if (-not (Test-Path ".env")) {
 }
 
 # Start service
-Write-Host "Starting uvicorn server on http://localhost:3004" -ForegroundColor Green
-Write-Host "API documentation: http://localhost:3004/docs" -ForegroundColor Cyan
+Write-Host "Starting uvicorn server on http://localhost:3003" -ForegroundColor Green
+Write-Host "API documentation: http://localhost:3003/docs" -ForegroundColor Cyan
 Write-Host "Press Ctrl+C to stop" -ForegroundColor Yellow
 Write-Host ""
 
-python -m uvicorn app.main:app --host 0.0.0.0 --port 3004 --reload
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload

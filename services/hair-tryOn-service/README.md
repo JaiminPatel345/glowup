@@ -92,7 +92,7 @@ AI-powered hair style try-on service with video processing and real-time streami
 
 6. **Start the service:**
    ```bash
-   uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+   uvicorn app.main:app --reload --host 0.0.0.0 --port 3004
    ```
 
 ## Configuration
@@ -132,14 +132,14 @@ AI-powered hair style try-on service with video processing and real-time streami
 
 1. **Upload video:**
    ```bash
-   curl -X POST "http://localhost:8000/api/hair-tryOn/upload-video" \
+   curl -X POST "http://localhost:3004/api/hair-tryOn/upload-video" \
         -F "video=@test_video.mp4" \
         -F "user_id=user123"
    ```
 
 2. **Process with hair style:**
    ```bash
-   curl -X POST "http://localhost:8000/api/hair-tryOn/process-video" \
+   curl -X POST "http://localhost:3004/api/hair-tryOn/process-video" \
         -F "upload_id=upload_id_from_step1" \
         -F "user_id=user123" \
         -F "style_image=@hairstyle.jpg" \
@@ -148,7 +148,7 @@ AI-powered hair style try-on service with video processing and real-time streami
 
 3. **Check result:**
    ```bash
-   curl "http://localhost:8000/api/hair-tryOn/result/result_id?user_id=user123"
+   curl "http://localhost:3004/api/hair-tryOn/result/result_id?user_id=user123"
    ```
 
 ### Real-Time Mode
@@ -156,7 +156,7 @@ AI-powered hair style try-on service with video processing and real-time streami
 Connect to WebSocket endpoint and send messages:
 
 ```javascript
-const ws = new WebSocket('ws://localhost:8000/api/hair-tryOn/realtime/session123?user_id=user123');
+const ws = new WebSocket('ws://localhost:3004/api/hair-tryOn/realtime/session123?user_id=user123');
 
 // Set style image
 ws.send(JSON.stringify({
@@ -261,7 +261,7 @@ docker build -t hair-tryOn-service .
 
 # Run container
 docker run -d \
-  -p 8000:8000 \
+  -p 3004:3004 \
   -e MONGODB_URL=mongodb://host.docker.internal:27017 \
   -v ./models:/app/models \
   -v ./uploads:/app/uploads \

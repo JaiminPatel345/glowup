@@ -14,7 +14,7 @@ from app.services.database_service import database_service
 # Configure logging
 logging.basicConfig(
     level=logging.INFO if not settings.debug else logging.DEBUG,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s \n"
 )
 logger = logging.getLogger(__name__)
 
@@ -121,7 +121,7 @@ if __name__ == "__main__":
     uvicorn.run(
         "app.main:app",
         host="0.0.0.0",
-        port=8000,
+        port=3004,
         reload=settings.debug,
         log_level="info"
     )

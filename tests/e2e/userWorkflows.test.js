@@ -280,8 +280,8 @@ describe('End-to-End User Workflows', function() {
       const services = [
         { name: 'auth', port: 3001 },
         { name: 'user', port: 3002 },
-        { name: 'skin-analysis', port: 8001 },
-        { name: 'hair-tryon', port: 8002 }
+        { name: 'skin-analysis', port: 3003 },
+        { name: 'hair-tryon', port: 3004 }
       ];
 
       for (const service of services) {
@@ -375,8 +375,8 @@ async function waitForServices() {
     { name: 'API Gateway', url: config.apiGateway },
     { name: 'Auth Service', url: 'http://localhost:3001' },
     { name: 'User Service', url: 'http://localhost:3002' },
-    { name: 'Skin Analysis Service', url: 'http://localhost:8001' },
-    { name: 'Hair Try-On Service', url: 'http://localhost:8002' }
+    { name: 'Skin Analysis Service', url: 'http://localhost:3003' },
+    { name: 'Hair Try-On Service', url: 'http://localhost:3004' }
   ];
 
   console.log('Waiting for services to be ready...');

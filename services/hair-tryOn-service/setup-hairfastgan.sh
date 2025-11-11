@@ -278,7 +278,7 @@ start_service() {
     
     # Check if service is already running
     if lsof -Pi :8000 -sTCP:LISTEN -t >/dev/null 2>&1; then
-        log_warning "Service already running on port 8000"
+        log_warning "Service already running on port 3004"
         if [ -t 0 ]; then  # Check if interactive
             read -p "Do you want to restart it? (y/n) " -n 1 -r
             echo
@@ -295,13 +295,13 @@ start_service() {
     fi
     
     log_info "Starting uvicorn server..."
-    nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload > service.log 2>&1 &
+    nohup uvicorn app.main:app --host 0.0.0.0 --port 3004 --reload > service.log 2>&1 &
     
     sleep 3
     
     if lsof -Pi :8000 -sTCP:LISTEN -t >/dev/null 2>&1; then
-        log_success "Service started successfully on http://localhost:8000"
-        log_info "API documentation available at http://localhost:8000/docs"
+        log_success "Service started successfully on http://localhost:3004"
+        log_info "API documentation available at http://localhost:3004/docs"
         log_info "Logs: tail -f service.log"
     else
         log_error "Failed to start service. Check service.log for details"

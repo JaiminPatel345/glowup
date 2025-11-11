@@ -8,9 +8,9 @@ echo "========================================================================"
 echo ""
 
 # Check if server is running
-echo "Checking if server is running on http://localhost:8000..."
-if ! curl -s -f http://localhost:8000/ > /dev/null 2>&1; then
-    echo "✗ Server is not running on http://localhost:8000"
+echo "Checking if server is running on http://localhost:3003..."
+if ! curl -s -f http://localhost:3003/ > /dev/null 2>&1; then
+    echo "✗ Server is not running on http://localhost:3003"
     echo ""
     echo "To start the server, run:"
     echo "  uvicorn app.main:app --host 0.0.0.0 --port 8000"
@@ -25,7 +25,7 @@ echo ""
 echo "Making GET request to /api/v1/model/info..."
 echo ""
 
-response=$(curl -s -w "\nHTTP_STATUS:%{http_code}" http://localhost:8000/api/v1/model/info)
+response=$(curl -s -w "\nHTTP_STATUS:%{http_code}" http://localhost:3003/api/v1/model/info)
 
 # Extract HTTP status code
 http_status=$(echo "$response" | grep "HTTP_STATUS:" | cut -d: -f2)

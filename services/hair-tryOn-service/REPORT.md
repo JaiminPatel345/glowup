@@ -41,8 +41,8 @@ graph TB
     subgraph "Microservices"
         Auth[Auth Service<br/>Node.js:3000]
         User[User Service<br/>Node.js:3000]
-        Hair[Hair Try-On Service<br/>FastAPI:8000]
-        Skin[Skin Analysis Service<br/>FastAPI:8000]
+        Hair[Hair Try-On Service<br/>FastAPI:3004]
+        Skin[Skin Analysis Service<br/>FastAPI:3004]
     end
     
     subgraph "Data Layer"
@@ -1701,8 +1701,8 @@ graph TB
         subgraph "Services"
             Auth[Auth Service<br/>node:3000]
             User[User Service<br/>node:3000]
-            Hair[Hair Try-On<br/>python:8000]
-            Skin[Skin Analysis<br/>python:8000]
+            Hair[Hair Try-On<br/>python:3004]
+            Skin[Skin Analysis<br/>python:3004]
         end
         
         subgraph "Data"
@@ -1934,7 +1934,7 @@ class HairTryOnUser(HttpUser):
         """Simulate history retrieval"""
         self.client.get(f"/api/hair-tryOn/history/user_{self.user_id}")
 
-# Run: locust -f load_test.py --host=http://localhost:8000
+# Run: locust -f load_test.py --host=http://localhost:3004
 ```
 
 ---
@@ -2252,7 +2252,7 @@ docker-compose up hair-tryOn-service
 ### Verification
 ```bash
 # Test service health
-curl http://localhost:8000/api/hair-tryOn/health
+curl http://localhost:3004/api/hair-tryOn/health
 
 # Run tests
 cd services/hair-tryOn-service
@@ -2264,8 +2264,8 @@ python test_setup.py
 ## Appendix B: API Reference
 
 Complete API documentation available at:
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+- Swagger UI: http://localhost:3004/docs
+- ReDoc: http://localhost:3004/redoc
 
 ---
 

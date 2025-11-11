@@ -58,13 +58,13 @@ yarn start
 
 ```bash
 # Health check
-curl http://localhost:8000/api/hair-tryOn/health
+curl http://localhost:3004/api/hair-tryOn/health
 
 # Get hairstyles
-curl http://localhost:8000/api/hair-tryOn/hairstyles
+curl http://localhost:3004/api/hair-tryOn/hairstyles
 
 # Process image
-curl -X POST http://localhost:8000/api/hair-tryOn/process \
+curl -X POST http://localhost:3004/api/hair-tryOn/process \
   -F "user_photo=@photo.jpg" \
   -F "hairstyle_id=13045969587275114" \
   -F "user_id=test" \
@@ -163,7 +163,7 @@ Documentation/
 | GET | `/api/hair-tryOn/health` | Health check |
 | POST | `/api/hair-tryOn/cache/clear` | Clear cache |
 
-Full API documentation: http://localhost:8000/docs
+Full API documentation: http://localhost:3004/docs
 
 ## 📊 Performance
 
@@ -183,7 +183,7 @@ docker build -t hair-tryOn-service services/hair-tryOn-service/
 
 # Run with GPU
 docker run -d \
-  -p 8000:8000 \
+  -p 8000:3004 \
   -e PERFECTCORP_API_KEY=your_key \
   -v ./models:/app/models \
   --gpus all \
@@ -191,7 +191,7 @@ docker run -d \
 
 # Run CPU-only
 docker run -d \
-  -p 8000:8000 \
+  -p 8000:3004 \
   -e PERFECTCORP_API_KEY=your_key \
   -v ./models:/app/models \
   hair-tryOn-service
@@ -208,20 +208,20 @@ python test-installation.py
 ### Test API
 ```bash
 # Health check
-curl http://localhost:8000/api/hair-tryOn/health
+curl http://localhost:3004/api/hair-tryOn/health
 
 # Get hairstyles
-curl http://localhost:8000/api/hair-tryOn/hairstyles
+curl http://localhost:3004/api/hair-tryOn/hairstyles
 
 # Process with default hairstyle
-curl -X POST http://localhost:8000/api/hair-tryOn/process \
+curl -X POST http://localhost:3004/api/hair-tryOn/process \
   -F "user_photo=@test.jpg" \
   -F "hairstyle_id=13045969587275114" \
   -F "user_id=test" \
   --output result.jpg
 
 # Process with custom hairstyle
-curl -X POST http://localhost:8000/api/hair-tryOn/process \
+curl -X POST http://localhost:3004/api/hair-tryOn/process \
   -F "user_photo=@test.jpg" \
   -F "hairstyle_image=@hairstyle.jpg" \
   -F "user_id=test" \
@@ -306,7 +306,7 @@ PERFECTCORP_API_KEY=your_actual_key_here
 **Solutions**:
 ```bash
 # Check if port is in use
-lsof -i :8000
+lsof -i :3004
 
 # Check logs
 tail -f services/hair-tryOn-service/service.log
@@ -326,20 +326,20 @@ python -c "import fastapi; print('OK')"
 **Solutions**:
 ```bash
 # Check backend is running
-curl http://localhost:8000/api/hair-tryOn/health
+curl http://localhost:3004/api/hair-tryOn/health
 
 # Update API endpoint in mobile app
 # Edit: mobile-app/GrowUpApp/src/api/client.ts
 # Change baseURL to your backend URL
 
 # For Android emulator, use:
-# http://10.0.2.2:8000
+# http://10.0.2.2:3004
 
 # For iOS simulator, use:
-# http://localhost:8000
+# http://localhost:3004
 
 # For physical device, use:
-# http://YOUR_COMPUTER_IP:8000
+# http://YOUR_COMPUTER_IP:3004
 ```
 
 ## 🔐 Security
@@ -354,7 +354,7 @@ curl http://localhost:8000/api/hair-tryOn/health
 
 ### Health Check
 ```bash
-curl http://localhost:8000/api/hair-tryOn/health
+curl http://localhost:3004/api/hair-tryOn/health
 ```
 
 ### Logs
@@ -395,7 +395,7 @@ gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker
 3. **Set up reverse proxy (nginx):**
 ```nginx
 location /api/hair-tryOn {
-    proxy_pass http://localhost:8000;
+    proxy_pass http://localhost:3004;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
 }
@@ -437,8 +437,8 @@ Part of the GrowUp application suite.
 ## 🆘 Support
 
 - **Documentation**: See `QUICKSTART.md` and `HAIR_TRYON_UPDATE.md`
-- **API Docs**: http://localhost:8000/docs
-- **Health Check**: http://localhost:8000/api/hair-tryOn/health
+- **API Docs**: http://localhost:3004/docs
+- **Health Check**: http://localhost:3004/api/hair-tryOn/health
 - **Logs**: `tail -f services/hair-tryOn-service/service.log`
 
 ## 🎉 Success!

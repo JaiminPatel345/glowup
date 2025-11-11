@@ -127,8 +127,8 @@ create_health_monitor() {
 SERVICES=(
     "auth-service:http://localhost:3001/api/health"
     "user-service:http://localhost:3002/api/v1/health"
-    "skin-analysis:http://localhost:8001/health"
-    "hair-tryon:http://localhost:8002/api/hair-tryOn/health"
+    "skin-analysis:http://localhost:3003/health"
+    "hair-tryon:http://localhost:3004/api/hair-tryOn/health"
 )
 
 # Colors
@@ -219,7 +219,7 @@ collect_app_metrics() {
     local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     
     # Check if services are running and collect basic metrics
-    local services=("auth-service:3001" "user-service:3002" "skin-analysis:8001" "hair-tryon:8002")
+    local services=("auth-service:3001" "user-service:3002" "skin-analysis:3003" "hair-tryon:3004")
     
     for service_info in "${services[@]}"; do
         IFS=':' read -r service_name port <<< "$service_info"
@@ -443,11 +443,11 @@ create_dev_dashboard() {
                 </div>
                 <div class="service-status">
                     <div class="status-indicator status-unknown"></div>
-                    <span>Skin Analysis (8001)</span>
+                    <span>Skin Analysis (3003)</span>
                 </div>
                 <div class="service-status">
                     <div class="status-indicator status-unknown"></div>
-                    <span>Hair Try-On (8002)</span>
+                    <span>Hair Try-On (3004)</span>
                 </div>
             </div>
         </div>

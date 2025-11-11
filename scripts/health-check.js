@@ -23,12 +23,12 @@ const services = [
   },
   {
     name: 'Skin Analysis Service',
-    url: 'http://localhost:8001/health',
+    url: 'http://localhost:3003/health',
     timeout: 5000
   },
   {
     name: 'Hair Try-On Service',
-    url: 'http://localhost:8002/health',
+    url: 'http://localhost:3004/health',
     timeout: 5000
   }
 ];

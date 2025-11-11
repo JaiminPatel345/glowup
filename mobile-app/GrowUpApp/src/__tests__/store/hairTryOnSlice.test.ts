@@ -176,7 +176,7 @@ describe('hairTryOnSlice', () => {
 
     it('should set WebSocket connection details', () => {
       const connectionDetails = {
-        url: 'ws://localhost:8000/ws',
+        url: 'ws://localhost:3004/ws',
         sessionId: 'session-123',
       };
 
@@ -430,14 +430,14 @@ describe('hairTryOnSlice', () => {
   describe('WebSocket connection management', () => {
     it('should clear connection details when disconnecting', () => {
       store.dispatch(setWebSocketConnection({
-        url: 'ws://localhost:8000/ws',
+        url: 'ws://localhost:3004/ws',
         sessionId: 'session-123',
       }));
       store.dispatch(setWebSocketConnected(true));
 
       let state = store.getState().hairTryOn;
       expect(state.realTime.webSocket.isConnected).toBe(true);
-      expect(state.realTime.webSocket.connectionUrl).toBe('ws://localhost:8000/ws');
+      expect(state.realTime.webSocket.connectionUrl).toBe('ws://localhost:3004/ws');
       expect(state.realTime.webSocket.sessionId).toBe('session-123');
 
       store.dispatch(setWebSocketConnected(false));
@@ -450,7 +450,7 @@ describe('hairTryOnSlice', () => {
 
     it('should handle multiple connection attempts', () => {
       store.dispatch(setWebSocketConnection({
-        url: 'ws://localhost:8000/ws',
+        url: 'ws://localhost:3004/ws',
         sessionId: 'session-1',
       }));
 

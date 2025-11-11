@@ -114,8 +114,8 @@ start_services() {
     wait_for_service "API Gateway" "http://localhost:80"
     wait_for_service "Auth Service" "http://localhost:3001"
     wait_for_service "User Service" "http://localhost:3002"
-    wait_for_service "Skin Analysis Service" "http://localhost:8001"
-    wait_for_service "Hair Try-On Service" "http://localhost:8002"
+    wait_for_service "Skin Analysis Service" "http://localhost:3003"
+    wait_for_service "Hair Try-On Service" "http://localhost:3004"
   fi
 }
 
@@ -127,8 +127,8 @@ run_health_checks() {
     "API Gateway:http://localhost:80"
     "Auth Service:http://localhost:3001"
     "User Service:http://localhost:3002"
-    "Skin Analysis Service:http://localhost:8001"
-    "Hair Try-On Service:http://localhost:8002"
+    "Skin Analysis Service:http://localhost:3003"
+    "Hair Try-On Service:http://localhost:3004"
   )
   
   local failed_services=()

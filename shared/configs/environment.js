@@ -131,8 +131,8 @@ class EnvironmentConfig {
   getAPIConfig() {
     return {
       port: this.getInt('API_PORT', 3000),
-      skinServicePort: this.getInt('SKIN_SERVICE_PORT', 8001),
-      hairServicePort: this.getInt('HAIR_SERVICE_PORT', 8002),
+      skinServicePort: this.getInt('SKIN_SERVICE_PORT', 3003),
+      hairServicePort: this.getInt('HAIR_SERVICE_PORT', 3004),
       gatewayPort: this.getInt('GATEWAY_PORT', 80),
       corsEnabled: this.getBool('ENABLE_CORS', true),
       rateLimitWindowMs: this.getInt('RATE_LIMIT_WINDOW_MS', 900000),

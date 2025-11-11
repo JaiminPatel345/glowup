@@ -7,7 +7,7 @@ echo "Starting Hair Try-On Service..."
 
 # Check if virtual environment exists
 if [ ! -d "venv" ]; then
-    echo "Error: Virtual environment not found. Please run setup-hairfastgan.sh first."
+    echo "Error: Virtual environment not found. make first."
     exit 1
 fi
 
@@ -26,9 +26,9 @@ if [ ! -f ".env" ]; then
 fi
 
 # Start service
-echo "Starting uvicorn server on http://localhost:3004"
-echo "API documentation: http://localhost:3004/docs"
+echo "Starting uvicorn server on http://localhost:3003"
+echo "API documentation: http://localhost:3003/docs"
 echo "Press Ctrl+C to stop"
 echo ""
 
-uvicorn app.main:app --host 0.0.0.0 --port 3004 --reload
+uvicorn app.main:app --host 0.0.0.0 --port 3003 --reload

@@ -12,7 +12,7 @@ export class UserApi {
    * Get current user profile
    */
   static async getProfile(userId: string): Promise<UserProfile> {
-    const response = await apiClient.get<ApiResponse<UserProfile>>(`/users/${userId}`);
+    const response = await apiClient.get<ApiResponse<UserProfile>>(`/v1/users/${userId}`);
     return response.data.data;
   }
 
@@ -21,7 +21,7 @@ export class UserApi {
    */
   static async updateProfile(userId: string, updates: UpdateUserRequest): Promise<UserProfile> {
     const response = await apiClient.put<ApiResponse<UserProfile>>(
-      `/users/${userId}`,
+      `/v1/users/${userId}`,
       updates
     );
     return response.data.data;
@@ -32,7 +32,7 @@ export class UserApi {
    */
   static async updatePreferences(userId: string, preferences: UpdatePreferencesRequest): Promise<UserPreferences> {
     const response = await apiClient.put<ApiResponse<UserPreferences>>(
-      `/users/${userId}/preferences`,
+      `/v1/users/${userId}/preferences`,
       preferences
     );
     return response.data.data;
@@ -42,7 +42,7 @@ export class UserApi {
    * Get user preferences
    */
   static async getPreferences(userId: string): Promise<UserPreferences> {
-    const response = await apiClient.get<ApiResponse<UserPreferences>>(`/users/${userId}/preferences`);
+    const response = await apiClient.get<ApiResponse<UserPreferences>>(`/v1/users/${userId}/preferences`);
     return response.data.data;
   }
 
@@ -51,7 +51,7 @@ export class UserApi {
    */
   static async uploadProfileImage(userId: string, imageFormData: FormData): Promise<{ imageUrl: string }> {
     const response = await apiClient.post<ApiResponse<{ imageUrl: string }>>(
-      `/users/${userId}/profile-image`,
+      `/v1/users/${userId}/profile-image`,
       imageFormData,
       {
         headers: {
@@ -66,7 +66,7 @@ export class UserApi {
    * Delete user account
    */
   static async deleteAccount(userId: string): Promise<void> {
-    await apiClient.delete(`/users/${userId}`);
+    await apiClient.delete(`/v1/users/${userId}`);
   }
 
   /**

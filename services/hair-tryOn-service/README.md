@@ -41,14 +41,14 @@ AI-powered hair style try-on service with video processing and real-time streami
 
 ### API Endpoints
 
-- `POST /api/hair-tryOn/upload-video` - Upload video for processing
-- `POST /api/hair-tryOn/process-video` - Start video processing with style/color
-- `GET /api/hair-tryOn/result/{result_id}` - Get processing result
-- `GET /api/hair-tryOn/history/{user_id}` - Get user's hair try-on history
-- `DELETE /api/hair-tryOn/result/{result_id}` - Delete a result
-- `WS /api/hair-tryOn/realtime/{session_id}` - WebSocket for real-time processing
-- `GET /api/hair-tryOn/stats` - Get processing statistics
-- `GET /api/hair-tryOn/health` - Health check
+- `POST /api/hair/upload-video` - Upload video for processing
+- `POST /api/hair/process-video` - Start video processing with style/color
+- `GET /api/hair/result/{result_id}` - Get processing result
+- `GET /api/hair/history/{user_id}` - Get user's hair try-on history
+- `DELETE /api/hair/result/{result_id}` - Delete a result
+- `WS /api/hair/realtime/{session_id}` - WebSocket for real-time processing
+- `GET /api/hair/stats` - Get processing statistics
+- `GET /api/hair/health` - Health check
 
 ## Installation
 
@@ -132,14 +132,14 @@ AI-powered hair style try-on service with video processing and real-time streami
 
 1. **Upload video:**
    ```bash
-   curl -X POST "http://localhost:3004/api/hair-tryOn/upload-video" \
+   curl -X POST "http://localhost:3004/api/hair/upload-video" \
         -F "video=@test_video.mp4" \
         -F "user_id=user123"
    ```
 
 2. **Process with hair style:**
    ```bash
-   curl -X POST "http://localhost:3004/api/hair-tryOn/process-video" \
+   curl -X POST "http://localhost:3004/api/hair/process-video" \
         -F "upload_id=upload_id_from_step1" \
         -F "user_id=user123" \
         -F "style_image=@hairstyle.jpg" \
@@ -148,7 +148,7 @@ AI-powered hair style try-on service with video processing and real-time streami
 
 3. **Check result:**
    ```bash
-   curl "http://localhost:3004/api/hair-tryOn/result/result_id?user_id=user123"
+   curl "http://localhost:3004/api/hair/result/result_id?user_id=user123"
    ```
 
 ### Real-Time Mode
@@ -156,7 +156,7 @@ AI-powered hair style try-on service with video processing and real-time streami
 Connect to WebSocket endpoint and send messages:
 
 ```javascript
-const ws = new WebSocket('ws://localhost:3004/api/hair-tryOn/realtime/session123?user_id=user123');
+const ws = new WebSocket('ws://localhost:3004/api/hair/realtime/session123?user_id=user123');
 
 // Set style image
 ws.send(JSON.stringify({
@@ -233,8 +233,8 @@ python run_tests.py --coverage
 
 ### Health Checks
 
-- Service health: `GET /api/hair-tryOn/health`
-- Processing statistics: `GET /api/hair-tryOn/stats`
+- Service health: `GET /api/hair/health`
+- Processing statistics: `GET /api/hair/stats`
 - Connection status: WebSocket connection manager stats
 
 ### Logging

@@ -68,66 +68,66 @@ describe('API Endpoints Configuration', () => {
 
   describe('Skin Analysis Endpoints', () => {
     it('should have correct analyze endpoint', () => {
-      const expectedPath = '/api/v1/analyze';
-      expect(expectedPath).toBe('/api/v1/analyze');
+      const expectedPath = '/api/skin/analyze';
+      expect(expectedPath).toBe('/api/skin/analyze');
     });
 
     it('should have correct history endpoint format', () => {
       const userId = 'test-user-id';
-      const expectedPath = `/api/v1/user/${userId}/history`;
-      expect(expectedPath).toBe(`/api/v1/user/${userId}/history`);
+      const expectedPath = `/api/skin/user/${userId}/history`;
+      expect(expectedPath).toBe(`/api/skin/user/${userId}/history`);
     });
 
     it('should have correct recommendations endpoint format', () => {
       const issueId = 'test-issue-id';
-      const expectedPath = `/api/v1/recommendations/${issueId}`;
-      expect(expectedPath).toBe(`/api/v1/recommendations/${issueId}`);
+      const expectedPath = `/api/skin/recommendations/${issueId}`;
+      expect(expectedPath).toBe(`/api/skin/recommendations/${issueId}`);
     });
 
     it('should have correct delete analysis endpoint format', () => {
       const analysisId = 'test-analysis-id';
-      const expectedPath = `/api/v1/analysis/${analysisId}`;
-      expect(expectedPath).toBe(`/api/v1/analysis/${analysisId}`);
+      const expectedPath = `/api/skin/analysis/${analysisId}`;
+      expect(expectedPath).toBe(`/api/skin/analysis/${analysisId}`);
     });
   });
 
   describe('Hair Try-On Endpoints', () => {
     it('should have correct get hairstyles endpoint', () => {
-      const expectedPath = '/api/hair-tryOn/hairstyles';
-      expect(expectedPath).toBe('/api/hair-tryOn/hairstyles');
+      const expectedPath = '/api/hair/hairstyles';
+      expect(expectedPath).toBe('/api/hair/hairstyles');
     });
 
     it('should have correct get hairstyle by ID endpoint format', () => {
       const hairstyleId = 'test-hairstyle-id';
-      const expectedPath = `/api/hair-tryOn/hairstyles/${hairstyleId}`;
-      expect(expectedPath).toBe(`/api/hair-tryOn/hairstyles/${hairstyleId}`);
+      const expectedPath = `/api/hair/hairstyles/${hairstyleId}`;
+      expect(expectedPath).toBe(`/api/hair/hairstyles/${hairstyleId}`);
     });
 
     it('should have correct process endpoint', () => {
-      const expectedPath = '/api/hair-tryOn/process';
-      expect(expectedPath).toBe('/api/hair-tryOn/process');
+      const expectedPath = '/api/hair/process';
+      expect(expectedPath).toBe('/api/hair/process');
     });
 
     it('should have correct history endpoint format', () => {
       const userId = 'test-user-id';
-      const expectedPath = `/api/hair-tryOn/history/${userId}`;
-      expect(expectedPath).toBe(`/api/hair-tryOn/history/${userId}`);
+      const expectedPath = `/api/hair/history/${userId}`;
+      expect(expectedPath).toBe(`/api/hair/history/${userId}`);
     });
 
     it('should have correct delete result endpoint format', () => {
       const resultId = 'test-result-id';
-      const expectedPath = `/api/hair-tryOn/result/${resultId}`;
-      expect(expectedPath).toBe(`/api/hair-tryOn/result/${resultId}`);
+      const expectedPath = `/api/hair/result/${resultId}`;
+      expect(expectedPath).toBe(`/api/hair/result/${resultId}`);
     });
 
     it('should have correct health check endpoint', () => {
-      const expectedPath = '/api/hair-tryOn/health';
-      expect(expectedPath).toBe('/api/hair-tryOn/health');
+      const expectedPath = '/api/hair/health';
+      expect(expectedPath).toBe('/api/hair/health');
     });
 
     it('should have correct cache clear endpoint', () => {
-      const expectedPath = '/api/hair-tryOn/cache/clear';
-      expect(expectedPath).toBe('/api/hair-tryOn/cache/clear');
+      const expectedPath = '/api/hair/cache/clear';
+      expect(expectedPath).toBe('/api/hair/cache/clear');
     });
   });
 

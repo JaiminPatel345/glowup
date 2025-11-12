@@ -11,7 +11,7 @@ info:
     url: https://opensource.org/licenses/MIT
 
 servers:
-  - url: http://localhost:3004/api/hair-tryOn
+  - url: http://localhost:3004/api/hair
     description: Development server
 
 paths:

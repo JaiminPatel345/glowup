@@ -29,7 +29,7 @@ class TestHairTryOnAPI:
     @pytest.mark.integration
     def test_health_check(self, client):
         """Test health check endpoint"""
-        response = client.get("/api/hair-tryOn/health")
+        response = client.get("/api/hair/health")
         
         assert response.status_code == 200
         data = response.json()
@@ -56,7 +56,7 @@ class TestHairTryOnAPI:
         video_content = b"fake video content"
         
         response = client.post(
-            "/api/hair-tryOn/upload-video",
+            "/api/hair/upload-video",
             files={"video": ("test.mp4", BytesIO(video_content), "video/mp4")},
             data={"user_id": "test_user"}
         )
@@ -79,7 +79,7 @@ class TestHairTryOnAPI:
         style_image = BytesIO(b"fake style image")
         
         response = client.post(
-            "/api/hair-tryOn/process-video",
+            "/api/hair/process-video",
             files={"style_image": ("style.jpg", style_image, "image/jpeg")},
             data={
                 "upload_id": "test_upload_id",
@@ -99,7 +99,7 @@ class TestHairTryOnAPI:
         mock_get_result.return_value = sample_hair_tryOn_result
         
         response = client.get(
-            f"/api/hair-tryOn/result/{sample_hair_tryOn_result.id}",
+            f"/api/hair/result/{sample_hair_tryOn_result.id}",
             params={"user_id": sample_hair_tryOn_result.user_id}
         )
         
@@ -115,7 +115,7 @@ class TestHairTryOnAPI:
         mock_get_result.return_value = None
         
         response = client.get(
-            "/api/hair-tryOn/result/nonexistent_id",
+            "/api/hair/result/nonexistent_id",
             params={"user_id": "test_user"}
         )
         
@@ -129,7 +129,7 @@ class TestHairTryOnAPI:
         mock_get_result.return_value = sample_hair_tryOn_result
         
         response = client.get(
-            f"/api/hair-tryOn/result/{sample_hair_tryOn_result.id}",
+            f"/api/hair/result/{sample_hair_tryOn_result.id}",
             params={"user_id": "wrong_user"}
         )
         
@@ -149,7 +149,7 @@ class TestHairTryOnAPI:
         )
         mock_get_history.return_value = mock_history
         
-        response = client.get("/api/hair-tryOn/history/test_user")
+        response = client.get("/api/hair/history/test_user")
         
         assert response.status_code == 200
         data = response.json()
@@ -170,7 +170,7 @@ class TestHairTryOnAPI:
         mock_get_history.return_value = mock_history
         
         response = client.get(
-            "/api/hair-tryOn/history/test_user",
+            "/api/hair/history/test_user",
             params={
                 "limit": 10,
                 "offset": 5,
@@ -186,7 +186,7 @@ class TestHairTryOnAPI:
     def test_get_user_history_invalid_type_filter(self, client):
         """Test getting user history with invalid type filter"""
         response = client.get(
-            "/api/hair-tryOn/history/test_user",
+            "/api/hair/history/test_user",
             params={"type_filter": "invalid_type"}
         )
         
@@ -200,7 +200,7 @@ class TestHairTryOnAPI:
         mock_delete.return_value = True
         
         response = client.delete(
-            "/api/hair-tryOn/result/test_result_id",
+            "/api/hair/result/test_result_id",
             params={"user_id": "test_user"}
         )
         
@@ -215,7 +215,7 @@ class TestHairTryOnAPI:
         mock_delete.return_value = False
         
         response = client.delete(
-            "/api/hair-tryOn/result/nonexistent_id",
+            "/api/hair/result/nonexistent_id",
             params={"user_id": "test_user"}
         )
         
@@ -232,7 +232,7 @@ class TestHairTryOnAPI:
         mock_ws_stats.return_value = {"active_connections": 5}
         mock_ai_stats.return_value = {"total_processed": 100}
         
-        response = client.get("/api/hair-tryOn/stats")
+        response = client.get("/api/hair/stats")
         
         assert response.status_code == 200
         data = response.json()
@@ -247,7 +247,7 @@ class TestVideoUploadValidation:
     def test_upload_video_missing_file(self, client):
         """Test upload without video file"""
         response = client.post(
-            "/api/hair-tryOn/upload-video",
+            "/api/hair/upload-video",
             data={"user_id": "test_user"}
         )
         
@@ -259,7 +259,7 @@ class TestVideoUploadValidation:
         video_content = b"fake video content"
         
         response = client.post(
-            "/api/hair-tryOn/upload-video",
+            "/api/hair/upload-video",
             files={"video": ("test.mp4", BytesIO(video_content), "video/mp4")}
         )
         
@@ -275,7 +275,7 @@ class TestErrorHandling:
         mock_get_result.side_effect = Exception("Database connection failed")
         
         response = client.get(
-            "/api/hair-tryOn/result/test_id",
+            "/api/hair/result/test_id",
             params={"user_id": "test_user"}
         )
         
@@ -291,7 +291,7 @@ class TestErrorHandling:
         video_content = b"fake video content"
         
         response = client.post(
-            "/api/hair-tryOn/upload-video",
+            "/api/hair/upload-video",
             files={"video": ("test.mp4", BytesIO(video_content), "video/mp4")},
             data={"user_id": "test_user"}
         )

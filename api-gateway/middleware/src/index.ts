@@ -65,9 +65,28 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-// Body parsing middleware
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+// Body parsing middleware - conditionally skip for multipart/form-data
+app.use((req, res, next) => {
+  const contentType = req.headers['content-type'] || '';
+  
+  // Skip body parsing for multipart/form-data (file uploads)
+  if (contentType.includes('multipart/form-data')) {
+    return next();
+  }
+  
+  // Apply JSON parsing
+  if (contentType.includes('application/json')) {
+    return express.json({ limit: '50mb' })(req, res, next);
+  }
+  
+  // Apply URL-encoded parsing
+  if (contentType.includes('application/x-www-form-urlencoded')) {
+    return express.urlencoded({ extended: true, limit: '50mb' })(req, res, next);
+  }
+  
+  // Default: try JSON parsing
+  express.json({ limit: '50mb' })(req, res, next);
+});
 
 // Correlation ID middleware
 app.use(correlationLogger.middleware());
@@ -81,13 +100,26 @@ app.use(rateLimitMiddleware);
 // Health check
 app.use('/health', healthCheck);
 
+// Add request logging for debugging
+app.use((req, res, next) => {
+  logger.info(`📨 Incoming Request: ${req.method} ${req.url}`, {
+    contentType: req.headers['content-type'],
+    hasBody: !!req.body,
+    bodySize: req.headers['content-length'],
+    headers: {
+      authorization: req.headers.authorization ? 'Bearer ***' : 'none',
+      contentType: req.headers['content-type']
+    }
+  });
+  next();
+});
+
 // Authentication middleware for protected routes
 // Auth routes are public (login, register, etc.)
 // All other routes require authentication
 app.use('/api/users', authMiddleware);
-app.use('/api/v1', authMiddleware);  // Skin analysis routes
+app.use('/api/v1/users', authMiddleware);
 app.use('/api/skin', authMiddleware);
-app.use('/api/hair-tryOn', authMiddleware);
 app.use('/api/hair', authMiddleware);
 
 // Import resilient proxy
@@ -119,23 +151,23 @@ const serviceProxies = [
     target: process.env.USER_SERVICE_URL || buildServiceUrl('USER_SERVICE_HOST', 'USER_SERVICE_PORT', 'user-service', '3002'),
     changeOrigin: true,
     timeout: 60000,
+    pathRewrite: {
+      '^/api/users': '/api/v1/users'
+    },
     circuitBreakerOptions: {
       failureThreshold: 3,
       recoveryTimeout: 30000
     }
   },
   {
-    path: '/api/v1',
-    serviceName: 'skin-analysis-service',
-    target: process.env.SKIN_SERVICE_URL || buildServiceUrl('SKIN_SERVICE_HOST', 'SKIN_SERVICE_PORT', 'skin-analysis-service', '3003'),
+    path: '/api/v1/users',
+    serviceName: 'user-service',
+    target: process.env.USER_SERVICE_URL || buildServiceUrl('USER_SERVICE_HOST', 'USER_SERVICE_PORT', 'user-service', '3002'),
     changeOrigin: true,
-    timeout: 120000, // Extended timeout for AI processing
+    timeout: 60000,
     circuitBreakerOptions: {
-      failureThreshold: 5,
-      recoveryTimeout: 60000
-    },
-    fallbackResponse: {
-      message: 'Skin analysis service is temporarily unavailable. Please try again later.'
+      failureThreshold: 3,
+      recoveryTimeout: 30000
     }
   },
   {
@@ -150,20 +182,6 @@ const serviceProxies = [
     },
     fallbackResponse: {
       message: 'Skin analysis service is temporarily unavailable. Please try again later.'
-    }
-  },
-  {
-    path: '/api/hair-tryOn',
-    serviceName: 'hair-tryon-service',
-    target: process.env.HAIR_SERVICE_URL || buildServiceUrl('HAIR_SERVICE_HOST', 'HAIR_SERVICE_PORT', 'hair-tryOn-service', '3004'),
-    changeOrigin: true,
-    timeout: 300000, // Extended timeout for video processing
-    circuitBreakerOptions: {
-      failureThreshold: 5,
-      recoveryTimeout: 60000
-    },
-    fallbackResponse: {
-      message: 'Hair try-on service is temporarily unavailable. Please try again later.'
     }
   },
   {

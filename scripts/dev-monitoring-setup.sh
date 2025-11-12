@@ -128,7 +128,7 @@ SERVICES=(
     "auth-service:http://localhost:3001/api/health"
     "user-service:http://localhost:3002/api/v1/health"
     "skin-analysis:http://localhost:3003/health"
-    "hair-tryon:http://localhost:3004/api/hair-tryOn/health"
+    "hair-tryon:http://localhost:3004/api/hair/health"
 )
 
 # Colors

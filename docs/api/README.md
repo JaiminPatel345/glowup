@@ -140,7 +140,7 @@ The Hair Try-On service provides real-time processing via WebSocket:
 
 ### Connection URL (Development)
 ```
-ws://localhost:8002/api/hair-tryOn/realtime/{session_id}?user_id={user_id}
+ws://localhost:8002/api/hair/realtime/{session_id}?user_id={user_id}
 ```
 
 ### Message Flow
@@ -167,10 +167,10 @@ http://localhost:3001/api/auth
 http://localhost:3002/api/v1
 
 # Skin Analysis Service
-http://localhost:3003/api/v1
+http://localhost:3003/api/skin
 
 # Hair Try-On Service
-http://localhost:3004/api/hair-tryOn
+http://localhost:3004/api/hair
 ```
 
 ### API Documentation Viewers
@@ -188,7 +188,7 @@ You can view the interactive API documentation using:
 curl http://localhost:3001/api/health
 curl http://localhost:3002/api/v1/health  
 curl http://localhost:3003/health
-curl http://localhost:3004/api/hair-tryOn/health
+curl http://localhost:3004/api/hair/health
 
 # Authentication flow
 curl -X POST http://localhost:3001/api/auth/login \

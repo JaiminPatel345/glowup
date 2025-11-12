@@ -756,7 +756,7 @@ flowchart TD
 
 #### Upload Video
 ```
-POST /api/hair-tryOn/upload-video
+POST /api/hair/upload-video
 Content-Type: multipart/form-data
 
 Request:
@@ -780,7 +780,7 @@ Errors:
 
 #### Process Video
 ```
-POST /api/hair-tryOn/process-video
+POST /api/hair/process-video
 Content-Type: multipart/form-data
 
 Request:
@@ -804,7 +804,7 @@ Errors:
 
 #### Get Result
 ```
-GET /api/hair-tryOn/result/{result_id}?user_id={user_id}
+GET /api/hair/result/{result_id}?user_id={user_id}
 
 Response: 200 OK
 {
@@ -831,7 +831,7 @@ Errors:
 
 #### Get History
 ```
-GET /api/hair-tryOn/history/{user_id}?limit=10&offset=0
+GET /api/hair/history/{user_id}?limit=10&offset=0
 
 Response: 200 OK
 {
@@ -852,7 +852,7 @@ Response: 200 OK
 
 #### Health Check
 ```
-GET /api/hair-tryOn/health
+GET /api/hair/health
 
 Response: 200 OK
 {
@@ -869,7 +869,7 @@ Response: 200 OK
 
 #### Connection
 ```
-WS /api/hair-tryOn/realtime/{session_id}?user_id={user_id}
+WS /api/hair/realtime/{session_id}?user_id={user_id}
 
 Connection established:
 {
@@ -1886,7 +1886,7 @@ async def test_video_upload_flow():
         # Upload video
         files = {"video": ("test.mp4", video_data, "video/mp4")}
         data = {"user_id": "test_user"}
-        response = await client.post("/api/hair-tryOn/upload-video", 
+        response = await client.post("/api/hair/upload-video", 
                                     files=files, data=data)
         assert response.status_code == 200
         upload_id = response.json()["upload_id"]
@@ -1894,7 +1894,7 @@ async def test_video_upload_flow():
         # Process video
         files = {"style_image": ("style.jpg", style_data, "image/jpeg")}
         data = {"upload_id": upload_id, "user_id": "test_user"}
-        response = await client.post("/api/hair-tryOn/process-video",
+        response = await client.post("/api/hair/process-video",
                                     files=files, data=data)
         assert response.status_code == 202
 
@@ -1926,13 +1926,13 @@ class HairTryOnUser(HttpUser):
         """Simulate video upload"""
         files = {"video": ("test.mp4", video_data, "video/mp4")}
         data = {"user_id": f"user_{self.user_id}"}
-        self.client.post("/api/hair-tryOn/upload-video",
+        self.client.post("/api/hair/upload-video",
                         files=files, data=data)
     
     @task(1)
     def get_history(self):
         """Simulate history retrieval"""
-        self.client.get(f"/api/hair-tryOn/history/user_{self.user_id}")
+        self.client.get(f"/api/hair/history/user_{self.user_id}")
 
 # Run: locust -f load_test.py --host=http://localhost:3004
 ```
@@ -2252,7 +2252,7 @@ docker-compose up hair-tryOn-service
 ### Verification
 ```bash
 # Test service health
-curl http://localhost:3004/api/hair-tryOn/health
+curl http://localhost:3004/api/hair/health
 
 # Run tests
 cd services/hair-tryOn-service

@@ -7,6 +7,7 @@ export interface Hairstyle {
   preview_image_url: string;
   style_name: string;
   category: string;
+  gender?: string;
   description?: string;
   tags?: string[];
 }
@@ -23,7 +24,6 @@ export interface ProcessHairTryOnRequest {
   hairstyleImage?: any; // File/Blob or React Native file object (optional)
   hairstyleId?: string; // (optional)
   userId: string;
-  blendRatio?: number;
 }
 
 export interface ProcessHairTryOnRequestNative {
@@ -31,7 +31,6 @@ export interface ProcessHairTryOnRequestNative {
   hairstyleImageUri?: string;
   hairstyleId?: string;
   userId: string;
-  blendRatio?: number;
 }
 
 interface HairTryOnHistoryResponseItem {
@@ -90,7 +89,7 @@ export class HairTryOnApi {
     }
 
     const response = await apiClient.get<HairstylesResponse>(
-      '/hair-tryOn/hairstyles',
+      '/hair/hairstyles',
       { params }
     );
     return response.data;
@@ -101,7 +100,7 @@ export class HairTryOnApi {
    */
   static async getHairstyleById(hairstyleId: string): Promise<Hairstyle> {
     const response = await apiClient.get<{ success: boolean; hairstyle: Hairstyle }>(
-      `/hair-tryOn/hairstyles/${hairstyleId}`
+      `/hair/hairstyles/${hairstyleId}`
     );
     return response.data.hairstyle;
   }
@@ -134,12 +133,9 @@ export class HairTryOnApi {
     
     // Add user ID
     formData.append('user_id', request.userId);
-    
-    // Add blend ratio
-    formData.append('blend_ratio', String(request.blendRatio || 0.8));
 
     const response = await apiClient.post(
-      '/hair-tryOn/process',
+      '/hair/process',
       formData,
       {
         headers: {
@@ -174,12 +170,9 @@ export class HairTryOnApi {
     
     // Add user ID
     formData.append('user_id', request.userId);
-    
-    // Add blend ratio
-    formData.append('blend_ratio', String(request.blendRatio || 0.8));
 
     const response = await apiClient.post(
-      '/hair-tryOn/process',
+      '/hair/process',
       formData,
       {
         headers: {
@@ -208,7 +201,7 @@ export class HairTryOnApi {
     );
 
     const response = await apiClient.post(
-      '/hair-tryOn/process-video',
+      '/hair/process-video',
       formData,
       {
         headers: {
@@ -227,7 +220,7 @@ export class HairTryOnApi {
     styleImageFormData: FormData
   ): Promise<WebSocketConnection> {
     const response = await apiClient.post(
-      '/hair-tryOn/realtime/session',
+      '/hair/realtime/session',
       styleImageFormData,
       {
         headers: {
@@ -259,7 +252,7 @@ export class HairTryOnApi {
     offset: number = 0
   ): Promise<HairTryOnHistoryItem[]> {
     const response = await apiClient.get(
-      `/hair-tryOn/history/${userId}`,
+      `/hair/history/${userId}`,
       {
         params: {
           limit,
@@ -280,7 +273,7 @@ export class HairTryOnApi {
    * Delete a hair try-on result
    */
   static async deleteHairTryOn(resultId: string, userId: string): Promise<void> {
-    await apiClient.delete(`/hair-tryOn/result/${resultId}`, {
+    await apiClient.delete(`/hair/result/${resultId}`, {
       params: { user_id: userId }
     });
   }
@@ -290,7 +283,7 @@ export class HairTryOnApi {
    */
   static async cancelProcessing(sessionId: string): Promise<void> {
     try {
-      await apiClient.post('/hair-tryOn/process/cancel', {
+      await apiClient.post('/hair/process/cancel', {
         session_id: sessionId,
       });
     } catch (error) {
@@ -316,7 +309,7 @@ export class HairTryOnApi {
    * Get service health status
    */
   static async getHealthStatus(): Promise<any> {
-    const response = await apiClient.get('/hair-tryOn/health');
+    const response = await apiClient.get('/hair/health');
     return response.data;
   }
 
@@ -324,7 +317,7 @@ export class HairTryOnApi {
    * Clear hairstyles cache
    */
   static async clearCache(): Promise<void> {
-    await apiClient.post('/hair-tryOn/cache/clear');
+    await apiClient.post('/hair/cache/clear');
   }
 
   private static mergeFormData(...forms: Array<FormData | undefined>): FormData {

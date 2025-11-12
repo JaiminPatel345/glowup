@@ -13,7 +13,7 @@ export class SkinAnalysisApi {
     imageFormData.append('user_id', userId);
 
     const response = await apiClient.post<any>(
-      '/v1/analyze',
+      '/skin/analyze',
       imageFormData,
       {
         headers: {
@@ -45,7 +45,7 @@ export class SkinAnalysisApi {
       ayurvedic_products: any[];
       non_ayurvedic_products: any[];
     }>(
-      `/v1/recommendations/${issueId}`
+      `/skin/recommendations/${issueId}`
     );
     
     // Transform snake_case to camelCase
@@ -62,7 +62,7 @@ export class SkinAnalysisApi {
    */
   static async getAnalysisHistory(userId: string, limit: number = 10, offset: number = 0): Promise<SkinAnalysisResult[]> {
     const response = await apiClient.get<{ user_id: string; analyses: any[]; total: number }>(
-      `/v1/user/${userId}/history`,
+      `/skin/user/${userId}/history`,
       {
         params: { limit, offset }
       }
@@ -84,7 +84,7 @@ export class SkinAnalysisApi {
    * Delete a specific skin analysis result
    */
   static async deleteAnalysis(analysisId: string): Promise<void> {
-    await apiClient.delete(`/v1/analysis/${analysisId}`);
+    await apiClient.delete(`/skin/analysis/${analysisId}`);
   }
 
   /**
@@ -92,7 +92,7 @@ export class SkinAnalysisApi {
    */
   static async getIssueDetails(issueId: string): Promise<any> {
     const response = await apiClient.get<any>(
-      `/v1/issues/${issueId}`
+      `/skin/issues/${issueId}`
     );
     return response.data;
   }

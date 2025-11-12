@@ -1,9 +1,9 @@
 #!/bin/bash
-# Test script for /api/v1/model/info endpoint using curl
+# Test script for /api/skin/model/info endpoint using curl
 # This demonstrates how to call the endpoint from the command line
 
 echo "========================================================================"
-echo "Testing /api/v1/model/info Endpoint with curl"
+echo "Testing /api/skin/model/info Endpoint with curl"
 echo "========================================================================"
 echo ""
 
@@ -22,10 +22,10 @@ echo "✓ Server is running"
 echo ""
 
 # Make request to model info endpoint
-echo "Making GET request to /api/v1/model/info..."
+echo "Making GET request to /api/skin/model/info..."
 echo ""
 
-response=$(curl -s -w "\nHTTP_STATUS:%{http_code}" http://localhost:3003/api/v1/model/info)
+response=$(curl -s -w "\nHTTP_STATUS:%{http_code}" http://localhost:3003/api/skin/model/info)
 
 # Extract HTTP status code
 http_status=$(echo "$response" | grep "HTTP_STATUS:" | cut -d: -f2)

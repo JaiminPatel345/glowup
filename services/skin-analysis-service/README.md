@@ -83,26 +83,26 @@ Input Image → Preprocessing → EfficientNet-B0 → Post-processing → Result
 
 ### Analysis Endpoints
 
-- `POST /api/v1/analyze` - Analyze skin image using ML model
-- `GET /api/v1/analysis/{analysis_id}` - Get analysis result by ID
-- `GET /api/v1/user/{user_id}/history` - Get user analysis history
+- `POST /api/skin/analyze` - Analyze skin image using ML model
+- `GET /api/skin/analysis/{analysis_id}` - Get analysis result by ID
+- `GET /api/skin/user/{user_id}/history` - Get user analysis history
 
 ### Product Endpoints
 
-- `GET /api/v1/recommendations/{issue_id}` - Get product recommendations
-- `GET /api/v1/products/search` - Search products
-- `GET /api/v1/products/trending` - Get trending products
-- `GET /api/v1/products/{product_id}` - Get product details
+- `GET /api/skin/recommendations/{issue_id}` - Get product recommendations
+- `GET /api/skin/products/search` - Search products
+- `GET /api/skin/products/trending` - Get trending products
+- `GET /api/skin/products/{product_id}` - Get product details
 
 ### Model Endpoints
 
-- `GET /api/v1/model/info` - Get ML model metadata (name, version, accuracy, device)
+- `GET /api/skin/model/info` - Get ML model metadata (name, version, accuracy, device)
 
 ### Utility Endpoints
 
 - `GET /health/` - Basic health check
 - `GET /health/detailed` - Detailed health check with database and model status
-- `GET /api/v1/stats` - Service statistics
+- `GET /api/skin/stats` - Service statistics
 
 ## Quick Start
 
@@ -600,7 +600,7 @@ python validate_performance_optimizations.py
 ### 1. Analyze Skin Image (ML Model)
 
 ```bash
-curl -X POST "http://localhost:8000/api/v1/analyze" \
+curl -X POST "http://localhost:8000/api/skin/analyze" \
   -H "Content-Type: multipart/form-data" \
   -F "image=@face_image.jpg" \
   -F "user_id=user123"
@@ -639,7 +639,7 @@ curl -X POST "http://localhost:8000/api/v1/analyze" \
 ### 2. Get Model Information
 
 ```bash
-curl "http://localhost:8000/api/v1/model/info"
+curl "http://localhost:8000/api/skin/model/info"
 ```
 
 **Response:**
@@ -671,7 +671,7 @@ curl "http://localhost:8000/api/v1/model/info"
 ### 3. Get Product Recommendations
 
 ```bash
-curl "http://localhost:8000/api/v1/recommendations/acne_ml_001?category=ayurvedic"
+curl "http://localhost:8000/api/skin/recommendations/acne_ml_001?category=ayurvedic"
 ```
 
 **Response:**

@@ -27,7 +27,6 @@ export default function HairTryOnScreen() {
   const [loading, setLoading] = useState(false);
   const [loadingHairstyles, setLoadingHairstyles] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [blendRatio, setBlendRatio] = useState(0.8);
   const [nextToken, setNextToken] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<'Male' | 'Female' | 'all'>('all');
   const [imageSelectionMode, setImageSelectionMode] = useState<'own' | 'default'>('own');
@@ -59,10 +58,23 @@ export default function HairTryOnScreen() {
       const fetchAll = !token;
       const response = await HairTryOnApi.getDefaultHairstyles(10, token, false, fetchAll);
       
+      console.log('🔍 Loaded hairstyles count:', response.hairstyles.length);
+      console.log('🔍 First 3 hairstyles:', response.hairstyles.slice(0, 3).map(h => ({ id: h.id, gender: h.gender, category: h.category })));
+      
+      // Check gender distribution
+      const maleCount = response.hairstyles.filter(h => h.gender?.toLowerCase() === 'male').length;
+      const femaleCount = response.hairstyles.filter(h => h.gender?.toLowerCase() === 'female').length;
+      console.log(`🔍 Gender breakdown - Male: ${maleCount}, Female: ${femaleCount}`);
+      
       if (!token) {
         setHairstyles(response.hairstyles);
       } else {
-        setHairstyles(prev => [...prev, ...response.hairstyles]);
+        // Filter out duplicates when appending more hairstyles
+        setHairstyles(prev => {
+          const existingIds = new Set(prev.map(h => h.id));
+          const newHairstyles = response.hairstyles.filter(h => !existingIds.has(h.id));
+          return [...prev, ...newHairstyles];
+        });
       }
       
       setNextToken(response.next_token || null);
@@ -145,8 +157,7 @@ export default function HairTryOnScreen() {
       console.log('🎨 Starting hair try-on process...', {
         userId,
         hasCustomHairstyle: !!customHairstyleUri,
-        selectedHairstyleId: selectedHairstyle?.id,
-        blendRatio
+        selectedHairstyleId: selectedHairstyle?.id
       });
 
       console.log('📦 Calling API with URIs...');
@@ -156,8 +167,7 @@ export default function HairTryOnScreen() {
         userPhotoUri: userPhotoUri,
         hairstyleImageUri: customHairstyleUri || undefined,
         hairstyleId: selectedHairstyle?.id,
-        userId: userId,
-        blendRatio,
+        userId: userId
       });
 
       console.log('✅ API call successful, setting result...');
@@ -209,7 +219,6 @@ export default function HairTryOnScreen() {
     
     return (
       <TouchableOpacity
-        key={item.id}
         className={`w-[30%] mb-3 rounded-lg overflow-hidden border-2 ${selectedHairstyle?.id === item.id ? 'border-secondary-600' : 'border-transparent'
           }`}
         onPress={() => {
@@ -236,8 +245,15 @@ export default function HairTryOnScreen() {
   };
 
   const filteredHairstyles = hairstyles.filter(
-    (item) => selectedCategory === 'all' || item.category === selectedCategory
+    (item) => {
+      if (selectedCategory === 'all') return true;
+      // Backend returns 'gender' field with lowercase 'male'/'female'
+      const itemGender = item.gender?.toLowerCase();
+      return itemGender === selectedCategory.toLowerCase();
+    }
   );
+  
+  console.log(`🔍 Filter - selectedCategory: ${selectedCategory}, total: ${hairstyles.length}, filtered: ${filteredHairstyles.length}`);
 
   return (
     <View className="flex-1 bg-gray-50">
@@ -387,7 +403,11 @@ export default function HairTryOnScreen() {
               ) : (
                 <>
                   <View className="flex-row flex-wrap justify-between">
-                    {filteredHairstyles.map(renderHairstyleItem)}
+                    {filteredHairstyles.map((item, idx) => (
+                      <React.Fragment key={idx}>
+                        {renderHairstyleItem(item)}
+                      </React.Fragment>
+                    ))}
                   </View>
                   
                   {/* Load More Button */}
@@ -404,7 +424,7 @@ export default function HairTryOnScreen() {
                         </>
                       ) : (
                         <>
-                          <Ionicons name="chevron-down-circle-outline" size={20} color="#ec4899" />
+                                                    <Ionicons name="chevron-down-circle-outline" size={20} color="#ec4899" />
                           <Text className="text-secondary-600 font-semibold ml-2">Load More Styles</Text>
                         </>
                       )}
@@ -414,35 +434,6 @@ export default function HairTryOnScreen() {
               )}
             </>
           )}
-        </Animated.View>
-
-        {/* Blend Ratio Slider */}
-        <Animated.View
-          entering={FadeInDown.delay(300).springify()}
-          className="bg-white mx-4 mb-4 p-4 rounded-2xl shadow-sm"
-        >
-          <Text className="text-lg font-semibold mb-3 text-gray-800">
-            Blend Intensity: {Math.round(blendRatio * 100)}%
-          </Text>
-          <View className="flex-row justify-between">
-            {[0.5, 0.6, 0.7, 0.8, 0.9, 1.0].map((value) => (
-              <TouchableOpacity
-                key={value}
-                className={`flex-1 p-2 mx-0.5 rounded-lg ${
-                  blendRatio === value ? 'bg-secondary-600' : 'bg-gray-200'
-                }`}
-                onPress={() => setBlendRatio(value)}
-              >
-                <Text
-                  className={`text-center text-xs font-semibold ${
-                    blendRatio === value ? 'text-white' : 'text-gray-700'
-                  }`}
-                >
-                  {Math.round(value * 100)}%
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
         </Animated.View>
 
         {/* Result Section */}

@@ -1,6 +1,7 @@
 """
-PerfectCorp API Integration Service
-Fetches default hairstyles from PerfectCorp API
+PerfectCorp Service - Static Hairstyles Data
+
+Provides hairstyles from local static JSON file
 """
 
 import aiohttp
@@ -10,283 +11,230 @@ from datetime import datetime, timedelta
 import json
 from pathlib import Path
 
+
 logger = logging.getLogger(__name__)
 
 
 class PerfectCorpService:
-    """Service for fetching hairstyles from PerfectCorp API"""
+    """Service for managing hairstyles using static data"""
     
-    def __init__(
-        self,
-        api_key: str,
-        api_url: str = "https://yce-api-01.perfectcorp.com/s2s/v2.0",
-        cache_ttl: int = 86400  # 24 hours
-    ):
-        self.api_key = api_key
-        self.api_url = api_url
-        self.cache_ttl = cache_ttl
-        self.cache_file = Path("temp/hairstyles_cache.json")
-        self.cache_file.parent.mkdir(parents=True, exist_ok=True)
-        self._cache = None
-        self._cache_timestamp = None
-    
-    def _is_cache_valid(self) -> bool:
-        """Check if cache is still valid"""
-        if self._cache is None or self._cache_timestamp is None:
-            return False
+    def __init__(self, api_key: str = "", api_url: str = "", cache_ttl: int = 86400):
+        """
+        Initialize service with static data
         
-        age = datetime.now() - self._cache_timestamp
-        return age.total_seconds() < self.cache_ttl
+        Args:
+            api_key: Not used (kept for backward compatibility)
+            api_url: Not used (kept for backward compatibility)
+            cache_ttl: Not used (kept for backward compatibility)
+        """
+        print("🔵 PerfectCorpService.__init__ called!")  # Debug print
+        self.static_data_path = Path(__file__).parent.parent / "data" / "hairstyles.json"
+        print(f"🔵 Static data path: {self.static_data_path}")  # Debug print
+        self.hairstyles: List[Dict] = []
+        print(f"🔵 About to load static data...")  # Debug print
+        self._load_static_data()
+        print(f"🔵 After _load_static_data, hairstyles count: {len(self.hairstyles)}")  # Debug print
     
-    def _load_cache_from_file(self) -> bool:
-        """Load cache from file"""
+    def _load_static_data(self) -> None:
+        """Load hairstyles from static JSON file"""
         try:
-            if not self.cache_file.exists():
-                return False
+            print(f"🔵 _load_static_data() called!")  # Debug print
+            logger.info(f"📂 Loading static hairstyles from: {self.static_data_path}")
             
-            with open(self.cache_file, 'r') as f:
+            if not self.static_data_path.exists():
+                print(f"❌ File NOT found: {self.static_data_path}")  # Debug print
+                logger.error(f"❌ Static data file not found: {self.static_data_path}")
+                self.hairstyles = []
+                return
+            
+            print(f"✅ File found, opening...")  # Debug print
+            with open(self.static_data_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
             
-            timestamp = datetime.fromisoformat(data['timestamp'])
-            age = datetime.now() - timestamp
+            print(f"✅ JSON loaded, data keys: {data.keys()}")  # Debug print
             
-            if age.total_seconds() < self.cache_ttl:
-                self._cache = data['hairstyles']
-                self._cache_timestamp = timestamp
-                logger.info(f"Loaded {len(self._cache)} hairstyles from cache file")
-                return True
+            # Extract hairstyles array from the JSON structure
+            hairstyles_data = data.get('hairstyles', [])
+            print(f"✅ Hairstyles array length: {len(hairstyles_data)}")  # Debug print
             
-            return False
+            # Transform the data to match expected format
+            self.hairstyles = []
+            for item in hairstyles_data:
+                hairstyle = {
+                    'id': item.get('id', ''),
+                    'preview_image_url': item.get('thumb', ''),  # Map 'thumb' to 'preview_image_url'
+                    'style_name': item.get('title', ''),  # Map 'title' to 'style_name'
+                    'category': item.get('category_name', ''),  # Map 'category_name' to 'category'
+                    'gender': item.get('category_name', 'unisex').lower()  # Use category_name as gender
+                }
+                self.hairstyles.append(hairstyle)
+            
+            print(f"✅ Successfully transformed {len(self.hairstyles)} hairstyles")  # Debug print
+            logger.info(f"✅ Successfully loaded {len(self.hairstyles)} hairstyles from static file")
+            
+            # Log gender breakdown
+            if self.hairstyles:
+                male_count = sum(1 for h in self.hairstyles if h.get('gender', '').lower() == 'male')
+                female_count = sum(1 for h in self.hairstyles if h.get('gender', '').lower() == 'female')
+                other_count = len(self.hairstyles) - male_count - female_count
+                print(f"📊 Gender breakdown - Male: {male_count}, Female: {female_count}, Other: {other_count}")
+                logger.info(f"📊 Gender breakdown - Male: {male_count}, Female: {female_count}, Other: {other_count}")
+                
+                # Sample male and female hairstyles
+                male_samples = [h['id'] for h in self.hairstyles if h.get('gender', '').lower() == 'male'][:3]
+                female_samples = [h['id'] for h in self.hairstyles if h.get('gender', '').lower() == 'female'][:3]
+                print(f"📋 Sample Male IDs: {male_samples}")
+                print(f"📋 Sample Female IDs: {female_samples}")
+                logger.info(f"📋 Sample Male IDs: {male_samples}")
+                logger.info(f"📋 Sample Female IDs: {female_samples}")
             
         except Exception as e:
-            logger.warning(f"Failed to load cache from file: {e}")
-            return False
-    
-    def _save_cache_to_file(self):
-        """Save cache to file"""
-        try:
-            data = {
-                'timestamp': self._cache_timestamp.isoformat(),
-                'hairstyles': self._cache
-            }
-            
-            with open(self.cache_file, 'w') as f:
-                json.dump(data, f, indent=2)
-            
-            logger.info(f"Saved {len(self._cache)} hairstyles to cache file")
-            
-        except Exception as e:
-            logger.warning(f"Failed to save cache to file: {e}")
+            print(f"❌ EXCEPTION in _load_static_data: {str(e)}")  # Debug print
+            logger.error(f"❌ Error loading static data: {str(e)}")
+            import traceback
+            print(traceback.format_exc())  # Debug print
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            self.hairstyles = []
     
     async def fetch_hairstyles(
         self,
+        page: int = 1,
         page_size: int = 20,
+        gender: Optional[str] = None,
         starting_token: Optional[str] = None,
         force_refresh: bool = False
     ) -> Dict:
         """
-        Fetch hairstyles from PerfectCorp API
+        Fetch hairstyles from static data with pagination
         
         Args:
-            page_size: Number of hairstyles to fetch
-            starting_token: Pagination token
-            force_refresh: Force refresh cache
-            
-        Returns:
-            Dictionary with hairstyles list and next_token
-        """
-        # Check cache first
-        if not force_refresh and not starting_token:
-            if self._is_cache_valid():
-                logger.info("Returning hairstyles from memory cache")
-                return {
-                    "hairstyles": self._cache,
-                    "next_token": None
-                }
-            
-            if self._load_cache_from_file():
-                return {
-                    "hairstyles": self._cache,
-                    "next_token": None
-                }
+            page: Page number (1-indexed)
+            page_size: Number of items per page
+            gender: Filter by gender ('male', 'female', or None for all)
+            starting_token: Not used (kept for backward compatibility)
+            force_refresh: Not used (kept for backward compatibility)
         
-        # Fetch from API
+        Returns:
+            Dictionary with pagination info and hairstyles
+        """
         try:
-            logger.info("Fetching hairstyles from PerfectCorp API...")
+            print(f"🔵 fetch_hairstyles() called - Total hairstyles in memory: {len(self.hairstyles)}")  # Debug print
+            logger.info(f"📄 Fetching hairstyles - Page: {page}, Size: {page_size}, Gender: {gender}")
             
-            url = f"{self.api_url}/task/template/hair-style"
-            params = {
-                "page_size": page_size
+            # Filter by gender if specified
+            filtered_styles = self.hairstyles
+            if gender:
+                filtered_styles = [h for h in self.hairstyles if h.get('gender', 'unisex').lower() == gender.lower()]
+                print(f"🔵 Gender filter applied: '{gender}' -> {len(filtered_styles)} hairstyles")
+            else:
+                print(f"🔵 No gender filter - returning all {len(filtered_styles)} hairstyles")
+            
+            print(f"🔵 After gender filter: {len(filtered_styles)} hairstyles")  # Debug print
+            
+            # Calculate pagination
+            total = len(filtered_styles)
+            start_idx = (page - 1) * page_size
+            end_idx = start_idx + page_size
+            
+            print(f"🔵 Pagination: start={start_idx}, end={end_idx}, total={total}")  # Debug print
+            
+            # Get page data
+            page_data = filtered_styles[start_idx:end_idx]
+            
+            print(f"🔵 Page data count: {len(page_data)}")  # Debug print
+            
+            result = {
+                'data': page_data,
+                'pagination': {
+                    'current_page': page,
+                    'page_size': page_size,
+                    'total': total,
+                    'total_pages': (total + page_size - 1) // page_size
+                }
             }
             
-            # Add starting_token only if provided and not empty
-            if starting_token:
-                params["starting_token"] = starting_token
-            
-            # PerfectCorp v2 API uses Authorization: Bearer <API_KEY>
-            headers = {
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-            
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, params=params, headers=headers) as response:
-                    response_text = await response.text()
-                    
-                    if response.status != 200:
-                        logger.error(f"API request failed: {response.status} - {response_text}")
-                        raise Exception(f"API request failed with status {response.status}: {response_text}")
-                    
-                    try:
-                        data = json.loads(response_text)
-                    except json.JSONDecodeError as e:
-                        logger.error(f"Failed to parse JSON response: {e}")
-                        logger.error(f"Response text: {response_text}")
-                        raise
-            
-           # Parse response
-            result = self._parse_hairstyles(data)
-            hairstyles = result.get("hairstyles", [])
-            next_token = result.get("next_token")
-             
-            # Update cache (only cache if no starting_token - first page)
-            if not starting_token:
-                self._cache = hairstyles
-                self._cache_timestamp = datetime.now()
-                self._save_cache_to_file()
-            
-            logger.info(f"Fetched {len(hairstyles)} hairstyles from API")
-            return {
-                "hairstyles": hairstyles,
-                "next_token": next_token
-            }
+            print(f"🔵 Result structure: {list(result.keys())}")  # Debug print
+            logger.info(f"✅ Returning {len(page_data)} hairstyles (Total: {total})")
+            return result
             
         except Exception as e:
-            logger.error(f"Failed to fetch hairstyles: {e}")
-            
-            # Return cached data if available
-            if self._cache and not starting_token:
-                logger.warning("Returning stale cache due to API error")
-                return {
-                    "hairstyles": self._cache,
-                    "next_token": None
+            logger.error(f"❌ Error fetching hairstyles: {str(e)}")
+            return {
+                'data': [],
+                'pagination': {
+                    'current_page': page,
+                    'page_size': page_size,
+                    'total': 0,
+                    'total_pages': 0
                 }
-            
-            raise
+            }
     
-    def _parse_hairstyles(self, api_response: Dict) -> Dict:
+    def get_hairstyle_by_id(self, hairstyle_id: str) -> Optional[Dict]:
         """
-        Parse API response and extract hairstyle information
+        Get a specific hairstyle by ID from static data
         
         Args:
-            api_response: Raw API response
-            
-        Returns:
-            Dictionary with hairstyles list and next_token
-        """
-        hairstyles = []
-        next_token = None
+            hairstyle_id: The hairstyle ID to look up
         
+        Returns:
+            Hairstyle dictionary if found, None otherwise
+        """
         try:
-            # Log the response structure for debugging
-            logger.debug(f"API Response structure: {json.dumps(api_response, indent=2)[:500]}")
+            logger.info(f"🔍 Looking up hairstyle ID: {hairstyle_id}")
             
-            # PerfectCorp API response structure:
-            # {
-            #   "status": 200,
-            #   "data": {
-            #     "templates": [
-            #       {"id": "...", "thumb": "...", "title": "...", "category_name": "..."}
-            #     ],
-            #     "next_token": "..."
-            #   }
-            # }
-            data = api_response.get('data', {})
-            templates = data.get('templates', [])
-            next_token = data.get('next_token')
+            for hairstyle in self.hairstyles:
+                if hairstyle.get('id') == hairstyle_id:
+                    logger.info(f"✅ Found hairstyle: {hairstyle.get('title', 'Unknown')}")
+                    return hairstyle
             
-            if not templates:
-                logger.warning("No templates found in API response")
-                logger.debug(f"Full response: {api_response}")
+            logger.warning(f"❌ Hairstyle not found for ID: {hairstyle_id}")
+            logger.info(f"📋 Total hairstyles available: {len(self.hairstyles)}")
             
-            logger.info(f"Found {len(templates)} templates in response")
+            # Log a few sample IDs to help debugging
+            if self.hairstyles:
+                sample_ids = [h['id'] for h in self.hairstyles[:10]]
+                logger.info(f"📋 Sample available IDs: {sample_ids}")
             
-            for template in templates:
-                hairstyle = {
-                    'id': str(template.get('id', '')),
-                    'preview_image_url': template.get('thumb', ''),
-                    'style_name': template.get('title', 'Unnamed Style'),
-                    'category': template.get('category_name', 'default'),
-                    'description': template.get('description', ''),
-                    'tags': []
-                }
-                
-                logger.debug(f"Parsed hairstyle: {hairstyle}")
-                
-                # Only add if we have required fields
-                if hairstyle['id'] and hairstyle['preview_image_url']:
-                    hairstyles.append(hairstyle)
-                else:
-                    logger.warning(f"Skipping template with missing fields: {template}")
-            
-            return {
-                "hairstyles": hairstyles,
-                "next_token": next_token
-            }
+            return None
             
         except Exception as e:
-            logger.error(f"Failed to parse hairstyles: {e}")
-            logger.error(f"API response: {api_response}")
-            raise
+            logger.error(f"❌ Error looking up hairstyle: {str(e)}")
+            return None
     
-    async def get_hairstyle_by_id(self, hairstyle_id: str) -> Optional[Dict]:
-        """
-        Get a specific hairstyle by ID
-        
-        Args:
-            hairstyle_id: Hairstyle ID
-            
-        Returns:
-            Hairstyle dictionary or None
-        """
-        result = await self.fetch_hairstyles()
-        hairstyles = result.get("hairstyles", [])
-        
-        for hairstyle in hairstyles:
-            if hairstyle['id'] == hairstyle_id:
-                return hairstyle
-        
-        return None
-    
-    async def download_hairstyle_image(self, image_url: str) -> bytes:
+    async def download_hairstyle_image(self, hairstyle: Dict) -> Optional[bytes]:
         """
         Download hairstyle image from URL
         
         Args:
-            image_url: Image URL
-            
+            hairstyle: Hairstyle dictionary containing thumbnail URL
+        
         Returns:
-            Image data as bytes
+            Image bytes if successful, None otherwise
         """
         try:
+            thumbnail_url = hairstyle.get('thumbnail')
+            if not thumbnail_url:
+                logger.error("❌ No thumbnail URL in hairstyle data")
+                return None
+            
+            logger.info(f"📥 Downloading hairstyle image: {hairstyle.get('title', 'Unknown')}")
+            logger.info(f"🔗 URL: {thumbnail_url}")
+            
             async with aiohttp.ClientSession() as session:
-                async with session.get(image_url) as response:
-                    if response.status != 200:
-                        raise Exception(f"Failed to download image: {response.status}")
-                    
-                    return await response.read()
-                    
+                async with session.get(thumbnail_url, timeout=aiohttp.ClientTimeout(total=30)) as response:
+                    if response.status == 200:
+                        image_data = await response.read()
+                        logger.info(f"✅ Downloaded {len(image_data)} bytes")
+                        return image_data
+                    else:
+                        logger.error(f"❌ Failed to download image: HTTP {response.status}")
+                        return None
+                        
         except Exception as e:
-            logger.error(f"Failed to download hairstyle image: {e}")
-            raise
+            logger.error(f"❌ Error downloading hairstyle image: {str(e)}")
+            return None
     
-    def clear_cache(self):
-        """Clear the cache"""
-        self._cache = None
-        self._cache_timestamp = None
-        
-        if self.cache_file.exists():
-            self.cache_file.unlink()
-        
-        logger.info("Cache cleared")
+    def clear_cache(self) -> None:
+        """Reload static data"""
+        logger.info("🔄 Reloading static hairstyle data")
+        self._load_static_data()

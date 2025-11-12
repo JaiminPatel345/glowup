@@ -34,8 +34,8 @@
 │  │                                                              │   │
 │  │  /api/auth/*        → auth-service:3001                     │   │
 │  │  /api/users/*       → user-service:3002                     │   │
-│  │  /api/v1/analyze    → skin-analysis-service:3003            │   │
-│  │  /api/hair-tryOn/*  → hair-tryOn-service:3004               │   │
+│  │  /api/skin/*        → skin-analysis-service:3003            │   │
+│  │  /api/hair/*       → hair-tryOn-service:3004               │   │
 │  │  /ws/hair           → hair-tryOn-service:3004 (WebSocket)   │   │
 │  └─────────────────────────────────────────────────────────────┘   │
 └───────────┬─────────────┬─────────────┬─────────────┬──────────────┘
@@ -376,13 +376,13 @@ KEY POINTS:
 │  │  │    limit_req zone=api burst=20;                       │ │ │
 │  │  │  }                                                     │ │ │
 │  │  │                                                        │ │ │
-│  │  │  location /api/v1/analyze {                           │ │ │
+│  │  │  location /api/skin {                                 │ │ │
 │  │  │    proxy_pass http://skin_service;                    │ │ │
 │  │  │    limit_req zone=upload burst=5;                     │ │ │
 │  │  │    client_max_body_size 50m;                          │ │ │
 │  │  │  }                                                     │ │ │
 │  │  │                                                        │ │ │
-│  │  │  location /api/hair-tryOn {                           │ │ │
+│  │  │  location /api/hair {                                 │ │ │
 │  │  │    proxy_pass http://hair_service;                    │ │ │
 │  │  │    limit_req zone=upload burst=5;                     │ │ │
 │  │  │    client_max_body_size 50m;                          │ │ │
@@ -411,7 +411,7 @@ KEY POINTS:
 1. User takes photo in mobile app
    ↓
 2. Mobile app uploads image
-   POST http://localhost:3000/api/v1/analyze
+   POST http://localhost:3000/api/skin/analyze
    Content-Type: multipart/form-data
    Authorization: Bearer <token>
    Body: { image: <file>, user_id: "123" }

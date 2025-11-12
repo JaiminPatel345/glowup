@@ -57,7 +57,7 @@ class TestAPIIntegration:
         files = {"image": ("test.jpg", sample_image_bytes, "image/jpeg")}
         data = {"user_id": "test_user_integration"}
         
-        response = await async_client.post("/api/v1/analyze", files=files, data=data)
+        response = await async_client.post("/api/skin/analyze", files=files, data=data)
         
         # Note: This might fail if MongoDB is not available in test environment
         # In that case, we expect a 500 error, which is acceptable for integration tests
@@ -75,7 +75,7 @@ class TestAPIIntegration:
         files = {"image": ("test.txt", b"not an image", "text/plain")}
         data = {"user_id": "test_user"}
         
-        response = await async_client.post("/api/v1/analyze", files=files, data=data)
+        response = await async_client.post("/api/skin/analyze", files=files, data=data)
         assert response.status_code == 415  # Unsupported Media Type
     
     @pytest.mark.integration
@@ -83,13 +83,13 @@ class TestAPIIntegration:
         """Test skin analysis without user ID"""
         files = {"image": ("test.jpg", sample_image_bytes, "image/jpeg")}
         
-        response = await async_client.post("/api/v1/analyze", files=files)
+        response = await async_client.post("/api/skin/analyze", files=files)
         assert response.status_code == 422  # Validation Error
     
     @pytest.mark.integration
     async def test_get_recommendations_endpoint(self, async_client):
         """Test product recommendations endpoint"""
-        response = await async_client.get("/api/v1/recommendations/acne_001")
+        response = await async_client.get("/api/skin/recommendations/acne_001")
         
         # Should return recommendations even if empty
         assert response.status_code in [200, 500]
@@ -104,7 +104,7 @@ class TestAPIIntegration:
     @pytest.mark.integration
     async def test_get_recommendations_with_category(self, async_client):
         """Test product recommendations with category filter"""
-        response = await async_client.get("/api/v1/recommendations/acne_001?category=ayurvedic")
+        response = await async_client.get("/api/skin/recommendations/acne_001?category=ayurvedic")
         
         assert response.status_code in [200, 500]
         
@@ -115,7 +115,7 @@ class TestAPIIntegration:
     @pytest.mark.integration
     async def test_search_products_endpoint(self, async_client):
         """Test product search endpoint"""
-        response = await async_client.get("/api/v1/products/search?q=neem")
+        response = await async_client.get("/api/skin/products/search?q=neem")
         
         assert response.status_code in [200, 500]
         
@@ -128,7 +128,7 @@ class TestAPIIntegration:
     @pytest.mark.integration
     async def test_trending_products_endpoint(self, async_client):
         """Test trending products endpoint"""
-        response = await async_client.get("/api/v1/products/trending")
+        response = await async_client.get("/api/skin/products/trending")
         
         assert response.status_code in [200, 500]
         
@@ -142,17 +142,17 @@ class TestAPIIntegration:
     async def test_get_analysis_result_endpoint(self, async_client):
         """Test getting analysis result by ID"""
         # Test with invalid ID
-        response = await async_client.get("/api/v1/analysis/invalid_id")
+        response = await async_client.get("/api/skin/analysis/invalid_id")
         assert response.status_code in [404, 500]
         
         # Test with valid but non-existent ID
-        response = await async_client.get("/api/v1/analysis/507f1f77bcf86cd799439011")
+        response = await async_client.get("/api/skin/analysis/507f1f77bcf86cd799439011")
         assert response.status_code in [404, 500]
     
     @pytest.mark.integration
     async def test_user_history_endpoint(self, async_client):
         """Test user analysis history endpoint"""
-        response = await async_client.get("/api/v1/user/test_user/history")
+        response = await async_client.get("/api/skin/user/test_user/history")
         
         assert response.status_code in [200, 500]
         
@@ -165,7 +165,7 @@ class TestAPIIntegration:
     @pytest.mark.integration
     async def test_service_stats_endpoint(self, async_client):
         """Test service statistics endpoint"""
-        response = await async_client.get("/api/v1/stats")
+        response = await async_client.get("/api/skin/stats")
         
         assert response.status_code in [200, 500]
         
@@ -192,5 +192,5 @@ class TestAPIIntegration:
         files = {"image": ("large.jpg", large_image_data, "image/jpeg")}
         data = {"user_id": "test_user"}
         
-        response = await async_client.post("/api/v1/analyze", files=files, data=data)
+        response = await async_client.post("/api/skin/analyze", files=files, data=data)
         assert response.status_code == 413  # Payload Too Large

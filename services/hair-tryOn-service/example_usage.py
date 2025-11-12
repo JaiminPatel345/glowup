@@ -15,7 +15,7 @@ BASE_URL = "http://localhost:3004"
 def test_health():
     """Test if service is running"""
     print("Testing service health...")
-    response = requests.get(f"{BASE_URL}/api/hair-tryOn/health")
+    response = requests.get(f"{BASE_URL}/api/hair/health")
     print(f"Status: {response.status_code}")
     print(f"Response: {response.json()}\n")
     return response.status_code == 200
@@ -30,7 +30,7 @@ def upload_video(video_path: str, user_id: str = "test_user"):
         data = {'user_id': user_id}
         
         response = requests.post(
-            f"{BASE_URL}/api/hair-tryOn/upload-video",
+            f"{BASE_URL}/api/hair/upload-video",
             files=files,
             data=data
         )
@@ -57,7 +57,7 @@ def process_video(upload_id: str, style_image_path: str, user_id: str = "test_us
         files['color_image'] = open(color_image_path, 'rb')
     
     response = requests.post(
-        f"{BASE_URL}/api/hair-tryOn/process-video",
+        f"{BASE_URL}/api/hair/process-video",
         files=files,
         data=data
     )
@@ -80,7 +80,7 @@ def get_result(result_id: str, user_id: str = "test_user", max_wait: int = 60):
     start_time = time.time()
     while time.time() - start_time < max_wait:
         response = requests.get(
-            f"{BASE_URL}/api/hair-tryOn/result/{result_id}",
+            f"{BASE_URL}/api/hair/result/{result_id}",
             params={'user_id': user_id}
         )
         
@@ -109,7 +109,7 @@ def get_history(user_id: str = "test_user"):
     """Get user's processing history"""
     print(f"Getting history for user: {user_id}")
     
-    response = requests.get(f"{BASE_URL}/api/hair-tryOn/history/{user_id}")
+    response = requests.get(f"{BASE_URL}/api/hair/history/{user_id}")
     
     print(f"Status: {response.status_code}")
     result = response.json()
@@ -148,7 +148,7 @@ import json
 import base64
 
 async def realtime_hair_tryOn():
-    uri = "ws://localhost:3004/api/hair-tryOn/realtime/session123?user_id=test_user"
+    uri = "ws://localhost:3004/api/hair/realtime/session123?user_id=test_user"
     
     async with websockets.connect(uri) as websocket:
         # Set style image

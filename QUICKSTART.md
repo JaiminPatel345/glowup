@@ -41,13 +41,13 @@ PERFECTCORP_API_KEY=your_actual_api_key_here
 
 ```bash
 # Check health
-curl http://localhost:8000/api/hair-tryOn/health
+curl http://localhost:8000/api/hair/health
 
 # Get hairstyles
-curl http://localhost:8000/api/hair-tryOn/hairstyles
+curl http://localhost:8000/api/hair/hairstyles
 
 # Try it out
-curl -X POST http://localhost:8000/api/hair-tryOn/process \
+curl -X POST http://localhost:8000/api/hair/process \
   -F "user_photo=@your_photo.jpg" \
   -F "hairstyle_id=13045969587275114" \
   -F "user_id=test_user" \
@@ -110,7 +110,7 @@ yarn start
 ## 🆘 Need Help?
 
 - **API Docs**: http://localhost:8000/docs
-- **Health Check**: http://localhost:8000/api/hair-tryOn/health
+- **Health Check**: http://localhost:8000/api/hair/health
 - **Full Docs**: See `HAIR_TRYON_UPDATE.md`
 - **Service Docs**: See `services/hair-tryOn-service/README_V2.md`
 

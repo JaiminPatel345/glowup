@@ -11,7 +11,7 @@ info:
     url: https://opensource.org/licenses/MIT
 
 servers:
-  - url: http://localhost:3003/api/v1
+  - url: http://localhost:3003/api/skin
     description: Development server
 
 paths:

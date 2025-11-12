@@ -165,24 +165,36 @@ class HairFastGANModel:
             raise RuntimeError("Model not loaded. Call load_model() first.")
         
         try:
-            # Preprocess images
-            source_tensor = self.preprocess_image(source_image)
-            style_tensor = self.preprocess_image(style_image)
+            logger.info(f"⚠️  Using DUMMY model (placeholder) - blend ratio: {blend_ratio}")
             
-            # Concatenate source and style
-            input_tensor = torch.cat([source_tensor, style_tensor], dim=1)
+            # Improved dummy implementation with better blending
+            # Resize images to same size
+            target_size = (512, 512)
+            source_resized = source_image.convert('RGB').resize(target_size, Image.LANCZOS)
+            style_resized = style_image.convert('RGB').resize(target_size, Image.LANCZOS)
             
-            # Run inference
-            with torch.no_grad():
-                output_tensor = self.model(source_tensor)  # Placeholder
+            # Convert to numpy arrays
+            source_array = np.array(source_resized).astype(np.float32)
+            style_array = np.array(style_resized).astype(np.float32)
             
-            # Blend with original if needed
-            if blend_ratio < 1.0:
-                output_tensor = blend_ratio * output_tensor + (1 - blend_ratio) * source_tensor
+            # Simple hair region mask (top 40% of image)
+            # In real implementation, this would use face detection + hair segmentation
+            height, width = source_array.shape[:2]
+            mask = np.zeros((height, width), dtype=np.float32)
+            hair_region_end = int(height * 0.4)
+            mask[:hair_region_end, :] = 1.0
             
-            # Postprocess
-            result_image = self.postprocess_image(output_tensor)
+            # Apply gaussian blur to mask for smooth blending
+            mask = cv2.GaussianBlur(mask, (51, 51), 30)
+            mask = mask[:, :, np.newaxis]  # Add channel dimension
             
+            # Blend style hair into source image using mask
+            result_array = source_array * (1 - mask * blend_ratio) + style_array * (mask * blend_ratio)
+            result_array = np.clip(result_array, 0, 255).astype(np.uint8)
+            
+            result_image = Image.fromarray(result_array)
+            
+            logger.info("✅ Dummy hair transfer completed (replace with real model)")
             return result_image
             
         except Exception as e:

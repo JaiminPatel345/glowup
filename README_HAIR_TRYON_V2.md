@@ -58,13 +58,13 @@ yarn start
 
 ```bash
 # Health check
-curl http://localhost:3004/api/hair-tryOn/health
+curl http://localhost:3004/api/hair/health
 
 # Get hairstyles
-curl http://localhost:3004/api/hair-tryOn/hairstyles
+curl http://localhost:3004/api/hair/hairstyles
 
 # Process image
-curl -X POST http://localhost:3004/api/hair-tryOn/process \
+curl -X POST http://localhost:3004/api/hair/process \
   -F "user_photo=@photo.jpg" \
   -F "hairstyle_id=13045969587275114" \
   -F "user_id=test" \
@@ -155,13 +155,13 @@ Documentation/
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/hair-tryOn/hairstyles` | Get default hairstyles |
-| GET | `/api/hair-tryOn/hairstyles/{id}` | Get specific hairstyle |
-| POST | `/api/hair-tryOn/process` | Process hair try-on |
-| GET | `/api/hair-tryOn/history/{user_id}` | Get user history |
-| DELETE | `/api/hair-tryOn/result/{result_id}` | Delete result |
-| GET | `/api/hair-tryOn/health` | Health check |
-| POST | `/api/hair-tryOn/cache/clear` | Clear cache |
+| GET | `/api/hair/hairstyles` | Get default hairstyles |
+| GET | `/api/hair/hairstyles/{id}` | Get specific hairstyle |
+| POST | `/api/hair/process` | Process hair try-on |
+| GET | `/api/hair/history/{user_id}` | Get user history |
+| DELETE | `/api/hair/result/{result_id}` | Delete result |
+| GET | `/api/hair/health` | Health check |
+| POST | `/api/hair/cache/clear` | Clear cache |
 
 Full API documentation: http://localhost:3004/docs
 
@@ -208,20 +208,20 @@ python test-installation.py
 ### Test API
 ```bash
 # Health check
-curl http://localhost:3004/api/hair-tryOn/health
+curl http://localhost:3004/api/hair/health
 
 # Get hairstyles
-curl http://localhost:3004/api/hair-tryOn/hairstyles
+curl http://localhost:3004/api/hair/hairstyles
 
 # Process with default hairstyle
-curl -X POST http://localhost:3004/api/hair-tryOn/process \
+curl -X POST http://localhost:3004/api/hair/process \
   -F "user_photo=@test.jpg" \
   -F "hairstyle_id=13045969587275114" \
   -F "user_id=test" \
   --output result.jpg
 
 # Process with custom hairstyle
-curl -X POST http://localhost:3004/api/hair-tryOn/process \
+curl -X POST http://localhost:3004/api/hair/process \
   -F "user_photo=@test.jpg" \
   -F "hairstyle_image=@hairstyle.jpg" \
   -F "user_id=test" \
@@ -326,7 +326,7 @@ python -c "import fastapi; print('OK')"
 **Solutions**:
 ```bash
 # Check backend is running
-curl http://localhost:3004/api/hair-tryOn/health
+curl http://localhost:3004/api/hair/health
 
 # Update API endpoint in mobile app
 # Edit: mobile-app/GrowUpApp/src/api/client.ts
@@ -354,7 +354,7 @@ curl http://localhost:3004/api/hair-tryOn/health
 
 ### Health Check
 ```bash
-curl http://localhost:3004/api/hair-tryOn/health
+curl http://localhost:3004/api/hair/health
 ```
 
 ### Logs
@@ -394,7 +394,7 @@ gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker
 
 3. **Set up reverse proxy (nginx):**
 ```nginx
-location /api/hair-tryOn {
+location /api/hair {
     proxy_pass http://localhost:3004;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
@@ -438,7 +438,7 @@ Part of the GrowUp application suite.
 
 - **Documentation**: See `QUICKSTART.md` and `HAIR_TRYON_UPDATE.md`
 - **API Docs**: http://localhost:3004/docs
-- **Health Check**: http://localhost:3004/api/hair-tryOn/health
+- **Health Check**: http://localhost:3004/api/hair/health
 - **Logs**: `tail -f services/hair-tryOn-service/service.log`
 
 ## 🎉 Success!

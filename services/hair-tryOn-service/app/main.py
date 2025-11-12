@@ -70,6 +70,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Add request logging middleware
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Log all incoming requests"""
+    logger.info(f"📨 Hair Service - Incoming: {request.method} {request.url.path}")
+    logger.info(f"   Headers: {dict(request.headers)}")
+    
+    response = await call_next(request)
+    
+    logger.info(f"📤 Hair Service - Response: {request.method} {request.url.path} -> {response.status_code}")
+    
+    return response
+
 # Mount static files for serving uploads
 app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads")
 
@@ -106,12 +119,12 @@ async def root():
             "Single image processing"
         ],
         "endpoints": {
-            "get_hairstyles": "/api/hair-tryOn/hairstyles",
-            "get_hairstyle": "/api/hair-tryOn/hairstyles/{hairstyle_id}",
-            "process": "/api/hair-tryOn/process",
-            "get_history": "/api/hair-tryOn/history/{user_id}",
-            "delete_result": "/api/hair-tryOn/result/{result_id}",
-            "health_check": "/api/hair-tryOn/health",
+            "get_hairstyles": "/api/hair/hairstyles",
+            "get_hairstyle": "/api/hair/hairstyles/{hairstyle_id}",
+            "process": "/api/hair/process",
+            "get_history": "/api/hair/history/{user_id}",
+            "delete_result": "/api/hair/result/{result_id}",
+            "health_check": "/api/hair/health",
             "docs": "/docs"
         }
     }

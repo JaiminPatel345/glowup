@@ -45,7 +45,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(health.router, prefix="/health", tags=["health"])
-app.include_router(skin_analysis.router, prefix="/api/v1", tags=["skin-analysis"])
+app.include_router(skin_analysis.router, prefix="/api/skin", tags=["skin-analysis"])
 
 
 @app.get("/")

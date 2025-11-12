@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script for the /api/v1/model/info endpoint.
+Test script for the /api/skin/model/info endpoint.
 
 This script validates that the model metadata endpoint returns
 the expected information including model name, version, accuracy,
@@ -23,7 +23,7 @@ import json
 async def test_model_info_endpoint():
     """Test the model info endpoint."""
     print("=" * 70)
-    print("Testing /api/v1/model/info Endpoint")
+    print("Testing /api/skin/model/info Endpoint")
     print("=" * 70)
     print()
     

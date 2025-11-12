@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Integration test for the /api/v1/model/info endpoint using FastAPI TestClient.
+Integration test for the /api/skin/model/info endpoint using FastAPI TestClient.
 
 This script tests the endpoint through the FastAPI application to ensure
 it works correctly in the actual API context.
@@ -20,7 +20,7 @@ import json
 def test_model_info_api():
     """Test the model info endpoint through the FastAPI app."""
     print("=" * 70)
-    print("Testing /api/v1/model/info API Endpoint")
+    print("Testing /api/skin/model/info API Endpoint")
     print("=" * 70)
     print()
     
@@ -29,8 +29,8 @@ def test_model_info_api():
     
     try:
         # Make GET request to the endpoint
-        print("Making GET request to /api/v1/model/info...")
-        response = client.get("/api/v1/model/info")
+        print("Making GET request to /api/skin/model/info...")
+        response = client.get("/api/skin/model/info")
         
         print(f"\n✓ Response Status Code: {response.status_code}")
         

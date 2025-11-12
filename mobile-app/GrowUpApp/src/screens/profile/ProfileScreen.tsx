@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,11 +6,19 @@ import {
   TouchableOpacity,
   Image,
   Switch,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useAppSelector, useAppDispatch } from '../../store';
 import { logoutUser } from '../../store/slices/authSlice';
+import { SkinAnalysisApi } from '../../api/skin';
+import { HairTryOnApi } from '../../api/hair';
+import { UserApi } from '../../api';
+import apiClient from '../../api/client';
+import EditProfileModal from '../../components/profile/EditProfileModal';
+import ChangePasswordModal from '../../components/profile/ChangePasswordModal';
+import SecureStorage from '../../utils/secureStorage';
 
 interface SettingItem {
   icon: keyof typeof Ionicons.glyphMap;
@@ -27,6 +35,129 @@ const ProfileScreen: React.FC = () => {
   const { user, isLoading } = useAppSelector((state) => state.auth);
   const [notifications, setNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
+  const [editProfileVisible, setEditProfileVisible] = useState(false);
+  const [changePasswordVisible, setChangePasswordVisible] = useState(false);
+  
+  // Statistics state
+  const [analysesCount, setAnalysesCount] = useState<number | null>(null);
+  const [tryOnsCount, setTryOnsCount] = useState<number | null>(null);
+  const [savedCount, setSavedCount] = useState<number | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [showStats, setShowStats] = useState(true);
+
+  // Load dark mode preference on mount
+  useEffect(() => {
+    loadDarkModePreference();
+  }, []);
+
+  // Load statistics on mount
+  useEffect(() => {
+    if (user?.id) {
+      loadStatistics();
+    }
+  }, [user?.id]);
+
+  const loadDarkModePreference = async () => {
+    try {
+      const preferences = await SecureStorage.getUserPreferences();
+      if (preferences?.theme === 'dark' || preferences?.darkMode === true) {
+        setDarkMode(true);
+      }
+    } catch (error) {
+      console.error('Error loading dark mode preference:', error);
+    }
+  };
+
+  const loadStatistics = async () => {
+    if (!user?.id) {
+      setShowStats(false);
+      setStatsLoading(false);
+      return;
+    }
+
+    try {
+      setStatsLoading(true);
+      let analyses: number | null = null;
+      let tryOns: number | null = null;
+      
+      // Fetch analyses count - use API response with new format
+      try {
+        // Use apiClient directly to get the total count from response
+        const response = await apiClient.get<{ user_id: string; analyses: any[]; total: number }>(
+          `/skin/user/${user.id}/history`,
+          { params: { limit: 1, offset: 0 } }
+        );
+        // Use total from API response if available, otherwise use analyses array length
+        analyses = response.data.total ?? response.data.analyses?.length ?? 0;
+      } catch (error) {
+        console.warn('Could not fetch analyses count:', error);
+        analyses = null;
+      }
+
+      // Fetch try-ons count - use API response with new format
+      try {
+        // Use apiClient directly to get the count from response
+        const response = await apiClient.get<{ success: boolean; count: number; history: any[] }>(
+          `/hair/history/${user.id}`,
+          { params: { limit: 1, skip: 0 } }
+        );
+        // Use count from API response if available, otherwise use history array length
+        tryOns = response.data.count ?? response.data.history?.length ?? 0;
+      } catch (error) {
+        console.warn('Could not fetch try-ons count:', error);
+        tryOns = null;
+      }
+
+      // Update state
+      setAnalysesCount(analyses);
+      setTryOnsCount(tryOns);
+      setSavedCount(null); // Saved count - not available from API yet
+      
+      // Hide stats section if all counts are unavailable
+      if (analyses === null && tryOns === null) {
+        setShowStats(false);
+      } else {
+        setShowStats(true);
+      }
+    } catch (error) {
+      console.error('Error loading statistics:', error);
+      // Don't hide stats on error, just show dashes
+      setShowStats(true);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  const handleDarkModeToggle = async (value: boolean) => {
+    setDarkMode(value);
+    
+    // Save to user preferences
+    try {
+      if (user?.id) {
+        const currentPreferences = await UserApi.getPreferences(user.id).catch(() => null);
+        await UserApi.updatePreferences(user.id, {
+          ...currentPreferences,
+          preferences: {
+            ...(currentPreferences?.preferences || {}),
+            darkMode: value,
+            theme: value ? 'dark' : 'light',
+          },
+        });
+      }
+      
+      // Also save locally
+      const localPreferences = await SecureStorage.getUserPreferences() || {};
+      await SecureStorage.storeUserPreferences({
+        ...localPreferences,
+        darkMode: value,
+        theme: value ? 'dark' : 'light',
+      });
+    } catch (error) {
+      console.error('Error saving dark mode preference:', error);
+      // Revert on error
+      setDarkMode(!value);
+    }
+  };
 
   const handleLogout = () => {
     dispatch(logoutUser());
@@ -41,14 +172,14 @@ const ProfileScreen: React.FC = () => {
           title: 'Edit Profile',
           subtitle: 'Update your personal information',
           type: 'navigation' as const,
-          onPress: () => console.log('Edit Profile'),
+          onPress: () => setEditProfileVisible(true),
         },
         {
           icon: 'lock-closed-outline' as const,
           title: 'Change Password',
           subtitle: 'Update your security credentials',
           type: 'navigation' as const,
-          onPress: () => console.log('Change Password'),
+          onPress: () => setChangePasswordVisible(true),
         },
       ],
     },
@@ -69,7 +200,7 @@ const ProfileScreen: React.FC = () => {
           subtitle: 'Switch to dark theme',
           type: 'toggle' as const,
           value: darkMode,
-          onToggle: setDarkMode,
+          onToggle: handleDarkModeToggle,
         },
       ],
     },
@@ -172,39 +303,67 @@ const ProfileScreen: React.FC = () => {
               )}
             </View>
             
-            <Text className="text-2xl font-bold text-white mb-1">
-              {user?.firstName} {user?.lastName}
+            <Text className="text-2xl font-bold text-white mb-1" style={{ color: '#ffffff' }}>
+              {user?.firstName && user?.lastName
+                ? `${user.firstName} ${user.lastName}`
+                : user?.firstName || user?.lastName || user?.email || 'User'}
             </Text>
-            <Text className="text-primary-100 mb-4">{user?.email}</Text>
+            <Text className="mb-4" style={{ color: '#e0f2fe' }}>{user?.email}</Text>
             
-            <TouchableOpacity className="bg-white px-6 py-2 rounded-full">
+            <TouchableOpacity 
+              className="bg-white px-6 py-2 rounded-full"
+              onPress={() => setEditProfileVisible(true)}
+            >
               <Text className="text-primary-600 font-medium">Edit Profile</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>
 
         {/* Stats Cards */}
-        <Animated.View
-          entering={FadeInDown.delay(100).springify()}
-          className="px-6 -mt-6 mb-6"
-        >
-          <View className="bg-white rounded-2xl shadow-lg p-4">
-            <View className="flex-row">
-              <View className="flex-1 items-center border-r border-gray-100">
-                <Text className="text-2xl font-bold text-gray-900">12</Text>
-                <Text className="text-sm text-gray-500 mt-1">Analyses</Text>
-              </View>
-              <View className="flex-1 items-center border-r border-gray-100">
-                <Text className="text-2xl font-bold text-gray-900">8</Text>
-                <Text className="text-sm text-gray-500 mt-1">Try-Ons</Text>
-              </View>
-              <View className="flex-1 items-center">
-                <Text className="text-2xl font-bold text-gray-900">5</Text>
-                <Text className="text-sm text-gray-500 mt-1">Saved</Text>
+        {showStats && (
+          <Animated.View
+            entering={FadeInDown.delay(100).springify()}
+            className="px-6 -mt-6 mb-6"
+          >
+            <View className="bg-white rounded-2xl shadow-lg p-4">
+              <View className="flex-row">
+                <View className="flex-1 items-center border-r border-gray-100">
+                  {statsLoading ? (
+                    <ActivityIndicator size="small" color="#0284c7" />
+                  ) : (
+                    <Text className="text-2xl font-bold text-gray-900">
+                      {analysesCount !== null ? analysesCount : '-'}
+                    </Text>
+                  )}
+                  <Text className="text-sm text-gray-500 mt-1">Analyses</Text>
+                </View>
+                <View className="flex-1 items-center border-r border-gray-100">
+                  {statsLoading ? (
+                    <ActivityIndicator size="small" color="#0284c7" />
+                  ) : (
+                    <Text className="text-2xl font-bold text-gray-900">
+                      {tryOnsCount !== null ? tryOnsCount : '-'}
+                    </Text>
+                  )}
+                  <Text className="text-sm text-gray-500 mt-1">Try-Ons</Text>
+                </View>
+                <View className="flex-1 items-center">
+                  {savedCount !== null ? (
+                    <>
+                      <Text className="text-2xl font-bold text-gray-900">{savedCount}</Text>
+                      <Text className="text-sm text-gray-500 mt-1">Saved</Text>
+                    </>
+                  ) : (
+                    <View className="items-center">
+                      <Text className="text-2xl font-bold text-gray-400">-</Text>
+                      <Text className="text-sm text-gray-400 mt-1">Saved</Text>
+                    </View>
+                  )}
+                </View>
               </View>
             </View>
-          </View>
-        </Animated.View>
+          </Animated.View>
+        )}
 
         {/* Settings Sections */}
         {settingsSections.map((section, sectionIndex) => (
@@ -249,6 +408,22 @@ const ProfileScreen: React.FC = () => {
           <Text className="text-gray-400 text-sm">GlowUp v1.0.0</Text>
         </View>
       </ScrollView>
+
+      {/* Modals */}
+      <EditProfileModal
+        visible={editProfileVisible}
+        onClose={() => {
+          setEditProfileVisible(false);
+          // Reload statistics after profile update
+          if (user?.id) {
+            loadStatistics();
+          }
+        }}
+      />
+      <ChangePasswordModal
+        visible={changePasswordVisible}
+        onClose={() => setChangePasswordVisible(false)}
+      />
     </View>
   );
 };

@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Image,
   TextInput,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -24,40 +25,41 @@ interface Product {
 const MOCK_PRODUCTS: Product[] = [
   {
     id: '1',
-    name: 'Hydrating Face Serum',
-    brand: 'GlowUp Essentials',
+    name: 'glowup 1 acne',
+    brand: 'GlowUp',
     price: 29.99,
     rating: 4.5,
-    image: 'https://via.placeholder.com/150',
+    image: 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=400&h=400&fit=crop',
     category: 'Serum',
-    isAyurvedic: false,
+    isAyurvedic: true,
   },
   {
     id: '2',
-    name: 'Ayurvedic Face Pack',
-    brand: 'Natural Glow',
+    name: 'glowup 2 dryness',
+    brand: 'GlowUp',
     price: 19.99,
     rating: 4.8,
-    image: 'https://via.placeholder.com/150',
+    image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400&h=400&fit=crop',
     category: 'Face Mask',
     isAyurvedic: true,
   },
   {
     id: '3',
-    name: 'Vitamin C Cream',
-    brand: 'Radiant Skin',
+    name: 'glowup 3 pigmentation',
+    brand: 'GlowUp',
     price: 34.99,
     rating: 4.6,
-    image: 'https://via.placeholder.com/150',
+    image: 'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?w=400&h=400&fit=crop',
     category: 'Moisturizer',
+    isAyurvedic: false,
   },
   {
     id: '4',
-    name: 'Neem Face Wash',
-    brand: 'Herbal Care',
+    name: 'glowup 1 dark circles',
+    brand: 'GlowUp',
     price: 14.99,
     rating: 4.7,
-    image: 'https://via.placeholder.com/150',
+    image: 'https://images.unsplash.com/photo-1571875257727-256c39da42af?w=400&h=400&fit=crop',
     category: 'Cleanser',
     isAyurvedic: true,
   },
@@ -79,6 +81,25 @@ const ProductsScreen: React.FC = () => {
       (selectedCategory === 'Ayurvedic' && product.isAyurvedic);
     return matchesSearch && matchesCategory;
   });
+
+  const handleBuyNow = async (productName: string) => {
+    try {
+      // Create Amazon search URL with product name
+      const searchQuery = encodeURIComponent(productName + ' skincare');
+      const amazonUrl = `https://www.amazon.com/s?k=${searchQuery}`;
+      
+      // Check if the link can be opened
+      const canOpen = await Linking.canOpenURL(amazonUrl);
+      
+      if (canOpen) {
+        await Linking.openURL(amazonUrl);
+      } else {
+        console.error('Cannot open Amazon URL');
+      }
+    } catch (error) {
+      console.error('Error opening Amazon:', error);
+    }
+  };
 
   const ProductCard = ({ product, index }: { product: Product; index: number }) => (
     <Animated.View
@@ -118,8 +139,11 @@ const ProductsScreen: React.FC = () => {
             <Text className="text-lg font-bold text-primary-600">
               ${product.price.toFixed(2)}
             </Text>
-            <TouchableOpacity className="bg-primary-600 px-4 py-2 rounded-lg">
-              <Text className="text-white text-sm font-medium">Add to Cart</Text>
+            <TouchableOpacity 
+              className="bg-primary-600 px-4 py-2 rounded-lg"
+              onPress={() => handleBuyNow(product.name)}
+            >
+              <Text className="text-white text-sm font-medium">Buy Now</Text>
             </TouchableOpacity>
           </View>
         </View>

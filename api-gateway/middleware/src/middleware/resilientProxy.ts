@@ -70,6 +70,16 @@ export function createResilientProxy(options: ResilientProxyOptions) {
       const correlationId = (req as any).correlationId || 'unknown';
       const proxyLogger = correlationLogger.createServiceLogger(correlationId, 'api-gateway');
       
+      // Log detailed error
+      logger.error(`❌ Proxy error for ${serviceName}`, {
+        method: req.method,
+        url: req.url,
+        error: err.message,
+        code: (err as any).code,
+        stack: err.stack,
+        correlationId
+      });
+      
       correlationLogger.logError(proxyLogger, err, {
         serviceName,
         url: req.url,
@@ -100,6 +110,16 @@ export function createResilientProxy(options: ResilientProxyOptions) {
       
       // Add correlation ID to proxied request
       proxyReq.setHeader('x-correlation-id', correlationId);
+      
+      // Log the proxy request
+      logger.info(`🔄 Proxying to ${serviceName}`, {
+        method: req.method,
+        originalUrl: req.url,
+        targetUrl: proxyReq.path,
+        contentType: req.headers['content-type'],
+        hasBody: !!req.body,
+        correlationId
+      });
       
       correlationLogger.logExternalApiCall(
         proxyLogger,
@@ -155,6 +175,16 @@ export function createResilientProxy(options: ResilientProxyOptions) {
       const duration = Date.now() - ((req as any).startTime || Date.now());
       const statusCode = proxyRes.statusCode || 500;
       const success = statusCode < 400;
+      
+      // Log the proxy response
+      logger.info(`✅ Proxy response from ${serviceName}`, {
+        method: req.method,
+        url: req.url,
+        statusCode,
+        duration: `${duration}ms`,
+        success,
+        correlationId
+      });
       
       correlationLogger.logExternalApiCall(
         proxyLogger,

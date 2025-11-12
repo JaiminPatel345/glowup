@@ -99,7 +99,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ### Get Default Hairstyles
 
 ```bash
-GET /api/hair-tryOn/hairstyles?page_size=20&force_refresh=false
+GET /api/hair/hairstyles?page_size=20&force_refresh=false
 ```
 
 **Response:**
@@ -123,13 +123,13 @@ GET /api/hair-tryOn/hairstyles?page_size=20&force_refresh=false
 ### Get Hairstyle by ID
 
 ```bash
-GET /api/hair-tryOn/hairstyles/{hairstyle_id}
+GET /api/hair/hairstyles/{hairstyle_id}
 ```
 
 ### Process Hair Try-On (Default Hairstyle)
 
 ```bash
-POST /api/hair-tryOn/process
+POST /api/hair/process
 Content-Type: multipart/form-data
 
 user_photo: <file>
@@ -141,7 +141,7 @@ blend_ratio: 0.8
 ### Process Hair Try-On (Custom Hairstyle)
 
 ```bash
-POST /api/hair-tryOn/process
+POST /api/hair/process
 Content-Type: multipart/form-data
 
 user_photo: <file>
@@ -155,19 +155,19 @@ blend_ratio: 0.8
 ### Get User History
 
 ```bash
-GET /api/hair-tryOn/history/{user_id}?limit=10&skip=0
+GET /api/hair/history/{user_id}?limit=10&skip=0
 ```
 
 ### Delete Result
 
 ```bash
-DELETE /api/hair-tryOn/result/{result_id}?user_id=user123
+DELETE /api/hair/result/{result_id}?user_id=user123
 ```
 
 ### Health Check
 
 ```bash
-GET /api/hair-tryOn/health
+GET /api/hair/health
 ```
 
 **Response:**
@@ -195,7 +195,7 @@ GET /api/hair-tryOn/health
 import requests
 
 # Get default hairstyles
-response = requests.get("http://localhost:3004/api/hair-tryOn/hairstyles")
+response = requests.get("http://localhost:3004/api/hair/hairstyles")
 hairstyles = response.json()["hairstyles"]
 
 # Process with default hairstyle
@@ -207,7 +207,7 @@ with open("user_photo.jpg", "rb") as f:
         "blend_ratio": 0.8
     }
     response = requests.post(
-        "http://localhost:3004/api/hair-tryOn/process",
+        "http://localhost:3004/api/hair/process",
         files=files,
         data=data
     )
@@ -221,10 +221,10 @@ with open("user_photo.jpg", "rb") as f:
 
 ```bash
 # Get hairstyles
-curl http://localhost:3004/api/hair-tryOn/hairstyles
+curl http://localhost:3004/api/hair/hairstyles
 
 # Process with custom hairstyle
-curl -X POST http://localhost:3004/api/hair-tryOn/process \
+curl -X POST http://localhost:3004/api/hair/process \
   -F "user_photo=@user_photo.jpg" \
   -F "hairstyle_image=@hairstyle.jpg" \
   -F "user_id=user123" \
@@ -383,4 +383,4 @@ Part of the GrowUp application suite.
 For issues or questions:
 - Check logs: `tail -f service.log`
 - API docs: http://localhost:3004/docs
-- Health check: http://localhost:3004/api/hair-tryOn/health
+- Health check: http://localhost:3004/api/hair/health

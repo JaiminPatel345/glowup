@@ -20,3 +20,4 @@ torch>=2.0.0
 torchvision>=0.15.0
 scikit-image>=0.21.0
 dlib>=19.24.0
+gradio-client>=0.7.0

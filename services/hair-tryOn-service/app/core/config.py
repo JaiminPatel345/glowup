@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     perfectcorp_api_url: str = os.getenv("PERFECTCORP_API_URL", "https://yce-api-01.perfectcorp.com/s2s/v2.0")
     hairstyle_cache_ttl: int = int(os.getenv("HAIRSTYLE_CACHE_TTL", "86400"))  # 24 hours
     
+    # Hugging Face API Configuration
+    huggingface_api_key: str = os.getenv("HUGGINGFACE_API_KEY", "")
+    use_huggingface_api: bool = os.getenv("USE_HUGGINGFACE_API", "true").lower() == "true"
+    
     # Performance Configuration
     image_max_size: int = int(os.getenv("IMAGE_MAX_SIZE", "1024"))
     

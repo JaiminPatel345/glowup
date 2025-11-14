@@ -45,107 +45,86 @@ HAIRSTYLE_CACHE_TTL=86400
 
 ## API Endpoints
 
-### 1. List Static Hairstyles
+### 1. GET `/api/hair/hairstyles` - Static Hairstyle List
 
-**Endpoint:** `GET /api/hair/hairstyles`
+Returns the static hairstyle data from local JSON file (backward compatible).
 
-Returns hairstyles from local static JSON file.
-
-**Parameters:**
-- `page_size` (int, optional): Number of results per page (default: 20)
-- `starting_token` (string, optional): Pagination token
-- `force_refresh` (bool, optional): Force reload static data
-- `fetch_all` (bool, optional): Return all hairstyles at once
+**Query Parameters:**
+- `page_size` (optional): Number of results per page (default: 20)
+- `starting_token` (optional): Pagination token
+- `force_refresh` (optional): Force cache refresh (default: false)
+- `fetch_all` (optional): Get all hairstyles at once (default: false)
 
 **Response:**
 ```json
 {
   "success": true,
-  "count": 150,
+  "count": 10,
   "hairstyles": [
     {
-      "id": "style_001",
-      "preview_image_url": "https://...",
-      "style_name": "Long Wavy",
-      "category": "Female",
-      "gender": "female"
+      "id": "female_pixie_pink",
+      "style_name": "Pixie Pink",
+      "gender": "female",
+      "preview_image_url": "https://cdn.perfectcorp.com/..."
     }
   ],
-  "next_token": null
+  "pagination": {
+    "total": 98,
+    "page": 1,
+    "page_size": 10
+  }
 }
 ```
 
-### 2. List API Templates
+### 2. GET `/api/hair/templates` - AI Template List
 
-**Endpoint:** `GET /api/hair/templates`
+Returns available hairstyle templates from PerfectCorp AI API.
 
-Returns templates from PerfectCorp API (if enabled) or static data.
-
-**Parameters:**
-- `page_size` (int, optional): Number of results per page (default: 20)
-- `starting_token` (string, optional): Pagination token
+**Query Parameters:**
+- `page_size` (optional): Number of results (default: 10, max: 100)
+- `starting_token` (optional): Pagination token
 
 **Response:**
 ```json
 {
   "success": true,
-  "count": 20,
+  "count": 5,
   "templates": [
     {
-      "id": "template_123",
-      "preview_url": "https://...",
-      "name": "Curly Bob",
-      "category": "Women"
+      "id": "male_long_wavy_blond",
+      "name": "Long Wavy Blond",
+      "preview_url": "https://..."
     }
   ],
-  "next_token": "next_page_token"
+  "next_token": "eyJ..."
 }
 ```
 
-### 3. Process Hair Try-On
+### 3. POST `/api/hair/process` - Hair Try-On Processing
 
-**Endpoint:** `POST /api/hair/process`
+Process hair try-on with **automatic AI detection**.
 
-Apply hairstyle to user photo using different methods.
+**Behavior:**
+- **With `hairstyle_id` and no custom image**: Uses PerfectCorp AI automatically (if API key configured)
+- **With custom `hairstyle_image`**: Uses traditional HairFastGAN processing
+- **Explicit `use_ai=true`**: Forces PerfectCorp AI usage
+- **Explicit `use_ai=false`**: Forces traditional processing
 
-**Form Data Parameters:**
-- `user_photo` (file, required): User's photo (JPG/PNG)
-- `hairstyle_image` (file, optional): Custom hairstyle image
-- `hairstyle_id` (string, optional): Template/style ID
-- `user_id` (string, required): User identifier
-- `use_ai` (bool, optional): Use PerfectCorp AI API (default: false)
+**Form Data:**
+- `user_photo` (required): User's photo file
+- `hairstyle_id` (optional): Template ID from static data or AI templates
+- `hairstyle_image` (optional): Custom hairstyle image
+- `user_id` (required): User identifier
+- `use_ai` (optional): Force AI (true) or traditional (false) processing. Default: auto-detect
 
-**Processing Methods:**
-
-#### Option 1: PerfectCorp AI (Recommended)
-```bash
-curl -X POST "http://localhost:3004/api/hair/process" \
-  -F "user_photo=@user.jpg" \
-  -F "hairstyle_id=template_123" \
-  -F "user_id=user_456" \
-  -F "use_ai=true"
+**Auto-Detection Logic:**
+```python
+use_ai = (
+    API_KEY_CONFIGURED and 
+    hairstyle_id_provided and 
+    no_custom_image_uploaded
+)
 ```
-
-#### Option 2: Traditional with Static Hairstyle
-```bash
-curl -X POST "http://localhost:3004/api/hair/process" \
-  -F "user_photo=@user.jpg" \
-  -F "hairstyle_id=style_001" \
-  -F "user_id=user_456"
-```
-
-#### Option 3: Custom Hairstyle Image
-```bash
-curl -X POST "http://localhost:3004/api/hair/process" \
-  -F "user_photo=@user.jpg" \
-  -F "hairstyle_image=@custom_style.jpg" \
-  -F "user_id=user_456"
-```
-
-**Response:**
-Returns processed image as JPEG with headers:
-- `X-Result-ID`: Unique result identifier
-- `X-Processing-Time`: Processing duration
 
 ## Architecture
 

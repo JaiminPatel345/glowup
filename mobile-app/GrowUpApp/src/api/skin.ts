@@ -4,6 +4,27 @@ import {
   ProductRecommendations
 } from './types';
 
+interface SkinAnalysisHistoryResponseItem {
+  analysis_id?: string;
+  skin_type?: string | null;
+  issues_count?: number;
+  created_at?: string;
+  issues?: Array<{ id?: string }>;
+}
+
+interface SkinAnalysisHistoryResponse {
+  user_id?: string;
+  analyses?: SkinAnalysisHistoryResponseItem[];
+  total?: number;
+}
+
+export interface SkinAnalysisHistorySummary {
+  id: string;
+  skinType: string | null;
+  issuesCount: number;
+  createdAt: string;
+}
+
 export class SkinAnalysisApi {
   /**
    * Analyze uploaded face image for skin type and issues
@@ -78,6 +99,41 @@ export class SkinAnalysisApi {
         imageQuality: 1.0
       }
     }));
+  }
+
+  /**
+   * Get a summarized version of the user's analysis history with metadata
+   */
+  static async getAnalysisHistorySummary(
+    userId: string,
+    limit: number = 10,
+    offset: number = 0
+  ): Promise<{ items: SkinAnalysisHistorySummary[]; total: number }> {
+    const response = await apiClient.get<SkinAnalysisHistoryResponse>(
+      `/skin/user/${userId}/history`,
+      {
+        params: { limit, offset },
+      }
+    );
+
+    const analyses = response.data?.analyses ?? [];
+
+    const items: SkinAnalysisHistorySummary[] = analyses.map((analysis, index) => ({
+      id: analysis.analysis_id ?? analysis.created_at ?? `${userId}-${offset + index}`,
+      skinType: analysis.skin_type ?? null,
+      issuesCount:
+        typeof analysis.issues_count === 'number'
+          ? analysis.issues_count
+          : Array.isArray(analysis.issues)
+          ? analysis.issues.length
+          : 0,
+      createdAt: analysis.created_at ?? new Date().toISOString(),
+    }));
+
+    return {
+      items,
+      total: response.data?.total ?? items.length,
+    };
   }
 
   /**

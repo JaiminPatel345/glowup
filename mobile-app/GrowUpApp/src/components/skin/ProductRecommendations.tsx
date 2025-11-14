@@ -179,7 +179,7 @@ const ProductRecommendations: React.FC<ProductRecommendationsProps> = ({
                     </TouchableOpacity>
                     <TouchableOpacity className="flex-1 bg-gray-100 py-2 px-4 rounded-lg">
                       <Text className="text-gray-700 text-center font-medium">
-                        Add to Cart
+                        Buy Now
                       </Text>
                     </TouchableOpacity>
                   </View>

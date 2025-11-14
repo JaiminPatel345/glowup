@@ -6,11 +6,13 @@ import { store, useAppDispatch, useAppSelector } from './src/store';
 import { loadStoredAuth } from './src/store/slices/authSlice';
 import { AuthNavigator } from './src/components/auth';
 import { MainNavigator } from './src/components/navigation';
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import './global.css'
 
 function AppContent() {
   const dispatch = useAppDispatch();
   const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
+  const { isDarkMode } = useTheme();
 
   useEffect(() => {
     // Load stored authentication on app start
@@ -19,10 +21,10 @@ function AppContent() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 bg-white items-center justify-center">
+      <View className="flex-1 bg-white dark:bg-gray-950 items-center justify-center">
         <ActivityIndicator size="large" color="#0284c7" />
-        <Text className="text-lg text-gray-600 mt-4">Loading...</Text>
-        <StatusBar style="auto" />
+        <Text className="text-lg text-gray-600 dark:text-gray-300 mt-4">Loading...</Text>
+        <StatusBar style={isDarkMode ? 'light' : 'dark'} />
       </View>
     );
   }
@@ -30,7 +32,7 @@ function AppContent() {
   return (
     <>
       {isAuthenticated ? <MainNavigator /> : <AuthNavigator />}
-      <StatusBar style="auto" />
+      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
     </>
   );
 }
@@ -38,7 +40,9 @@ function AppContent() {
 export default function App() {
   return (
     <Provider store={store}>
-      <AppContent />
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
     </Provider>
   );
 }

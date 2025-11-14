@@ -9,6 +9,8 @@ from typing import Optional
 import logging
 from datetime import datetime
 import uuid
+import asyncio
+
 
 from app.core.config import settings
 from app.services.hairfastgan_service import HairFastGANService
@@ -200,18 +202,19 @@ async def get_hairstyle_by_id(hairstyle_id: str):
 
 @router.post("/process")
 async def process_hair_tryOn(
+
     user_photo: UploadFile = File(..., description="User's photo"),
     hairstyle_image: Optional[UploadFile] = File(None, description="Custom hairstyle image"),
     hairstyle_id: Optional[str] = Form(None, description="Default hairstyle ID from PerfectCorp"),
     user_id: str = Form(..., description="User ID"),
-    use_ai: bool = Form(False, description="Use PerfectCorp AI Hairstyle Generator")
+    use_ai: Optional[bool] = Form(None, description="Use PerfectCorp AI Hairstyle Generator (default: auto-detect based on API key)")
 ):
     """
     Process hair try-on request
     
     User can either:
-    - Upload a custom hairstyle image
-    - Select a default hairstyle by ID
+    - Upload a custom hairstyle image → Uses traditional HairFastGAN processing
+    - Select a default hairstyle by ID → Uses PerfectCorp AI if API key configured
     - Use PerfectCorp AI Hairstyle Generator (if use_ai=true and API key is configured)
     
     Args:
@@ -219,7 +222,7 @@ async def process_hair_tryOn(
         hairstyle_image: Custom hairstyle image (optional)
         hairstyle_id: Default hairstyle ID (optional)
         user_id: User ID
-        use_ai: Use PerfectCorp AI API for processing
+        use_ai: Use PerfectCorp AI API for processing (None = auto-detect, True = force AI, False = force traditional)
         
     Returns:
         Processed image with hairstyle applied
@@ -228,16 +231,38 @@ async def process_hair_tryOn(
     logger.info(f"   - User photo: {user_photo.filename if user_photo else 'None'}")
     logger.info(f"   - Hairstyle image: {hairstyle_image.filename if hairstyle_image else 'None'}")
     logger.info(f"   - Hairstyle ID: {hairstyle_id or 'None'}")
-    logger.info(f"   - Use AI: {use_ai}")
+    logger.info(f"   - Use AI (explicit): {use_ai}")
     
     try:
+        await asyncio.sleep(900) 
         # Read user photo
         user_photo_data = await user_photo.read()
         logger.info(f"✅ User photo read: {len(user_photo_data)} bytes")
         
+        # Auto-detect: Use AI if API key is configured and hairstyle_id is provided (not custom image)
+        should_use_ai = use_ai
+        if should_use_ai is None:
+            # Auto-detect: Use AI if we have API key and using hairstyle_id (not custom image)
+            should_use_ai = (
+                perfectcorp_service.api_enabled and 
+                hairstyle_id is not None and 
+                hairstyle_image is None
+            )
+            logger.info(f"🔍 Auto-detected use_ai: {should_use_ai} (API enabled: {perfectcorp_service.api_enabled}, has hairstyle_id: {hairstyle_id is not None}, no custom image: {hairstyle_image is None})")
+        
+        logger.info(f"   - Final decision - Use AI: {should_use_ai}")
+        
         # Check if using PerfectCorp AI
-        if use_ai and hairstyle_id:
+        if should_use_ai and hairstyle_id:
             logger.info("🤖 Using PerfectCorp AI Hairstyle Generator")
+            
+            # Check if API is enabled
+            if not perfectcorp_service.api_enabled:
+                logger.warning("⚠️ PerfectCorp AI requested but API key not configured")
+                raise HTTPException(
+                    status_code=503,
+                    detail="PerfectCorp AI is not configured. Please set PERFECTCORP_API_KEY in environment variables."
+                )
             
             # Use PerfectCorp AI API
             result_image_data = await perfectcorp_service.apply_hairstyle(
@@ -252,6 +277,15 @@ async def process_hair_tryOn(
                 )
             
             hairstyle_source = f"perfectcorp_ai:{hairstyle_id}"
+            logger.info(f"✅ PerfectCorp AI processing completed successfully")
+            
+        elif should_use_ai and not hairstyle_id:
+            # User wants AI but didn't provide hairstyle_id
+            logger.error("❌ AI processing requested but no hairstyle_id provided")
+            raise HTTPException(
+                status_code=400,
+                detail="hairstyle_id is required when using PerfectCorp AI (use_ai=true)"
+            )
             
         else:
             # Use traditional processing with HairFastGAN or HuggingFace

@@ -251,6 +251,15 @@ export class HairTryOnApi {
     limit: number = 10,
     offset: number = 0
   ): Promise<HairTryOnHistoryItem[]> {
+    const { items } = await HairTryOnApi.getHairTryOnHistoryWithMeta(userId, limit, offset);
+    return items;
+  }
+
+  static async getHairTryOnHistoryWithMeta(
+    userId: string,
+    limit: number = 10,
+    offset: number = 0
+  ): Promise<{ items: HairTryOnHistoryItem[]; total: number }> {
     const response = await apiClient.get(
       `/hair/history/${userId}`,
       {
@@ -266,7 +275,25 @@ export class HairTryOnApi {
     const history: HairTryOnHistoryResponseItem[] =
       payload.history ?? payload.results ?? [];
 
-    return history.map(HairTryOnApi.mapHistoryItem);
+    const items = history.map((entry, index) => {
+      const normalizedItem = HairTryOnApi.mapHistoryItem(entry);
+      if (!normalizedItem.id) {
+        normalizedItem.id = `${normalizedItem.createdAt}-${offset + index}`;
+      }
+      return normalizedItem;
+    });
+
+    return {
+      items,
+      total:
+        (typeof payload.count === 'number' && !Number.isNaN(payload.count)
+          ? payload.count
+          : undefined) ??
+        (typeof payload.total === 'number' && !Number.isNaN(payload.total)
+          ? payload.total
+          : undefined) ??
+        items.length,
+    };
   }
 
   /**

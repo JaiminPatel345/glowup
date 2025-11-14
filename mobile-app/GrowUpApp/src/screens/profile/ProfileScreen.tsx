@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,19 +6,16 @@ import {
   TouchableOpacity,
   Image,
   Switch,
-  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useAppSelector, useAppDispatch } from '../../store';
 import { logoutUser } from '../../store/slices/authSlice';
-import { SkinAnalysisApi } from '../../api/skin';
-import { HairTryOnApi } from '../../api/hair';
 import { UserApi } from '../../api';
-import apiClient from '../../api/client';
 import EditProfileModal from '../../components/profile/EditProfileModal';
 import ChangePasswordModal from '../../components/profile/ChangePasswordModal';
-import SecureStorage from '../../utils/secureStorage';
+import HistoryModal from '../../components/profile/HistoryModal';
+import { useTheme } from '../../context/ThemeContext';
 
 interface SettingItem {
   icon: keyof typeof Ionicons.glyphMap;
@@ -33,106 +30,19 @@ interface SettingItem {
 const ProfileScreen: React.FC = () => {
   const dispatch = useAppDispatch();
   const { user, isLoading } = useAppSelector((state) => state.auth);
+  const { isDarkMode, setDarkModePreference } = useTheme();
   const [notifications, setNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
   const [editProfileVisible, setEditProfileVisible] = useState(false);
   const [changePasswordVisible, setChangePasswordVisible] = useState(false);
-  
-  // Statistics state
-  const [analysesCount, setAnalysesCount] = useState<number | null>(null);
-  const [tryOnsCount, setTryOnsCount] = useState<number | null>(null);
-  const [savedCount, setSavedCount] = useState<number | null>(null);
-  const [statsLoading, setStatsLoading] = useState(true);
-  const [showStats, setShowStats] = useState(true);
-
-  // Load dark mode preference on mount
-  useEffect(() => {
-    loadDarkModePreference();
-  }, []);
-
-  // Load statistics on mount
-  useEffect(() => {
-    if (user?.id) {
-      loadStatistics();
-    }
-  }, [user?.id]);
-
-  const loadDarkModePreference = async () => {
-    try {
-      const preferences = await SecureStorage.getUserPreferences();
-      if (preferences?.theme === 'dark' || preferences?.darkMode === true) {
-        setDarkMode(true);
-      }
-    } catch (error) {
-      console.error('Error loading dark mode preference:', error);
-    }
-  };
-
-  const loadStatistics = async () => {
-    if (!user?.id) {
-      setShowStats(false);
-      setStatsLoading(false);
-      return;
-    }
-
-    try {
-      setStatsLoading(true);
-      let analyses: number | null = null;
-      let tryOns: number | null = null;
-      
-      // Fetch analyses count - use API response with new format
-      try {
-        // Use apiClient directly to get the total count from response
-        const response = await apiClient.get<{ user_id: string; analyses: any[]; total: number }>(
-          `/skin/user/${user.id}/history`,
-          { params: { limit: 1, offset: 0 } }
-        );
-        // Use total from API response if available, otherwise use analyses array length
-        analyses = response.data.total ?? response.data.analyses?.length ?? 0;
-      } catch (error) {
-        console.warn('Could not fetch analyses count:', error);
-        analyses = null;
-      }
-
-      // Fetch try-ons count - use API response with new format
-      try {
-        // Use apiClient directly to get the count from response
-        const response = await apiClient.get<{ success: boolean; count: number; history: any[] }>(
-          `/hair/history/${user.id}`,
-          { params: { limit: 1, skip: 0 } }
-        );
-        // Use count from API response if available, otherwise use history array length
-        tryOns = response.data.count ?? response.data.history?.length ?? 0;
-      } catch (error) {
-        console.warn('Could not fetch try-ons count:', error);
-        tryOns = null;
-      }
-
-      // Update state
-      setAnalysesCount(analyses);
-      setTryOnsCount(tryOns);
-      setSavedCount(null); // Saved count - not available from API yet
-      
-      // Hide stats section if all counts are unavailable
-      if (analyses === null && tryOns === null) {
-        setShowStats(false);
-      } else {
-        setShowStats(true);
-      }
-    } catch (error) {
-      console.error('Error loading statistics:', error);
-      // Don't hide stats on error, just show dashes
-      setShowStats(true);
-    } finally {
-      setStatsLoading(false);
-    }
-  };
+  const [historyVisible, setHistoryVisible] = useState(false);
+  const [historyTab, setHistoryTab] = useState<'skin' | 'hair'>('skin');
 
   const handleDarkModeToggle = async (value: boolean) => {
-    setDarkMode(value);
-    
-    // Save to user preferences
+    const previous = isDarkMode;
+
     try {
+      await setDarkModePreference(value);
+
       if (user?.id) {
         const currentPreferences = await UserApi.getPreferences(user.id).catch(() => null);
         await UserApi.updatePreferences(user.id, {
@@ -144,23 +54,23 @@ const ProfileScreen: React.FC = () => {
           },
         });
       }
-      
-      // Also save locally
-      const localPreferences = await SecureStorage.getUserPreferences() || {};
-      await SecureStorage.storeUserPreferences({
-        ...localPreferences,
-        darkMode: value,
-        theme: value ? 'dark' : 'light',
-      });
     } catch (error) {
       console.error('Error saving dark mode preference:', error);
-      // Revert on error
-      setDarkMode(!value);
+      try {
+        await setDarkModePreference(previous);
+      } catch (revertError) {
+        console.error('Error reverting theme preference:', revertError);
+      }
     }
   };
 
   const handleLogout = () => {
     dispatch(logoutUser());
+  };
+
+  const openHistory = (tab: 'skin' | 'hair') => {
+    setHistoryTab(tab);
+    setHistoryVisible(true);
   };
 
   const settingsSections = [
@@ -199,7 +109,7 @@ const ProfileScreen: React.FC = () => {
           title: 'Dark Mode',
           subtitle: 'Switch to dark theme',
           type: 'toggle' as const,
-          value: darkMode,
+          value: isDarkMode,
           onToggle: handleDarkModeToggle,
         },
       ],
@@ -212,14 +122,14 @@ const ProfileScreen: React.FC = () => {
           title: 'Skin Analysis History',
           subtitle: 'View your past skin analyses',
           type: 'navigation' as const,
-          onPress: () => console.log('Skin History'),
+          onPress: () => openHistory('skin'),
         },
         {
           icon: 'cut-outline' as const,
           title: 'Hair Try-On History',
           subtitle: 'See your saved hairstyles',
           type: 'navigation' as const,
-          onPress: () => console.log('Hair History'),
+          onPress: () => openHistory('hair'),
         },
       ],
     },
@@ -251,32 +161,32 @@ const ProfileScreen: React.FC = () => {
       <TouchableOpacity
         onPress={item.type === 'navigation' ? item.onPress : undefined}
         disabled={item.type === 'toggle'}
-        className="bg-white px-4 py-4 flex-row items-center justify-between border-b border-gray-100"
+  className="bg-white dark:bg-gray-900 px-4 py-4 flex-row items-center justify-between border-b border-gray-100 dark:border-gray-800 last:border-b-0"
         activeOpacity={0.7}
       >
         <View className="flex-row items-center flex-1">
-          <View className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mr-4">
+          <View className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-full items-center justify-center mr-4">
             <Ionicons name={item.icon} size={20} color="#0284c7" />
           </View>
           
           <View className="flex-1">
-            <Text className="text-base font-medium text-gray-900">{item.title}</Text>
+            <Text className="text-base font-medium text-gray-900 dark:text-gray-100">{item.title}</Text>
             {item.subtitle && (
-              <Text className="text-sm text-gray-500 mt-0.5">{item.subtitle}</Text>
+              <Text className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{item.subtitle}</Text>
             )}
           </View>
         </View>
         
         {item.type === 'navigation' && (
-          <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+          <Ionicons name="chevron-forward" size={20} color={isDarkMode ? '#6b7280' : '#9ca3af'} />
         )}
         
         {item.type === 'toggle' && item.onToggle && (
           <Switch
             value={item.value}
             onValueChange={item.onToggle}
-            trackColor={{ false: '#d1d5db', true: '#93c5fd' }}
-            thumbColor={item.value ? '#0284c7' : '#f3f4f6'}
+            trackColor={{ false: isDarkMode ? '#4b5563' : '#d1d5db', true: '#3b82f6' }}
+            thumbColor={item.value ? '#0284c7' : isDarkMode ? '#1f2937' : '#f3f4f6'}
           />
         )}
       </TouchableOpacity>
@@ -284,15 +194,18 @@ const ProfileScreen: React.FC = () => {
   );
 
   return (
-    <View className="flex-1 bg-gray-50">
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <View className="flex-1 bg-gray-50 dark:bg-gray-950">
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 32 }}
+      >
         {/* Profile Header */}
         <Animated.View
           entering={FadeInDown.springify()}
-          className="bg-gradient-to-b from-primary-600 to-primary-700 px-6 pt-14 pb-8"
+          className="bg-gradient-to-b from-primary-600 to-primary-700 dark:from-primary-700 dark:to-primary-900 px-6 pt-14 pb-10 rounded-b-3xl shadow"
         >
           <View className="items-center">
-            <View className="w-24 h-24 rounded-full bg-white items-center justify-center mb-4 shadow-lg">
+            <View className="w-24 h-24 rounded-full bg-white dark:bg-gray-900 items-center justify-center mb-5 shadow-lg">
               {user?.profileImageUrl ? (
                 <Image
                   source={{ uri: user.profileImageUrl }}
@@ -302,76 +215,36 @@ const ProfileScreen: React.FC = () => {
                 <Ionicons name="person" size={48} color="#0284c7" />
               )}
             </View>
-            
-            <Text className="text-2xl font-bold text-white mb-1" style={{ color: '#ffffff' }}>
+
+            <Text
+              className="text-3xl font-semibold text-white tracking-tight mb-1"
+              style={{ textShadowColor: 'rgba(15, 23, 42, 0.35)', textShadowRadius: 6 }}
+            >
               {user?.firstName && user?.lastName
                 ? `${user.firstName} ${user.lastName}`
                 : user?.firstName || user?.lastName || user?.email || 'User'}
             </Text>
-            <Text className="mb-4" style={{ color: '#e0f2fe' }}>{user?.email}</Text>
-            
-            <TouchableOpacity 
-              className="bg-white px-6 py-2 rounded-full"
+            <Text className="text-base text-primary-50/90 dark:text-primary-100 mb-6">
+              {user?.email}
+            </Text>
+
+            <TouchableOpacity
+              className="bg-white/90 dark:bg-primary-900/40 px-6 py-2 rounded-full shadow-sm"
               onPress={() => setEditProfileVisible(true)}
+              activeOpacity={0.85}
             >
-              <Text className="text-primary-600 font-medium">Edit Profile</Text>
+              <Text className="text-primary-600 dark:text-primary-200 font-semibold">Edit Profile</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>
 
-        {/* Stats Cards */}
-        {showStats && (
-          <Animated.View
-            entering={FadeInDown.delay(100).springify()}
-            className="px-6 -mt-6 mb-6"
-          >
-            <View className="bg-white rounded-2xl shadow-lg p-4">
-              <View className="flex-row">
-                <View className="flex-1 items-center border-r border-gray-100">
-                  {statsLoading ? (
-                    <ActivityIndicator size="small" color="#0284c7" />
-                  ) : (
-                    <Text className="text-2xl font-bold text-gray-900">
-                      {analysesCount !== null ? analysesCount : '-'}
-                    </Text>
-                  )}
-                  <Text className="text-sm text-gray-500 mt-1">Analyses</Text>
-                </View>
-                <View className="flex-1 items-center border-r border-gray-100">
-                  {statsLoading ? (
-                    <ActivityIndicator size="small" color="#0284c7" />
-                  ) : (
-                    <Text className="text-2xl font-bold text-gray-900">
-                      {tryOnsCount !== null ? tryOnsCount : '-'}
-                    </Text>
-                  )}
-                  <Text className="text-sm text-gray-500 mt-1">Try-Ons</Text>
-                </View>
-                <View className="flex-1 items-center">
-                  {savedCount !== null ? (
-                    <>
-                      <Text className="text-2xl font-bold text-gray-900">{savedCount}</Text>
-                      <Text className="text-sm text-gray-500 mt-1">Saved</Text>
-                    </>
-                  ) : (
-                    <View className="items-center">
-                      <Text className="text-2xl font-bold text-gray-400">-</Text>
-                      <Text className="text-sm text-gray-400 mt-1">Saved</Text>
-                    </View>
-                  )}
-                </View>
-              </View>
-            </View>
-          </Animated.View>
-        )}
-
         {/* Settings Sections */}
         {settingsSections.map((section, sectionIndex) => (
           <View key={section.title} className="mb-6">
-            <Text className="text-sm font-semibold text-gray-500 uppercase px-6 mb-3">
+            <Text className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase px-6 mb-3">
               {section.title}
             </Text>
-            <View className="bg-white">
+            <View className="bg-white dark:bg-gray-900 mx-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
               {section.items.map((item, index) => (
                 <SettingItem
                   key={item.title}
@@ -391,12 +264,16 @@ const ProfileScreen: React.FC = () => {
           <TouchableOpacity
             onPress={handleLogout}
             disabled={isLoading}
-            className="bg-red-50 border border-red-200 rounded-xl py-4 items-center"
+            className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-xl py-4 items-center"
             activeOpacity={0.7}
           >
             <View className="flex-row items-center">
-              <Ionicons name="log-out-outline" size={20} color="#dc2626" />
-              <Text className="text-red-600 font-semibold ml-2">
+              <Ionicons
+                name="log-out-outline"
+                size={20}
+                color={isDarkMode ? '#fca5a5' : '#dc2626'}
+              />
+              <Text className="text-red-600 dark:text-red-200 font-semibold ml-2">
                 {isLoading ? 'Signing Out...' : 'Sign Out'}
               </Text>
             </View>
@@ -405,7 +282,7 @@ const ProfileScreen: React.FC = () => {
 
         {/* App Version */}
         <View className="items-center pb-6">
-          <Text className="text-gray-400 text-sm">GlowUp v1.0.0</Text>
+          <Text className="text-gray-400 dark:text-gray-600 text-sm">GlowUp v1.0.0</Text>
         </View>
       </ScrollView>
 
@@ -414,15 +291,17 @@ const ProfileScreen: React.FC = () => {
         visible={editProfileVisible}
         onClose={() => {
           setEditProfileVisible(false);
-          // Reload statistics after profile update
-          if (user?.id) {
-            loadStatistics();
-          }
         }}
       />
       <ChangePasswordModal
         visible={changePasswordVisible}
         onClose={() => setChangePasswordVisible(false)}
+      />
+      <HistoryModal
+        visible={historyVisible}
+        initialTab={historyTab}
+        userId={user?.id}
+        onClose={() => setHistoryVisible(false)}
       />
     </View>
   );

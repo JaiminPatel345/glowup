@@ -148,6 +148,27 @@ export default function HairTryOnScreen() {
     }
   };
 
+  const pickCustomHairstyle = async () => {
+    Alert.alert("Coming Soon", "Custom hairstyle upload will be available in a future update!");
+    return;
+
+    /* 
+    // Original logic disabled for now
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setCustomHairstyleUri(result.assets[0].uri);
+      setSelectedHairstyle(null); // Deselect default hairstyle
+      setImageSelectionMode('own');
+    }
+    */
+  };
+
   const takePhoto = async () => {
     try {
       const result = await ImagePicker.launchCameraAsync({

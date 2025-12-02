@@ -34,7 +34,8 @@ class Settings(BaseSettings):
     
     # PerfectCorp API Configuration
     perfectcorp_api_key: str = os.getenv("PERFECTCORP_API_KEY", "")
-    perfectcorp_api_url: str = os.getenv("PERFECTCORP_API_URL", "https://yce-api-01.perfectcorp.com/s2s/v2.0")
+    perfectcorp_secret_key: str = os.getenv("PERFECTCORP_SECRET_KEY", "")
+    perfectcorp_api_url: str = os.getenv("PERFECTCORP_API_URL", "https://yce-api-01.makeupar.com/s2s/v2.0")
     hairstyle_cache_ttl: int = int(os.getenv("HAIRSTYLE_CACHE_TTL", "86400"))  # 24 hours
 
     # MagicAPI Configuration

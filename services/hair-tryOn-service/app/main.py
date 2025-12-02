@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 import os
 
 # Load environment variables from .env file immediately
-load_dotenv()
+load_dotenv(override=True)
 # Also try loading .env.local if it exists (overrides .env)
 load_dotenv(".env.local", override=True)
 

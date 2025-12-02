@@ -13,6 +13,11 @@ from datetime import datetime, timedelta
 import json
 from pathlib import Path
 import asyncio
+import time
+import base64
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.backends import default_backend
 
 
 logger = logging.getLogger(__name__)
@@ -27,12 +32,13 @@ class PerfectCorpService:
     - AI Hairstyle Generator integration for real-time try-on processing
     """
     
-    def __init__(self, api_key: str = "", api_url: str = "", cache_ttl: int = 86400):
+    def __init__(self, api_key: str = "", secret_key: str = "", api_url: str = "", cache_ttl: int = 86400):
         """
         Initialize service
         
         Args:
-            api_key: PerfectCorp API Key for V2 API
+            api_key: PerfectCorp API Key (Client ID)
+            secret_key: PerfectCorp Secret Key (Client Secret)
             api_url: PerfectCorp API base URL
             cache_ttl: Cache TTL (not used in static mode)
         """
@@ -40,8 +46,14 @@ class PerfectCorpService:
         
         # API Configuration
         self.api_key = api_key
-        self.api_url = api_url or "https://yce-api-01.perfectcorp.com/s2s/v2.0"
+        self.secret_key = secret_key
+        self.api_url = api_url or "https://yce-api-01.makeupar.com/s2s/v2.0"
+        self.auth_url = self.api_url.replace("/v2.0", "/v1.0") + "/client/auth"
         self.api_enabled = bool(api_key)
+        
+        # Token management
+        self.access_token = None
+        self.token_expiry = datetime.min
         
         # Static data configuration
         self.static_data_path = Path(__file__).parent.parent / "data" / "hairstyles.json"
@@ -259,6 +271,91 @@ class PerfectCorpService:
         """Reload static data"""
         logger.info("🔄 Reloading static hairstyle data")
         self._load_static_data()
+
+    async def _get_access_token(self) -> Optional[str]:
+        """
+        Get valid access token.
+        If secret_key is present, authenticates to get token.
+        Otherwise, returns api_key (assuming it's a V2 key).
+        """
+        # If no secret key, assume api_key is the token (V2 direct key)
+        if not self.secret_key:
+            return self.api_key
+            
+        # Check if current token is valid (with 5 min buffer)
+        if self.access_token and datetime.utcnow() < self.token_expiry - timedelta(minutes=5):
+            return self.access_token
+            
+        try:
+            logger.info("🔐 Authenticating with PerfectCorp to get Access Token...")
+            
+            id_token = self._generate_id_token()
+            if not id_token:
+                logger.error("❌ Failed to generate ID token")
+                return None
+                
+            async with aiohttp.ClientSession() as session:
+                payload = {
+                    "client_id": self.api_key,
+                    "id_token": id_token
+                }
+                
+                async with session.post(self.auth_url, json=payload) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        # Response format: {"status": 200, "result": {"access_token": "..."}}
+                        result = data.get("result", {})
+                        self.access_token = result.get("access_token")
+                        
+                        # Default expiry 1 hour if not provided
+                        expires_in = result.get("expires_in", 3600)
+                        self.token_expiry = datetime.utcnow() + timedelta(seconds=expires_in)
+                        
+                        logger.info("✅ Authentication successful")
+                        return self.access_token
+                    else:
+                        error_text = await response.text()
+                        logger.error(f"❌ Authentication failed: {response.status} - {error_text}")
+                        return None
+        except Exception as e:
+            logger.error(f"❌ Error during authentication: {str(e)}")
+            return None
+
+    def _generate_id_token(self) -> Optional[str]:
+        """Generate encrypted ID token using RSA Public Key (Secret Key)"""
+        try:
+            # Debug logs
+            logger.info(f"🔑 Generating ID Token for Client ID: {self.api_key[:5]}...")
+            logger.info(f"🔑 Secret Key present: {bool(self.secret_key)}")
+            if self.secret_key:
+                logger.info(f"🔑 Secret Key start: {self.secret_key[:10]}...")
+
+            # 1. Prepare data
+            timestamp = int(time.time() * 1000)
+            data = f"client_id={self.api_key}&timestamp={timestamp}".encode('utf-8')
+            logger.info(f"📝 Data to encrypt: {data}")
+
+            # 2. Load Public Key
+            key_str = self.secret_key
+            if not key_str.startswith("-----BEGIN PUBLIC KEY-----"):
+                key_str = f"-----BEGIN PUBLIC KEY-----\n{key_str}\n-----END PUBLIC KEY-----"
+                
+            public_key = serialization.load_pem_public_key(
+                key_str.encode('utf-8'),
+                backend=default_backend()
+            )
+
+            # 3. Encrypt (PKCS1v15 padding)
+            encrypted = public_key.encrypt(
+                data,
+                padding.PKCS1v15()
+            )
+
+            # 4. Base64 Encode
+            return base64.b64encode(encrypted).decode('utf-8')
+        except Exception as e:
+            logger.error(f"❌ Encryption error: {e}")
+            return None
     
     # ============================================================================
     # AI Hairstyle Generator V2 API Integration
@@ -333,16 +430,21 @@ class PerfectCorpService:
         try:
             async with aiohttp.ClientSession() as session:
                 # Step 1: Request upload URL
+                token = await self._get_access_token()
+                if not token:
+                    return None
+                    
                 headers = {
-                    "Authorization": f"Bearer {self.api_key}",
+                    "Authorization": f"Bearer {token}",
                     "Content-Type": "application/json"
                 }
                 
                 payload = {
                     "files": [
                         {
-                            "filename": "user_photo.jpg",
-                            "content_type": "image/jpeg"
+                            "file_name": "user_photo.jpg",
+                            "content_type": "image/jpeg",
+                            "file_size": len(image_bytes)
                         }
                     ]
                 }
@@ -364,9 +466,17 @@ class PerfectCorpService:
                     logger.info(f"✅ Upload URL response: {data}")
                     
                     file_info = data.get("data", {}).get("files", [{}])[0]
-                    upload_url = file_info.get("url")
                     file_id = file_info.get("file_id")
-                    upload_headers = file_info.get("headers", {})
+                    
+                    # Extract upload URL and headers from 'requests' list
+                    requests_list = file_info.get("requests", [])
+                    upload_url = None
+                    upload_headers = {}
+                    
+                    if requests_list:
+                        upload_req = requests_list[0]
+                        upload_url = upload_req.get("url")
+                        upload_headers = upload_req.get("headers", {})
                     
                     if not upload_url or not file_id:
                         logger.error("❌ Missing upload URL or file_id in response")
@@ -402,8 +512,12 @@ class PerfectCorpService:
         """
         try:
             async with aiohttp.ClientSession() as session:
+                token = await self._get_access_token()
+                if not token:
+                    return None
+                    
                 headers = {
-                    "Authorization": f"Bearer {self.api_key}",
+                    "Authorization": f"Bearer {token}",
                     "Content-Type": "application/json"
                 }
                 
@@ -454,8 +568,12 @@ class PerfectCorpService:
         """
         try:
             async with aiohttp.ClientSession() as session:
+                token = await self._get_access_token()
+                if not token:
+                    return None
+                    
                 headers = {
-                    "Authorization": f"Bearer {self.api_key}"
+                    "Authorization": f"Bearer {token}"
                 }
                 
                 for attempt in range(max_attempts):
@@ -478,9 +596,11 @@ class PerfectCorpService:
                         logger.info(f"   Status: {status}")
                         
                         if status == "success":
-                            # Extract result URL
-                            results = task_data.get("results", {})
-                            result_url = results.get("result_url")
+                            logger.info(f"✅ Task success data: {task_data}")
+                            
+                            # Extract result URL - check 'results' (plural) and 'result' (singular)
+                            results = task_data.get("results") or task_data.get("result") or {}
+                            result_url = results.get("result_url") or results.get("url")
                             
                             if not result_url:
                                 logger.error("❌ Missing result_url in success response")
@@ -574,8 +694,12 @@ class PerfectCorpService:
         
         try:
             async with aiohttp.ClientSession() as session:
+                token = await self._get_access_token()
+                if not token:
+                    return {"templates": [], "next_token": None}
+                    
                 headers = {
-                    "Authorization": f"Bearer {self.api_key}"
+                    "Authorization": f"Bearer {token}"
                 }
                 
                 params = {

@@ -1,3 +1,11 @@
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file immediately
+load_dotenv()
+# Also try loading .env.local if it exists (overrides .env)
+load_dotenv(".env.local", override=True)
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -16,6 +24,7 @@ logging.basicConfig(
     level=logging.INFO if not settings.debug else logging.DEBUG,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s \n"
 )
+logging.getLogger("pymongo").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 @asynccontextmanager
@@ -31,10 +40,14 @@ async def lifespan(app: FastAPI):
         os.makedirs(settings.model_path, exist_ok=True)
         
         # Initialize database connection
-        await connect_to_mongo()
-        
-        # Initialize services
-        await database_service.initialize()
+        try:
+            await connect_to_mongo()
+            # Initialize services
+            await database_service.initialize()
+            logger.info("Database connected successfully")
+        except Exception as db_e:
+            logger.error(f"Failed to connect to database: {db_e}")
+            logger.warning("Service starting without database connection")
         
         logger.info("Hair Try-On Service started successfully")
         
@@ -42,7 +55,8 @@ async def lifespan(app: FastAPI):
         
     except Exception as e:
         logger.error(f"Failed to start service: {e}")
-        raise
+        # Don't raise, allow partial startup
+        yield
     finally:
         # Shutdown
         logger.info("Shutting down Hair Try-On Service...")

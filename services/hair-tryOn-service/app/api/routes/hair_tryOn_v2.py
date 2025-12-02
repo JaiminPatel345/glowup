@@ -13,28 +13,14 @@ import asyncio
 
 
 from app.core.config import settings
-from app.services.hairfastgan_service import HairFastGANService
-from app.services.huggingface_service import HuggingFaceService
+
 from app.services.perfectcorp_service import PerfectCorpService
+from app.services.magicapi_service import MagicAPIService
 from app.services.database_service import database_service
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/hair", tags=["Hair Try-On"])
-
-# Initialize services based on configuration
-if settings.use_huggingface_api and settings.huggingface_api_key:
-    logger.info("🤗 Using Hugging Face API for hair processing")
-    hair_processing_service = HuggingFaceService(
-        api_key=settings.huggingface_api_key,
-        model_name="hairfast"  # Priority 1: HairFastGAN
-    )
-else:
-    logger.info("🔧 Using local HairFastGAN model")
-    hair_processing_service = HairFastGANService(
-        model_path=f"{settings.model_path}/{settings.hair_model_name}",
-        device="auto"
-    )
 
 perfectcorp_service = PerfectCorpService(
     api_key=settings.perfectcorp_api_key,
@@ -47,7 +33,7 @@ perfectcorp_service = PerfectCorpService(
 async def startup():
     """Initialize services on startup"""
     try:
-        await hair_processing_service.initialize()
+        # No async initialization needed for LightX or PerfectCorp (static)
         logger.info("Hair Try-On services initialized successfully")
     except Exception as e:
         logger.error(f"Failed to initialize services: {e}")
@@ -233,150 +219,55 @@ async def process_hair_tryOn(
     logger.info(f"   - Hairstyle ID: {hairstyle_id or 'None'}")
     logger.info(f"   - Use AI (explicit): {use_ai}")
     
-    try:
-        await asyncio.sleep(900) 
+    try:    
         # Read user photo
         user_photo_data = await user_photo.read()
         logger.info(f"✅ User photo read: {len(user_photo_data)} bytes")
         
-        # Auto-detect: Use AI if API key is configured and hairstyle_id is provided (not custom image)
-        should_use_ai = use_ai
-        if should_use_ai is None:
-            # Auto-detect: Use AI if we have API key and using hairstyle_id (not custom image)
-            should_use_ai = (
-                perfectcorp_service.api_enabled and 
-                hairstyle_id is not None and 
-                hairstyle_image is None
-            )
-            logger.info(f"🔍 Auto-detected use_ai: {should_use_ai} (API enabled: {perfectcorp_service.api_enabled}, has hairstyle_id: {hairstyle_id is not None}, no custom image: {hairstyle_image is None})")
+        # Initialize MagicAPI Service
+        magicapi_service = MagicAPIService(
+            api_key=settings.magicapi_api_key,
+            api_url=settings.magicapi_api_url
+        )
         
-        logger.info(f"   - Final decision - Use AI: {should_use_ai}")
+        # Determine prompt
+        prompt = "hairstyle"
+        if hairstyle_id:
+            # Look up hairstyle name from static data
+            hairstyle = perfectcorp_service.get_hairstyle_by_id(hairstyle_id)
+            if hairstyle:
+                prompt = f"{hairstyle.get('style_name', '')} hairstyle"
+                logger.info(f"🎯 Using prompt from hairstyle ID: {prompt}")
         
-        # Check if using PerfectCorp AI
-        if should_use_ai and hairstyle_id:
-            logger.info("🤖 Using PerfectCorp AI Hairstyle Generator")
+        # Process with MagicAPI
+        logger.info(f"🎨 Processing with MagicAPI (Prompt: {prompt})")
+        result_url = await magicapi_service.generate_hairstyle(user_photo_data, prompt)
+        
+        if not result_url:
+            # Fallback or Error
+            logger.error("❌ MagicAPI processing failed")
+            raise HTTPException(status_code=500, detail="Failed to process hair try-on")
             
-            # Check if API is enabled
-            if not perfectcorp_service.api_enabled:
-                logger.warning("⚠️ PerfectCorp AI requested but API key not configured")
-                raise HTTPException(
-                    status_code=503,
-                    detail="PerfectCorp AI is not configured. Please set PERFECTCORP_API_KEY in environment variables."
-                )
-            
-            # Use PerfectCorp AI API
-            result_image_data = await perfectcorp_service.apply_hairstyle(
-                user_image_bytes=user_photo_data,
-                template_id=hairstyle_id
-            )
-            
-            if not result_image_data:
-                raise HTTPException(
-                    status_code=500,
-                    detail="Failed to process with PerfectCorp AI. Please try again or use custom image processing."
-                )
-            
-            hairstyle_source = f"perfectcorp_ai:{hairstyle_id}"
-            logger.info(f"✅ PerfectCorp AI processing completed successfully")
-            
-        elif should_use_ai and not hairstyle_id:
-            # User wants AI but didn't provide hairstyle_id
-            logger.error("❌ AI processing requested but no hairstyle_id provided")
-            raise HTTPException(
-                status_code=400,
-                detail="hairstyle_id is required when using PerfectCorp AI (use_ai=true)"
-            )
-            
-        else:
-            # Use traditional processing with HairFastGAN or HuggingFace
-            logger.info("🎨 Using traditional hair processing (HairFastGAN/HuggingFace)")
-            
-            # Validate input
-            if not hairstyle_image and not hairstyle_id:
-                logger.error("❌ Validation failed: Neither hairstyle_image nor hairstyle_id provided")
-                raise HTTPException(
-                    status_code=400,
-                    detail="Either hairstyle_image or hairstyle_id must be provided"
-                )
-            
-            # Get hairstyle image
-            if hairstyle_image:
-                # Use custom uploaded image
-                logger.info("📁 Using custom hairstyle image...")
-                hairstyle_data = await hairstyle_image.read()
-                hairstyle_source = "custom"
-                logger.info(f"✅ Custom hairstyle read: {len(hairstyle_data)} bytes")
-            else:
-                # Download default hairstyle
-                logger.info(f"🔍 Looking up hairstyle ID: {hairstyle_id}")
-                hairstyle = perfectcorp_service.get_hairstyle_by_id(hairstyle_id)
-                if not hairstyle:
-                    logger.error(f"❌ Hairstyle not found for ID: {hairstyle_id}")
-                    raise HTTPException(status_code=404, detail="Hairstyle not found")
-                
-                logger.info(f"✅ Found hairstyle: {hairstyle.get('style_name', 'Unknown')}")
-                logger.info(f"📥 Downloading hairstyle image from: {hairstyle.get('preview_image_url')}")
-                
-                # Download the hairstyle image from URL
-                image_url = hairstyle.get('preview_image_url')
-                if not image_url:
-                    logger.error(f"❌ No preview_image_url for hairstyle: {hairstyle_id}")
-                    raise HTTPException(status_code=500, detail="Hairstyle image URL not found")
-                
-                # Download image using aiohttp
-                import aiohttp
-                import traceback
-                try:
-                    async with aiohttp.ClientSession() as session:
-                        logger.info(f"🌐 Making HTTP request to: {image_url}")
-                        async with session.get(image_url, timeout=aiohttp.ClientTimeout(total=30)) as response:
-                            logger.info(f"📡 Response status: {response.status}")
-                            if response.status == 200:
-                                hairstyle_data = await response.read()
-                                logger.info(f"✅ Hairstyle downloaded: {len(hairstyle_data)} bytes")
-                            else:
-                                logger.error(f"❌ Failed to download image: HTTP {response.status}")
-                                raise HTTPException(status_code=500, detail=f"Failed to download hairstyle image: HTTP {response.status}")
-                except aiohttp.ClientError as download_error:
-                    error_msg = f"{type(download_error).__name__}: {str(download_error)}"
-                    logger.error(f"❌ Error downloading hairstyle image: {error_msg}")
-                    logger.error(f"Traceback: {traceback.format_exc()}")
-                    raise HTTPException(status_code=500, detail=f"Error downloading hairstyle image: {error_msg}")
-                except Exception as download_error:
-                    error_msg = f"{type(download_error).__name__}: {str(download_error)}"
-                    logger.error(f"❌ Error downloading hairstyle image: {error_msg}")
-                    logger.error(f"Traceback: {traceback.format_exc()}")
-                    raise HTTPException(status_code=500, detail=f"Error downloading hairstyle image: {error_msg}")
-                
-                hairstyle_source = f"default:{hairstyle_id}"
-            
-            # Process with HairFastGAN or HuggingFace
-            logger.info("🎨 Starting hair processing...")
-            result_image_data = await hair_processing_service.process_image(
-                source_image_data=user_photo_data,
-                style_image_data=hairstyle_data
-            )
-            logger.info(f"✅ Processing complete: {len(result_image_data)} bytes")
+        logger.info(f"✅ Processing complete. Result URL: {result_url}")
         
         # Save to database
         result_id = str(uuid.uuid4())
         await database_service.save_hair_tryOn_result({
             "result_id": result_id,
             "user_id": user_id,
-            "hairstyle_source": hairstyle_source,
+            "result_media_url": result_url,
+            "hairstyle_source": f"magicapi:{prompt}",
             "created_at": datetime.utcnow(),
             "status": "completed"
         })
         
-        # Return image
-        return Response(
-            content=result_image_data,
-            media_type="image/jpeg",
-            headers={
-                "X-Result-ID": result_id,
-                "X-Processing-Time": "0"  # Add actual timing
-            }
-        )
+        # Return JSON with URL
+        return {
+            "success": True,
+            "result_id": result_id,
+            "result_url": result_url,
+            "processing_time": 0
+        }
         
     except HTTPException:
         raise
@@ -457,14 +348,10 @@ async def delete_result(result_id: str, user_id: str):
 async def health_check():
     """Health check endpoint"""
     try:
-        device_info = hair_processing_service.get_device_info()
-        
         return {
             "status": "healthy",
             "service": "hair-tryOn-service",
             "version": settings.service_version,
-            "model_loaded": hair_processing_service.initialized,
-            "device": device_info,
             "timestamp": datetime.utcnow().isoformat()
         }
         

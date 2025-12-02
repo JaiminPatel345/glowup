@@ -79,8 +79,8 @@ export class HairTryOnApi {
     forceRefresh: boolean = false,
     fetchAll: boolean = false
   ): Promise<HairstylesResponse> {
-    const params: any = { 
-      page_size: pageSize, 
+    const params: any = {
+      page_size: pageSize,
       force_refresh: forceRefresh,
       fetch_all: fetchAll
     };
@@ -110,14 +110,14 @@ export class HairTryOnApi {
    */
   static async processHairTryOnNative(request: ProcessHairTryOnRequestNative): Promise<string> {
     const formData = new FormData();
-    
+
     // Add user photo
     formData.append('user_photo', {
       uri: request.userPhotoUri,
       type: 'image/jpeg',
       name: 'user_photo.jpg',
     } as any);
-    
+
     // Add hairstyle (either custom image or ID)
     if (request.hairstyleImageUri) {
       formData.append('hairstyle_image', {
@@ -130,35 +130,34 @@ export class HairTryOnApi {
     } else {
       throw new Error('Either hairstyleImageUri or hairstyleId must be provided');
     }
-    
+
     // Add user ID
     formData.append('user_id', request.userId);
 
-    const response = await apiClient.post(
+    const response = await apiClient.post<{ result_url: string }>(
       '/hair/process',
       formData,
       {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        responseType: 'blob',
-        timeout: 60000, // 1 minute for image processing
+        timeout: 300000, // 5 minutes for AI image processing (LightX API takes 2-3 mins)
       }
     );
-    
-    // Convert blob to base64 for React Native
-    return response.data;
+
+    // Return the URL directly
+    return response.data.result_url;
   }
 
   /**
    * Process hair try-on with either default or custom hairstyle
    */
-  static async processHairTryOn(request: ProcessHairTryOnRequest): Promise<Blob> {
+  static async processHairTryOn(request: ProcessHairTryOnRequest): Promise<string> {
     const formData = new FormData();
-    
+
     // Add user photo
     formData.append('user_photo', request.userPhoto);
-    
+
     // Add hairstyle (either custom image or ID)
     if (request.hairstyleImage) {
       formData.append('hairstyle_image', request.hairstyleImage);
@@ -167,23 +166,22 @@ export class HairTryOnApi {
     } else {
       throw new Error('Either hairstyleImage or hairstyleId must be provided');
     }
-    
+
     // Add user ID
     formData.append('user_id', request.userId);
 
-    const response = await apiClient.post(
+    const response = await apiClient.post<{ result_url: string }>(
       '/hair/process',
       formData,
       {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        responseType: 'blob',
-        timeout: 60000, // 1 minute for image processing
+        timeout: 300000, // 5 minutes for AI image processing (LightX API takes 2-3 mins)
       }
     );
-    
-    return response.data;
+
+    return response.data.result_url;
   }
 
   /**
@@ -364,7 +362,7 @@ export class HairTryOnApi {
   }
 
   private static mapProcessedVideo(data: any): ProcessedVideo {
-  const metadata = (data?.processing_metadata ?? data?.processingMetadata ?? {}) as Record<string, any>;
+    const metadata = (data?.processing_metadata ?? data?.processingMetadata ?? {}) as Record<string, any>;
 
     return {
       resultVideoUrl:
@@ -381,7 +379,7 @@ export class HairTryOnApi {
   }
 
   private static mapHistoryItem(item: HairTryOnHistoryResponseItem): HairTryOnHistoryItem {
-  const metadata = (item.processing_metadata ?? item.processingMetadata ?? {}) as Record<string, any>;
+    const metadata = (item.processing_metadata ?? item.processingMetadata ?? {}) as Record<string, any>;
 
     return {
       id: item.id ?? item.result_id ?? '',

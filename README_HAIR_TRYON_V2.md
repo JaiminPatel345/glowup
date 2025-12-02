@@ -291,14 +291,6 @@ HAIR_MODEL_NAME=hair_fastgan_model.pth
 # Check if API key is set
 cat .env | grep PERFECTCORP_API_KEY
 
-# Test API key manually
-curl -H "Authorization: Bearer YOUR_KEY" \
-  "https://yce-api-01.perfectcorp.com/s2s/v2.0/task/template/hair-style?page_size=1"
-
-# Update API key in .env
-PERFECTCORP_API_KEY=your_actual_key_here
-```
-
 ### Service Won't Start
 
 **Problem**: Service fails to start

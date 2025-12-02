@@ -7,6 +7,7 @@ import {
   Image,
   ActivityIndicator,
   Alert,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
@@ -56,9 +57,11 @@ export default function HairTryOnScreen() {
       const fileUri = FileSystem.documentDirectory + filename;
 
       const { uri } = await FileSystem.downloadAsync(resultUri, fileUri);
+      console.log("File downloaded to:", uri);
 
       // Check if sharing is available
-      if (!(await Sharing.isAvailableAsync())) {
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (!isAvailable) {
         Alert.alert('Error', 'Sharing is not available on this device');
         return;
       }
@@ -72,7 +75,14 @@ export default function HairTryOnScreen() {
 
     } catch (error) {
       console.error('Error saving/sharing:', error);
-      Alert.alert('Error', 'Failed to save or share image.');
+      Alert.alert(
+        'Save Error',
+        'Could not share image directly. Would you like to open it in the browser to save it?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Open Browser', onPress: () => Linking.openURL(resultUri) }
+        ]
+      );
     }
   };
 

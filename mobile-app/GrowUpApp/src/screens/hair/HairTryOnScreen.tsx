@@ -11,8 +11,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import * as ImagePicker from 'expo-image-picker';
-import * as MediaLibrary from 'expo-media-library';
 import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { HairTryOnApi, Hairstyle } from '../../api/hair';
 import { useAppSelector } from '../../store';
 
@@ -41,9 +41,8 @@ export default function HairTryOnScreen() {
   const requestPermissions = async () => {
     const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
     const { status: libraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    const { status: saveStatus } = await MediaLibrary.requestPermissionsAsync();
 
-    if (cameraStatus !== 'granted' || libraryStatus !== 'granted' || saveStatus !== 'granted') {
+    if (cameraStatus !== 'granted' || libraryStatus !== 'granted') {
       Alert.alert('Permission Required', 'Camera and photo library access is required');
     }
   };
@@ -52,27 +51,28 @@ export default function HairTryOnScreen() {
     if (!resultUri) return;
 
     try {
-      // 1. Check permissions
-      const { status } = await MediaLibrary.requestPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'We need permission to save to your gallery');
+      // Download image to local filesystem first
+      const filename = resultUri.split('/').pop() || 'hairstyle_result.jpg';
+      const fileUri = FileSystem.documentDirectory + filename;
+
+      const { uri } = await FileSystem.downloadAsync(resultUri, fileUri);
+
+      // Check if sharing is available
+      if (!(await Sharing.isAvailableAsync())) {
+        Alert.alert('Error', 'Sharing is not available on this device');
         return;
       }
 
-      // 2. Download file if it's a remote URL
-      let uriToSave = resultUri;
-      if (resultUri.startsWith('http')) {
-        const fileUri = FileSystem.documentDirectory + 'glowup_hair_result.jpg';
-        const { uri } = await FileSystem.downloadAsync(resultUri, fileUri);
-        uriToSave = uri;
-      }
+      // Open share sheet (allows saving to gallery)
+      await Sharing.shareAsync(uri, {
+        mimeType: 'image/jpeg',
+        dialogTitle: 'Save your new hairstyle',
+        UTI: 'public.jpeg' // for iOS
+      });
 
-      // 3. Save to gallery
-      await MediaLibrary.saveToLibraryAsync(uriToSave);
-      Alert.alert('Saved!', 'Image saved to your gallery successfully');
     } catch (error) {
-      console.error('Error saving to gallery:', error);
-      Alert.alert('Error', 'Failed to save image to gallery');
+      console.error('Error saving/sharing:', error);
+      Alert.alert('Error', 'Failed to save or share image.');
     }
   };
 

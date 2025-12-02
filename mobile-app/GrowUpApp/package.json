@@ -28,6 +28,7 @@
     "expo-image-picker": "^17.0.8",
     "expo-media-library": "~16.0.1",
     "expo-secure-store": "~13.0.2",
+    "expo-sharing": "~14.0.7",
     "expo-status-bar": "~3.0.8",
     "nativewind": "4.1.23",
     "react": "19.1.0",
